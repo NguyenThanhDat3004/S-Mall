@@ -1,0 +1,28 @@
+cau truc cua mot du an spring
+-----------------------------
+de doc src trong github thi tai src nhan "." thi no se mo code 
+hoc beans core va context
+------------------------------
+quan trong nhat la hoc spring core container
+----------------------------------------------------
+Bean : la mot class quan li boi spring container
+----------------------------------------------------
+Component Scan : tu dong nhan dien Bean
+@Bean :  // tam ngung tai vid 4
+jspring tu quet tu toi uu hoa, quet tu application den cac con cua no
+no se noi voi jspring rang day la mot doi tuong m can quan li
+Tai vid nay chua can tim hieu sau
+----------------------------------------------------
+IoC: quan li dao nguoc tien trinh
+Dependencies Injection: tiem phu thuoc
+Tung Component chua tung bean tat ca deu chiu anh huong boi bean container
+A-->B-->C (phu thuoc) : neu muon thay doi B thi toang ca dam
+bay gio chung ta se giam su phu thuoc bang cach chi can A va C 
+con B se duoc cap boi Jspring--> hien thuc dieu nay bang tiem phu thuoc (Dependencies Injection)
+- How to ap dung: tightly couple va loose coupling
+Tightly: rang buoc vao nhau : mot cai sua doi thi ca 2 cai kia phai sua theo
+Less couple: giam su phu thuoc vao nhau
+----------------------------------------------------
+Injector:
+Tat ca la jspring lo het, minh chi code cho dung cu phap la duoc
+

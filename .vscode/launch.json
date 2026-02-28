@@ -1,0 +1,32 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "App",
+      "request": "launch",
+      "mainClass": "com.App",
+      "projectName": "du_an_springmvc"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-KhaiButDauNam<du_an_springmvc>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "codeTaiDay.KhaiButDauNam",
+      "projectName": "du_an_springmvc",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-App<du_an_springmvc>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "App",
+      "projectName": "du_an_springmvc",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=63559 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=du_an_springmvc"
+    }
+  ]
+}
