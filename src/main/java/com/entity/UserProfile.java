@@ -2,7 +2,17 @@ package com.entity;
 
 import java.time.LocalDate;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+@Entity
+@Table(name = "user_profiles")
+
 public class UserProfile {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String fullName;
     private String email;
@@ -31,8 +41,8 @@ public class UserProfile {
     
 
     // Getters and Setters
-    public int getUserId() { return id; }
-    public void setUserId(int userId) { this.id = userId; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
@@ -48,5 +58,12 @@ public class UserProfile {
 
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+
+    @Override
+    public String toString() {
+        return "UserProfile [id=" + id + ", fullName=" + fullName + ", email=" + email + ", gender=" + gender
+                + ", address=" + address + ", dateOfBirth=" + dateOfBirth + "]";
+    }
+    
 }
 
