@@ -4,59 +4,58 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.entity.UserProfile;
+import java.util.Optional;
+import com.entity.User;
 import com.repository.UserRepository;
 import com.service.UserService;
 
 @Service
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+
     public UserServiceImpl(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
+
     public String getUserInfo() {
         return "User information from UserService";
     }
-    public UserProfile handleSaveUser(UserProfile user){
+
+    public User handleSaveUser(User user) {
         try {
-           user =  this.userRepository.save(user);
+            return this.userRepository.save(user);
         } catch (Exception e) {
             return null;
         }
-        return user;
     }
-    public List<UserProfile> getAllUsers(){
+
+    public List<User> getAllUsers() {
         return this.userRepository.findAll();
     }
-    public List<UserProfile> getUsersByEmail(String email){
+
+    public Optional<User> getUsersByEmail(String email) {
         return this.userRepository.findByEmail(email);
     }
-    public boolean deleteById(int id){
-        boolean success = false;
+
+    public boolean deleteById(Long id) {
         try {
             this.userRepository.deleteById(id);
-            success =  true;
+            return true;
         } catch (Exception e) {
             System.out.println("Error deleting user with id " + id + ": " + e.getMessage());
-            success =  false;
+            return false;
         }
-        return success;
     }
-    public UserProfile handleUpdateUser(UserProfile user){
+
+    public User handleUpdateUser(User user) {
         try {
-           user =  this.userRepository.save(user);
+            return this.userRepository.save(user);
         } catch (Exception e) {
             return null;
         }
-        return user;
     }
-    public UserProfile findById(int id){
-        UserProfile user = null;
-        try {
-           user =  this.userRepository.findById(id);
-        } catch (Exception e) {
-            return null;
-        }
-        return user;
+
+    public User findById(Long id) {
+        return this.userRepository.findById(id).orElse(null);
     }
 }

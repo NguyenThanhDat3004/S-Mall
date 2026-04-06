@@ -1,0 +1,226 @@
+:root {
+    --primary-color: #2c3e50;
+    --accent-color: #27ae60;
+    --text-color: #333;
+    --bg-light: #f8f9fa;
+    --transition: all 0.3s ease;
+}
+
+.top-header {
+    background-color: #219150;
+    color: white;
+    font-size: 0.85rem;
+    padding: 5px 0;
+}
+
+.top-header a {
+    color: rgba(255, 255, 255, 0.85);
+    text-decoration: none;
+    margin: 0 10px;
+    transition: var(--transition);
+}
+
+.top-header a:hover {
+    color: #ffeb3b;
+    /* Vibrant Yellow */
+    text-shadow: 0 0 5px rgba(255, 235, 59, 0.4);
+}
+
+/* Specific hover color if needed */
+.top-header-left a:hover,
+.top-header-right a:hover {
+    color: #ffeb3b;
+}
+
+.top-header-divider {
+    opacity: 0.3;
+}
+
+/* Hover Dropdown */
+.top-header-item {
+    position: relative;
+    display: inline-block;
+}
+
+.top-header-item .dropdown-menu-custom {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 140px;
+    z-index: 1100;
+    border-radius: 4px;
+    padding: 8px 0;
+    list-style: none;
+    margin: 0;
+
+    /* Animation properties */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.top-header-item:hover .dropdown-menu-custom {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Triangle for dropdown */
+.dropdown-menu-custom::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    right: 20px;
+    border-width: 0 8px 8px 8px;
+    border-style: solid;
+    border-color: transparent transparent white transparent;
+}
+
+.dropdown-menu-custom li a {
+    color: #333 !important;
+    display: block !important;
+    padding: 8px 16px !important;
+    margin: 0 !important;
+    font-size: 0.85rem;
+}
+
+.dropdown-menu-custom li a:hover {
+    background-color: #f8f9fa;
+    color: #f39c12 !important;
+    /* Golden Yellow for better contrast on white */
+    opacity: 1 !important;
+}
+
+.header-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.logo-section a {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    text-decoration: none;
+    letter-spacing: -1px;
+}
+
+.logo-section span {
+    color: var(--accent-color);
+}
+
+.search-section {
+    flex-grow: 1;
+    max-width: 600px;
+}
+
+.search-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.8rem 1.5rem;
+    border: 2px solid #eee;
+    border-radius: 50px;
+    font-size: 1rem;
+    transition: var(--transition);
+    outline: none;
+}
+
+.search-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(39, 174, 96, 0.1);
+}
+
+.search-btn {
+    position: absolute;
+    right: 5px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.search-btn:hover {
+    background: #ffeb3b;
+    color: #2c3e50;
+    transform: scale(1.05);
+}
+
+.cart-section {
+    display: flex;
+    align-items: center;
+}
+
+.cart-icon-wrapper {
+    position: relative;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.cart-icon-wrapper:hover {
+    transform: translateY(-2px);
+}
+
+.cart-icon {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.cart-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--accent-color);
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 50%;
+    font-weight: bold;
+}
+
+.btn-login {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    transition: var(--transition);
+}
+
+.btn-login:hover {
+    background-color: #ffeb3b;
+    color: #2c3e50;
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .search-section {
+        order: 3;
+        max-width: 100%;
+    }
+}

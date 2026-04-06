@@ -1,14 +1,21 @@
 package com.service;
 
 import java.util.List;
-import com.entity.UserProfile;
+import com.entity.User;
+import java.util.Optional;
 
 public interface UserService {
     String getUserInfo();
-    UserProfile handleSaveUser(UserProfile user);
-    List<UserProfile> getAllUsers();
-    List<UserProfile> getUsersByEmail(String email);
-    boolean deleteById(int id);
-    UserProfile handleUpdateUser(UserProfile user);
-    UserProfile findById(int id);
+
+    User handleSaveUser(User user);
+
+    List<User> getAllUsers();
+
+    Optional<User> getUsersByEmail(String email);
+
+    boolean deleteById(Long id);
+
+    User handleUpdateUser(User user);
+
+    User findById(Long id);
 }
