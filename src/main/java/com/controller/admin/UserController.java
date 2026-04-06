@@ -30,7 +30,7 @@ public class UserController {
         Optional<User> users = this.userService.getUsersByEmail("3004nguyenthanhdat@gmail.com");
         System.out.println("users: " + users);
         model.addAttribute("dat", "dat");
-        return "hello";
+        return "client/home/index";
     }
 
     @RequestMapping("/admin/user")
