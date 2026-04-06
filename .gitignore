@@ -1,0 +1,12 @@
+# Maven
+target/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.properties
+
+# OS
+Thumbs.db
+.DS_Store

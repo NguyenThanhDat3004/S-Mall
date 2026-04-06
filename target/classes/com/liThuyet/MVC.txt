@@ -1,8 +1,0 @@
-Anotation
--------------------
-cau hinh username va password mac dinh
-Cau hinh thong qua file propeties
-Disable security: de khong can nhap username va password
-Dung thong qua Anotation @springbootApplication
---------------------
-xong vid 3
