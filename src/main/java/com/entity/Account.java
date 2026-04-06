@@ -1,6 +1,7 @@
 package com.entity;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -26,6 +27,10 @@ public class Account {
     @OneToMany(mappedBy = "account")
     private java.util.List<Order> orders;
     // con cai nay la dung moi quan he de lay data chu khong tao them
+    @ManyToOne
+    @JoinColumn(name = "user_profile_id")
+    private UserProfile user;
+
     public Account() {
         this.role = new Role(1, "User");
         this.status = true;
@@ -53,7 +58,7 @@ public class Account {
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
-    public String getphoneNumber() { return phoneNumber; }
+    public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
 
     public String getPasswordHash() { return passwordHash; }
@@ -65,8 +70,18 @@ public class Account {
     public void setRole(Role role) {
         this.role = role;
     }
-    public String getPhoneNumber() {
-        return phoneNumber;
+    
+    public List<Order> getOrders() {
+        return orders;
+    }
+    public void setOrders(List<Order> orders) {
+        this.orders = orders;
+    }
+    public UserProfile getUser() {
+        return user;
+    }
+    public void setUser(UserProfile user) {
+        this.user = user;
     }
     
     public boolean isStatus() { return status; }

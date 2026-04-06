@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 @Entity
 @Table(name = "user_profiles")
@@ -38,6 +39,8 @@ public class UserProfile {
         this.address = address;
         this.dateOfBirth = dateOfBirth;
     }
+    @OneToMany(mappedBy = "user")
+    private java.util.List<Account> accounts;
     
 
     // Getters and Setters

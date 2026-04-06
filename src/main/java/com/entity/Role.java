@@ -12,30 +12,36 @@ import jakarta.persistence.OneToMany;
 public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    int roleId;
+    int id;
     String name;
     @OneToMany(mappedBy = "role")
     private List<Account> accounts;
     public Role() {
     }
     public Role(int id, String name) {
-        this.roleId = id;
+        this.id = id;
         this.name = name;
     }
     public int getId() {
-        return roleId;
+        return id;
     }
     public String getName() {
         return name;
     }
     public void setId(int id) {
-        this.roleId = id;
+        this.id = id;
     }
     public void setName(String name) {
         this.name = name;
     }
+    public List<Account> getAccounts() {
+        return accounts;
+    }
+    public void setAccounts(List<Account> accounts) {
+        this.accounts = accounts;
+    }
     @Override
     public String toString() {
-        return "Role [id=" + roleId + ", name=" + name + "]";
+        return "Role [id=" + id + ", name=" + name + "]";
     }
 }

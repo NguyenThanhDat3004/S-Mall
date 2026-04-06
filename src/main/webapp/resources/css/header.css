@@ -1,0 +1,196 @@
+/* --- 1. Thiết lập cơ bản (Reset & Font) --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family:
+    "Century Gothic", Futura, sans-serif; /* Font chữ thanh mảnh gần giống mẫu */
+}
+
+body {
+  color: #000;
+  background-color: #fff;
+  font-size: 14px;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul {
+  list-style: none;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* --- 2. Thanh thông báo (Top Announcement Bar) --- */
+.announcement-bar {
+  background-color: #000;
+  color: #fff;
+  padding: 10px 20px;
+  text-align: center;
+  position: relative;
+  font-size: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.announcement-bar p {
+  margin-right: auto;
+  margin-left: auto;
+  max-width: 800px;
+}
+
+.announcement-bar strong {
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.announcement-bar .close-btn {
+  color: #fff;
+  font-size: 20px;
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* --- 3. Header chính (Main Header) --- */
+.main-header {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 15px 40px;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between; /* Căn 3 phần Trái - Giữa - Phải */
+  align-items: center;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Nhóm bên trái */
+.header-left {
+  display: flex;
+  gap: 30px; /* Khoảng cách giữa Menu và Tìm kiếm */
+  align-items: center;
+  flex: 1; /* Cho phép mở rộng */
+}
+
+.menu-toggle,
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+/* Icon Menu (Hamburger) */
+.hamburger-icon {
+  display: inline-block;
+  width: 18px;
+  height: 1px;
+  background-color: #000;
+  position: relative;
+}
+
+.hamburger-icon::before,
+.hamburger-icon::after {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background-color: #000;
+  position: absolute;
+  left: 0;
+}
+
+.hamburger-icon::before {
+  top: -6px;
+}
+.hamburger-icon::after {
+  bottom: -6px;
+}
+
+/* Trung tâm: Logo */
+.header-center {
+  flex: 1;
+  text-align: center;
+}
+
+.header-center h1 {
+  font-family:
+    "Times New Roman", Times, serif; /* Logo thường dùng font có chân */
+  font-size: 28px;
+  font-weight: normal;
+  letter-spacing: 4px; /* Khoảng cách chữ rộng */
+}
+
+/* Nhóm bên phải */
+.header-right {
+  display: flex;
+  gap: 25px;
+  justify-content: flex-end;
+  align-items: center;
+  flex: 1;
+  font-size: 11px;
+}
+
+.header-right a {
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+}
+
+.icon-heart,
+.icon-user {
+  font-size: 18px;
+}
+
+/* --- 4. Thanh điều hướng phụ (Sub Navigation) --- */
+.sub-nav {
+  background-color: #fff;
+  padding: 15px 40px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sub-nav ul {
+  display: flex;
+  justify-content: center; /* Căn giữa toàn bộ danh mục */
+  gap: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+  flex-wrap: wrap; /* Cho phép xuống dòng nếu màn hình nhỏ */
+}
+
+.sub-nav a {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #666; /* Màu chữ nhạt hơn */
+  padding: 5px 0;
+  position: relative;
+}
+
+/* Trạng thái Active và Hover */
+.sub-nav li.active a,
+.sub-nav a:hover {
+  color: #000; /* Màu đen khi chọn hoặc hover */
+}
+
+.sub-nav li.active a::after {
+  content: "";
+  width: 100%;
+  height: 2px;
+  background-color: #000;
+  position: absolute;
+  bottom: -15px; /* Điều chỉnh khoảng cách đường gạch chân */
+  left: 0;
+}

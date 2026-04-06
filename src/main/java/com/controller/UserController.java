@@ -53,6 +53,7 @@ public class UserController {
     public String listUsers(Model model) {
         List<UserProfile> users = this.userService.getAllUsers();
         model.addAttribute("users", users);
+        System.out.println("Admin check list user");
         return "admin/user/list-user";
     }
 

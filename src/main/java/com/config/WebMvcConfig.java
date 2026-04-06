@@ -21,14 +21,18 @@ public class WebMvcConfig implements WebMvcConfigurer {
         resolver.setSuffix(".jsp");
         return resolver;
     }
+
     @Override
     public void configureViewResolvers(ViewResolverRegistry registry) {
         registry.viewResolver(viewResolver());
     }
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/css/**")
-                .addResourceLocations("resources:/css/");
-                // tim trong folder resources/css
+                .addResourceLocations("/resources/css/");
+        // tim trong folder resources/css
+        registry.addResourceHandler("/js/**")
+                .addResourceLocations("/resources/js/");
     }
 }
