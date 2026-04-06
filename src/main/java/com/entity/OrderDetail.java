@@ -1,51 +1,42 @@
 package com.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 @Entity
+@Table(name = "order_items")
 public class OrderDetail {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    private int id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "price_at_purchase")
+    private double priceAtPurchase;
+
     private int quantity;
-    private double price;
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private Order order;
-    @ManyToOne
-    @JoinColumn(name = "product_id")
-    private Product product;
-    // moi quan he mot chieu nen khong can mappedBy, chi can joinColumn de noi lien ket voi truong id cua bang order va product la duoc
 
-    public int getId() {
-        return id;
-    }
-    public Order getOrder() {
-        return order;
-    }
-    public double getPrice() {
-        return price;
-    }
-    public int getQuantity() {
-        return quantity;
-    }
-    public void setId(int id) {
-        this.id = id;
-    }
-    public void setOrder(Order order) {
-        this.order = order;
-    }
-    public void setPrice(double price) {
-        this.price = price;
-    }
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_variant_id")
+    private ProductVariant productVariant;
 
+    @OneToOne(mappedBy = "orderItem")
+    private Review review;
 
+    public OrderDetail() {}
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public double getPriceAtPurchase() { return priceAtPurchase; }
+    public void setPriceAtPurchase(double priceAtPurchase) { this.priceAtPurchase = priceAtPurchase; }
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public Order getOrder() { return order; }
+    public void setOrder(Order order) { this.order = order; }
+    public ProductVariant getProductVariant() { return productVariant; }
+    public void setProductVariant(ProductVariant productVariant) { this.productVariant = productVariant; }
+    public Review getReview() { return review; }
+    public void setReview(Review review) { this.review = review; }
 }

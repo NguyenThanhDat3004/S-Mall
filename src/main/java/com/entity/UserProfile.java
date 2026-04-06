@@ -1,72 +1,45 @@
 package com.entity;
 
 import java.time.LocalDate;
+import jakarta.persistence.*;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
 @Entity
 @Table(name = "user_profiles")
-
 public class UserProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
+
     private String fullName;
-    private String email;
+    private String phoneNumber;
     private boolean gender;
     private String address;
     private LocalDate dateOfBirth;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
     public UserProfile() {}
 
-    public UserProfile(int id, String fullName, String email, boolean gender, String address, LocalDate dateOfBirth) {
-        this.id = id;
-        this.fullName = fullName;
-        this.email = email;
-        this.gender = gender;
-        this.address = address;
-        this.dateOfBirth = dateOfBirth;
-    }
-
-    public UserProfile( String fullName, String email, boolean gender, String address, LocalDate dateOfBirth) {
-        this.fullName = fullName;
-        this.email = email;
-        this.gender = gender;
-        this.address = address;
-        this.dateOfBirth = dateOfBirth;
-    }
-    @OneToMany(mappedBy = "user")
-    private java.util.List<Account> accounts;
-    
-
     // Getters and Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     public boolean isGender() { return gender; }
     public void setGender(boolean gender) { this.gender = gender; }
-
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
-
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
-
-    @Override
-    public String toString() {
-        return "UserProfile [id=" + id + ", fullName=" + fullName + ", email=" + email + ", gender=" + gender
-                + ", address=" + address + ", dateOfBirth=" + dateOfBirth + "]";
-    }
-    
+    public String getAvatarUrl() { return avatarUrl; }
+    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }
-

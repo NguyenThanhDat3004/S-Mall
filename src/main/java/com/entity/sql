@@ -1,109 +1,196 @@
-DROP DATABASE IF EXISTS shop_clothes;
-CREATE DATABASE shop_clothes;
-USE shop_clothes;
+-- ======================================================
+-- PROJECT: S-MALL (High-Level E-commerce Portfolio)
+-- AUTHOR: Nguyen Thanh Dat
+-- TECHNOLOGY: SQL Server
+-- ======================================================
 
--- ROLES
+-- 1. DATABASE INIT
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'S_Mall')
+BEGIN
+    CREATE DATABASE S_Mall;
+END
+GO
+
+USE S_Mall;
+GO
+
+-- 2. USERS & ROLES
 CREATE TABLE roles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL UNIQUE,
-    description VARCHAR(255)
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    name NVARCHAR(50) NOT NULL UNIQUE,
+    description NVARCHAR(255)
 );
 
-INSERT INTO roles (name, description) VALUES
-('ADMIN', 'Full quyền hệ thống'),
-('STAFF', 'Nhân viên bán hàng'),
-('CUSTOMER', 'Khách hàng');
-
--- USERS
 CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(150),
-    phone VARCHAR(20),
-    email VARCHAR(150),
-    address TEXT,
-    role_id INT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    email NVARCHAR(255) UNIQUE NOT NULL,
+    password NVARCHAR(255) NOT NULL,
+    role_id BIGINT,
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
--- CATEGORIES
-CREATE TABLE categories (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    description VARCHAR(255)
+CREATE TABLE user_profiles (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT UNIQUE NOT NULL,
+    full_name NVARCHAR(255),
+    phone_number NVARCHAR(20),
+    gender BIT, -- 0: Female, 1: Male
+    address NVARCHAR(MAX),
+    avatar_url NVARCHAR(MAX),
+    date_of_birth DATE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-INSERT INTO categories (name, description) VALUES
-('Áo', 'Các loại áo'),
-('Quần', 'Các loại quần'),
-('Váy', 'Các loại váy'),
-('Phụ kiện', 'Phụ kiện thời trang');
+-- 3. SHOPS
+CREATE TABLE shops (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT UNIQUE NOT NULL,
+    name NVARCHAR(255) NOT NULL,
+    slug NVARCHAR(255) UNIQUE,
+    description NVARCHAR(MAX),
+    logo_url NVARCHAR(MAX),
+    rating_average DECIMAL(3,2) DEFAULT 0.0,
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
--- PRODUCTS
+-- 4. CATEGORIES
+CREATE TABLE categories (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    parent_id BIGINT NULL,
+    name NVARCHAR(255) NOT NULL,
+    slug NVARCHAR(255) UNIQUE,
+    icon_url NVARCHAR(MAX),
+    is_active BIT DEFAULT 1,
+    FOREIGN KEY (parent_id) REFERENCES categories(id)
+);
+
+-- 5. PRODUCTS & VARIANTS
 CREATE TABLE products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
-    description TEXT,
-    price DECIMAL(10,2) NOT NULL,
-    stock_quantity INT DEFAULT 0,
-    image_url VARCHAR(255),
-    category_id INT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    shop_id BIGINT NOT NULL,
+    category_id BIGINT,
+    name NVARCHAR(255) NOT NULL,
+    slug NVARCHAR(255) UNIQUE,
+    description NVARCHAR(MAX),
+    status NVARCHAR(50) DEFAULT 'PUBLISHED', -- DRAFT, PUBLISHED, BANNED
+    view_count INT DEFAULT 0,
+    sold_count INT DEFAULT 0,
+    average_rating DECIMAL(3,2) DEFAULT 0.0,
+    is_active BIT DEFAULT 1,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(id)
 );
 
-INSERT INTO products (name, description, price, stock_quantity, category_id) VALUES
-('Áo thun basic', 'Áo cotton 100%', 120000, 50, 1),
-('Quần jean nam', 'Jean xanh đậm', 350000, 30, 2),
-('Váy hoa', 'Váy mùa hè', 280000, 20, 3);
+CREATE TABLE product_variants (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    sku NVARCHAR(100) UNIQUE,
+    price DECIMAL(12,2) NOT NULL,
+    discount_price DECIMAL(12,2) NULL, -- FLASH SALE PRICE
+    stock INT NOT NULL DEFAULT 0,
+    attributes_json NVARCHAR(MAX), -- Flexible attributes (Color, Size, Capacity, etc.)
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
 
--- ORDERS
+CREATE TABLE product_images (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    url NVARCHAR(MAX) NOT NULL,
+    is_main BIT DEFAULT 0,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- 6. CART & ORDERS
+CREATE TABLE cart_items (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    product_variant_id BIGINT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+    CONSTRAINT unique_cart UNIQUE (user_id, product_variant_id)
+);
+
 CREATE TABLE orders (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    order_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(12,2) DEFAULT 0,
-    status ENUM('PENDING','CONFIRMED','SHIPPING','COMPLETED','CANCELLED') DEFAULT 'PENDING',
-    shipping_address TEXT,
-    phone VARCHAR(20),
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    order_code NVARCHAR(50) UNIQUE NOT NULL, -- Format: SM-XXXXXXXX
+    total_price DECIMAL(12,2) NOT NULL,
+    status NVARCHAR(50) DEFAULT 'PENDING', -- PENDING, CONFIRMED, SHIPPING, DELIVERED, CANCELLED
+    shipping_address NVARCHAR(MAX) NOT NULL,
+    payment_method NVARCHAR(50) DEFAULT 'COD',
+    note NVARCHAR(MAX),
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2 DEFAULT GETDATE(),
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- ORDER DETAILS
-CREATE TABLE order_details (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    order_id INT NOT NULL,
-    product_id INT NOT NULL,
+CREATE TABLE order_items (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    product_variant_id BIGINT NOT NULL,
+    price_at_purchase DECIMAL(12,2) NOT NULL, -- For Financial Audit
     quantity INT NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    subtotal DECIMAL(12,2) NOT NULL,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id)
+    FOREIGN KEY (product_variant_id) REFERENCES product_variants(id)
 );
 
--- INDEX
-CREATE INDEX idx_user_role ON users(role_id);
-CREATE INDEX idx_product_category ON products(category_id);
-CREATE INDEX idx_order_user ON orders(user_id);
-CREATE INDEX idx_detail_order ON order_details(order_id);
-CREATE INDEX idx_detail_product ON order_details(product_id);
+-- 7. REVIEWS & FEEDBACK
+CREATE TABLE reviews (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    order_item_id BIGINT UNIQUE NOT NULL, -- Only review if purchased
+    rating INT CHECK (rating BETWEEN 1 AND 5),
+    comment NVARCHAR(MAX),
+    ai_sentiment NVARCHAR(50), -- POSITIVE, NEGATIVE, NEUTRAL
+    created_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    FOREIGN KEY (order_item_id) REFERENCES order_items(id)
+);
 
--- TRIGGER AUTO UPDATE TOTAL
-DELIMITER $$
+-- 8. SYSTEM & AUDIT
+CREATE TABLE notifications (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title NVARCHAR(255),
+    content NVARCHAR(MAX),
+    type NVARCHAR(50), -- ORDER_STATUS, PROMOTION, SYSTEM
+    is_read BIT DEFAULT 0,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
-CREATE TRIGGER update_order_total
-AFTER INSERT ON order_details
-FOR EACH ROW
-BEGIN
-    UPDATE orders
-    SET total_amount = (
-        SELECT SUM(subtotal)
-        FROM order_details
-        WHERE order_id = NEW.order_id
-    )
-    WHERE id = NEW.order_id;
-END $$
+CREATE TABLE order_status_logs (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    status NVARCHAR(50) NOT NULL,
+    note NVARCHAR(MAX),
+    created_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+);
 
-DELIMITER ;
+CREATE TABLE inventory_logs (
+    id BIGINT IDENTITY(1,1) PRIMARY KEY,
+    product_variant_id BIGINT NOT NULL,
+    change_amount INT NOT NULL,
+    type NVARCHAR(50), -- IMPORT, EXPORT, SALE, RETURN
+    created_at DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (product_variant_id) REFERENCES product_variants(id)
+);
+
+-- 9. PERFORMANCE INDEXES
+CREATE INDEX idx_product_slug ON products(slug);
+CREATE INDEX idx_category_slug ON categories(slug);
+CREATE INDEX idx_order_code ON orders(order_code);
+CREATE INDEX idx_user_email ON users(email);
+CREATE INDEX idx_shop_slug ON shops(slug);
+GO
