@@ -14,6 +14,7 @@
 
             <!-- Custom CSS -->
             <link rel="stylesheet" href="${url}/css/client/header.css">
+            <link rel="stylesheet" href="${url}/css/client/footer.css">
             <link rel="stylesheet" href="${url}/css/client/homepage.css">
         </head>
 
@@ -35,6 +36,9 @@
                     </div>
                 </div>
             </main>
+
+            <!-- Footer -->
+            <jsp:include page="/WEB-INF/view/client/layout/footer.jsp" />
 
             <!-- Bootstrap JS -->
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

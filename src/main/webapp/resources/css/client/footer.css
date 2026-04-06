@@ -1,0 +1,143 @@
+.footer-container {
+    background-color: #fbfbfb;
+    border-top: 4px solid #27ae60;
+    padding: 60px 0 40px;
+    color: #555;
+}
+
+.footer-header {
+    color: #333;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-links li {
+    margin-bottom: 12px;
+}
+
+.footer-links a {
+    color: #666;
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: var(--transition);
+}
+
+.footer-links a:hover {
+    color: #27ae60;
+    padding-left: 5px;
+}
+
+.partner-logos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.partner-box {
+    background: white;
+    color: #555;
+    border: 1px solid #ddd;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    padding: 5px 10px;
+    border-radius: 2px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+    transition: var(--transition);
+}
+
+.partner-box:hover {
+    background-color: #27ae60;
+    color: white;
+    border-color: #27ae60;
+}
+
+.social-links a {
+    color: #555;
+    font-size: 1.2rem;
+    margin-right: 15px;
+    transition: var(--transition);
+}
+
+.social-links a:hover {
+    color: #27ae60;
+    transform: translateY(-3px);
+}
+
+.download-app {
+    display: flex;
+    gap: 15px;
+}
+
+.qr-code {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border: 1px solid #ddd;
+    padding: 5px;
+}
+
+.app-stores {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.app-box {
+    background: white;
+    color: #555;
+    border: 1px solid #ddd;
+    padding: 2px 8px;
+    font-size: 0.7rem;
+    border-radius: 2px;
+    transition: var(--transition);
+}
+
+.app-box:hover {
+    background-color: #27ae60;
+    color: white;
+    border-color: #27ae60;
+}
+
+/* Detailed Footer Bottom Info - KEEP GREEN */
+.footer-bottom-info {
+    background-color: #27ae60;
+    padding: 40px 0;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.75rem;
+    line-height: 2;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-bottom-info p {
+    margin-bottom: 5px;
+}
+
+.map-container {
+    width: 100%;
+    margin-top: 10px;
+    height: 200px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.map-container iframe {
+    width: 100%;
+    height: 100%;
+}
+
+@media (max-width: 768px) {
+    .footer-container {
+        padding: 30px 20px;
+    }
+}
