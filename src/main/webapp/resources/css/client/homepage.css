@@ -5,3 +5,91 @@ body {
 }
 
 /* Hero section CSS removed by user request */
+
+/* Category Navigation Styling */
+.category-section {
+    background-color: #fff;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 20px;
+    width: 100%;
+}
+
+.category-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+.category-item:hover {
+    transform: translateY(-5px);
+}
+
+.category-icon {
+    width: 70px;
+    height: 70px;
+    background-color: #f8f9fa;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    border: 1px solid #eee;
+    transition: all 0.3s ease;
+}
+
+.category-item:hover .category-icon {
+    border-color: #27ae60;
+    box-shadow: 0 4px 10px rgba(39, 174, 96, 0.2);
+}
+
+.category-icon img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.category-label {
+    font-size: 0.85rem;
+    color: #444;
+    text-align: center;
+    font-weight: 500;
+    line-height: 1.2;
+    transition: color 0.3s ease;
+}
+
+.category-item:hover .category-label {
+    color: #27ae60;
+}
+
+/* Toggle Button Logic */
+#btnToggleCats i {
+    transition: transform 0.3s ease;
+}
+
+#btnToggleCats[aria-expanded="true"] i {
+    transform: rotate(180deg);
+}
+
+#btnToggleCats .toggle-text::after {
+    content: 'Xem tất cả';
+}
+
+#btnToggleCats[aria-expanded="true"] .toggle-text::after {
+    content: 'Thu gọn';
+}
+
+/* Featured Section Title */
+.section-title {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 1.5rem;
+}
