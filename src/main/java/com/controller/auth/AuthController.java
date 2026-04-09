@@ -30,6 +30,12 @@ public class AuthController {
     @PostMapping("/register")
     public String handleRegister(@ModelAttribute("registerDTO") RegisterDTO registerDTO, Model model) {
         
+        // 0. Kiểm tra đồng ý điều khoản
+        if (!registerDTO.isAcceptTerms()) {
+            model.addAttribute("error", "Bạn vui lòng đồng ý với Điều khoản & Chính sách trước khi tiếp tục");
+            return "client/auth/register";
+        }
+
         // 1. Kiểm tra mật khẩu khớp nhau
         if (registerDTO.getPassword() != null && !registerDTO.getPassword().equals(registerDTO.getConfirmPassword())) {
             model.addAttribute("error", "Mật khẩu xác nhận không khớp");

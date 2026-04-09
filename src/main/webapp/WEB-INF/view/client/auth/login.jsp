@@ -34,6 +34,14 @@
                 </div>
             </c:if>
 
+            <!-- Alert for Registration Success -->
+            <c:if test="${not empty param.success}">
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill"></i> Đăng ký thành công! Vui lòng đăng nhập.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            </c:if>
+
             <!-- Alert for Logout Success -->
             <c:if test="${not empty param.logout}">
                 <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
@@ -84,5 +92,17 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Cleanup Registration Auto-save -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('success')) {
+                const STORAGE_KEY = 's-mall-register-data';
+                sessionStorage.removeItem(STORAGE_KEY);
+                console.log('Registration data cleared from SessionMemory.');
+            }
+        });
+    </script>
 </body>
 </html>
