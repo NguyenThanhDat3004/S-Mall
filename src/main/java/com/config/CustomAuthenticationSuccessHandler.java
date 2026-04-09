@@ -8,9 +8,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
+import com.dto.CustomUserDetails;
+
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 @Component
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
@@ -18,6 +21,12 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
+        
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        HttpSession session = request.getSession();
+        
+        session.setAttribute("userId", userDetails.getId());
+        session.setAttribute("fullName", userDetails.getFullName());
         
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         

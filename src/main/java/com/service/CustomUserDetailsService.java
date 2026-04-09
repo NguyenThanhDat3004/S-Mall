@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.dto.CustomUserDetails;
 import com.entity.User;
 import com.repository.UserRepository;
 
@@ -30,10 +31,12 @@ public class CustomUserDetailsService implements UserDetailsService {
         // Tên role trong DB (ví dụ ADMIN) cần được thêm tiền tố "ROLE_" cho Spring Security
         String roleName = "ROLE_" + user.getRole().getName();
 
-        return new org.springframework.security.core.userdetails.User(
+        return new CustomUserDetails(
                 user.getEmail(),
                 user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority(roleName))
+                Collections.singletonList(new SimpleGrantedAuthority(roleName)),
+                user.getId(),
+                user.getProfile() != null ? user.getProfile().getFullName() : "User"
         );
     }
 }
