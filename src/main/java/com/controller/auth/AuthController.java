@@ -84,12 +84,13 @@ public class AuthController {
                 
                 // Logging success as requested by USER - RAISED VISIBILITY
                 System.out.println("==================================================");
-                System.out.println("[SUCCESS] ĐĂNG KÝ THÀNH CÔNG!");
+                System.out.println("[SUCCESS] REGISTRATION COMPLETED!");
                 System.out.println("[INFO] Email: " + savedUser.getEmail());
                 System.out.println("[INFO] User ID in Database: " + savedUser.getId());
                 System.out.println("==================================================");
                 
-                logger.info("[SUCCESS] User registered successfully with ID: {}", savedUser.getId());
+                logger.info("[SUCCESS] User registered successfully! Email: {}, ID: {}", 
+                           savedUser.getEmail(), savedUser.getId());
                 
                 otpService.clearOtpData(email);
                 return "redirect:/login?success=true";
