@@ -48,7 +48,9 @@ public class AuthServiceImpl implements AuthService {
         
         user.setProfile(profile);
         
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        userRepository.flush(); // Ép dữ liệu ghi vào DB ngay lập tức
+        return savedUser;
     }
 
     @Override

@@ -1,20 +1,33 @@
 package com.controller.auth;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.dto.request.RegisterDTO;
+import com.entity.User;
 import com.service.AuthService;
+import com.service.OtpService;
+
+import jakarta.validation.Valid;
 
 @Controller
 public class AuthController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private OtpService otpService;
 
     @GetMapping("/login")
     public String getLoginPage(Model model) {
@@ -22,35 +35,73 @@ public class AuthController {
     }
 
     @GetMapping("/register")
-    public String getRegisterPage(Model model) {
+    public String getRegisterPage(Model model, 
+                                @RequestParam(required = false) boolean otpSent,
+                                @RequestParam(required = false) String email) {
         model.addAttribute("registerDTO", new RegisterDTO());
+        if (otpSent) {
+            model.addAttribute("otpSent", true);
+            model.addAttribute("email", email);
+        }
         return "client/auth/register";
     }
 
     @PostMapping("/register")
-    public String handleRegister(@ModelAttribute("registerDTO") RegisterDTO registerDTO, Model model) {
-        
-        // 0. Kiểm tra đồng ý điều khoản
-        if (!registerDTO.isAcceptTerms()) {
-            model.addAttribute("error", "Bạn vui lòng đồng ý với Điều khoản & Chính sách trước khi tiếp tục");
+    public String handleRegister(@ModelAttribute("registerDTO") @Valid RegisterDTO registerDTO,
+                               BindingResult bindingResult, 
+                               Model model) {
+        if (bindingResult.hasErrors()) {
             return "client/auth/register";
         }
 
-        // 1. Kiểm tra mật khẩu khớp nhau
-        if (registerDTO.getPassword() != null && !registerDTO.getPassword().equals(registerDTO.getConfirmPassword())) {
-            model.addAttribute("error", "Mật khẩu xác nhận không khớp");
-            return "client/auth/register";
-        }
-
-        // 2. Kiểm tra email tồn tại
         if (authService.checkEmailExists(registerDTO.getEmail())) {
-            model.addAttribute("error", "Email này đã được sử dụng");
+            bindingResult.rejectValue("email", "error.registerDTO", "Email này đã được sử dụng");
             return "client/auth/register";
         }
 
-        // 3. Thực hiện lưu người dùng
-        authService.register(registerDTO);
+        try {
+            otpService.saveRegisterDTO(registerDTO.getEmail(), registerDTO);
+            String otp = otpService.generateOtp(registerDTO.getEmail());
+            otpService.sendOtpEmail(registerDTO.getEmail(), otp);
+            
+            // PRG Pattern: Redirect to GET to prevent resending on F5
+            return "redirect:/register?otpSent=true&email=" + registerDTO.getEmail();
+        } catch (Exception e) {
+            e.printStackTrace(); 
+            model.addAttribute("error", "Có lỗi xảy ra khi gửi mã OTP. Vui lòng thử lại.");
+            return "client/auth/register";
+        }
+    }
 
-        return "redirect:/login?success";
+    @PostMapping("/verify-otp")
+    public String handleVerifyOtp(@RequestParam("email") String email, 
+                                @RequestParam("otp") String otp, 
+                                Model model) {
+        if (otpService.verifyOtp(email, otp)) {
+            RegisterDTO registerDTO = otpService.getRegisterDTO(email);
+            if (registerDTO != null) {
+                User savedUser = authService.register(registerDTO);
+                
+                // Logging success as requested by USER - RAISED VISIBILITY
+                System.out.println("==================================================");
+                System.out.println("[SUCCESS] ĐĂNG KÝ THÀNH CÔNG!");
+                System.out.println("[INFO] Email: " + savedUser.getEmail());
+                System.out.println("[INFO] User ID in Database: " + savedUser.getId());
+                System.out.println("==================================================");
+                
+                logger.info("[SUCCESS] User registered successfully with ID: {}", savedUser.getId());
+                
+                otpService.clearOtpData(email);
+                return "redirect:/login?success=true";
+            }
+            model.addAttribute("error", "Dữ liệu đăng ký đã hết hạn. Vui lòng thử lại.");
+        } else {
+            model.addAttribute("error", "Mã OTP không chính xác hoặc đã hết hạn.");
+        }
+        
+        model.addAttribute("email", email);
+        model.addAttribute("otpSent", true);
+        model.addAttribute("registerDTO", new RegisterDTO());
+        return "client/auth/register";
     }
 }

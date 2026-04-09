@@ -33,7 +33,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/", "/login", "/perform_login", "/register", "/error", "/favicon.ico", "/resources/**", "/css/**", "/js/**").permitAll()
+                .requestMatchers("/", "/login", "/perform_login", "/register", "/verify-otp", "/error", "/favicon.ico", "/resources/**", "/css/**", "/js/**").permitAll()
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
