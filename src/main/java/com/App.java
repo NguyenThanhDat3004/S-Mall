@@ -1,15 +1,11 @@
 package com;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ApplicationContext;
-// @SpringBootApplication
+
 @SpringBootApplication
 public class App {
     public static void main(String[] args) {
-		// lay ra tat ca cac bean da duoc khoi tao trong spring container
-		ApplicationContext abc = SpringApplication.run(App.class, args);
-		for (String name : abc.getBeanDefinitionNames()) {
-			System.out.println(name);
-		}
-	}
+        SpringApplication.run(App.class, args);
+        System.out.println(">>> S-Mall Application is running at: http://localhost:8080");
+    }
 }
