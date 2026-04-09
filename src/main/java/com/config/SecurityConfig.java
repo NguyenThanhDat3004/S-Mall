@@ -1,5 +1,8 @@
 package com.config;
 
+import jakarta.servlet.DispatcherType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,20 +20,40 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    @Value("${s-mall.remember-me.key}")
+    private String rememberMeKey;
+
+    @Autowired
+    private CustomAuthenticationSuccessHandler successHandler;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Disable for development
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/**", "/login/**", "/resources/**", "/css/**", "/js/**").permitAll()
-                .anyRequest().permitAll() // Allow others for now during development
+                .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
+                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/", "/login", "/perform_login", "/register", "/verify-otp", "/error", "/favicon.ico", "/resources/**", "/css/**", "/js/**").permitAll()
+                .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
+                .loginProcessingUrl("/perform_login")
+                .successHandler(successHandler)
+                .failureUrl("/login?error")
                 .permitAll()
             )
-            .logout(logout -> logout.permitAll());
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout")
+                .deleteCookies("JSESSIONID")
+                .invalidateHttpSession(true)
+                .permitAll()
+            )
+            .rememberMe(remember -> remember
+                .key(rememberMeKey)
+                .tokenValiditySeconds(86400)
+            );
         
         return http.build();
     }

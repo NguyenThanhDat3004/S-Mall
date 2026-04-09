@@ -1,18 +1,14 @@
 package com.config;
 
-import javax.swing.text.View;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
 @Configuration
-@EnableWebMvc
 public class WebMvcConfig implements WebMvcConfigurer {
     @Bean
     public ViewResolver viewResolver() {
@@ -31,8 +27,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/css/**")
                 .addResourceLocations("/resources/css/");
-        // tim trong folder resources/css
         registry.addResourceHandler("/js/**")
                 .addResourceLocations("/resources/js/");
+        registry.addResourceHandler("/resources/**")
+                .addResourceLocations("/resources/");
     }
 }
