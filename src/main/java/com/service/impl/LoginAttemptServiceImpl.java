@@ -47,7 +47,7 @@ public class LoginAttemptServiceImpl implements LoginAttemptService {
 
     @Override
     public long getLockExpiry(String key) {
-        Long expire = redisTemplate.getExpire(BLOCK_PREFIX + key, TimeUnit.MINUTES);
+        Long expire = redisTemplate.getExpire(BLOCK_PREFIX + key, TimeUnit.SECONDS);
         return (expire != null) ? expire : 0;
     }
 }

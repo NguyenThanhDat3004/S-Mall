@@ -36,8 +36,16 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
         // thị
         String errorMessage = exception.getMessage();
 
-        // Nếu là lỗi mặc định của Spring, chúng ta dịch sang tiếng Việt
-        if (errorMessage != null && errorMessage.equalsIgnoreCase("Bad credentials")) {
+        // CÁCH FOOLPROOF: Nếu thông báo chỉ toàn số, chắc chắn là số giây còn lại
+        if (errorMessage != null && errorMessage.matches("\\d+")) {
+            try {
+                long seconds = Long.parseLong(errorMessage);
+                request.getSession().setAttribute("lockExpirySeconds", seconds);
+                errorMessage = "Tài khoản đã bị khóa do nhập sai quá nhiều lần.";
+            } catch (Exception e) {
+                // Giữ nguyên errorMessage nếu có lỗi parse
+            }
+        } else if (errorMessage != null && errorMessage.equalsIgnoreCase("Bad credentials")) {
             errorMessage = "Email hoặc mật khẩu không chính xác.";
         }
 

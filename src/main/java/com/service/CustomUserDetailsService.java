@@ -3,12 +3,6 @@ package com.service;
 import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Service;
-
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -34,11 +28,9 @@ public class CustomUserDetailsService implements UserDetailsService {
         System.out.println(">>> Đang kiểm tra đăng nhập cho email: " + email);
 
         if (loginAttemptService.isBlocked(email)) {
-            long remainingMinutes = loginAttemptService.getLockExpiry(email);
-            System.out.println(">>> [LỖI] Tài khoản này đang bị khóa. Còn lại: " + remainingMinutes + " phút.");
-            throw new LockedException(
-                    "Tài khoản đã bị khóa do nhập sai quá nhiều lần. Vui lòng thử lại sau " + remainingMinutes
-                            + " phút.");
+            long remainingSeconds = loginAttemptService.getLockExpiry(email);
+            System.out.println(">>> [LỖI] Tài khoản này đang bị khóa. Còn lại: " + remainingSeconds + " giây.");
+            throw new LockedException(String.valueOf(remainingSeconds));
         }
 
         User user = userRepository.findByEmail(email)

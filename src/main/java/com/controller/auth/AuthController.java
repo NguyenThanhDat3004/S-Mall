@@ -46,8 +46,11 @@ public class AuthController {
             if (message != null) {
                 model.addAttribute("message", message);
                 model.addAttribute("messageType", messageType);
+                model.addAttribute("lockExpirySeconds", session.getAttribute("lockExpirySeconds"));
+
                 session.removeAttribute("message");
                 session.removeAttribute("messageType");
+                session.removeAttribute("lockExpirySeconds");
             }
         }
         return "client/auth/login";

@@ -29,72 +29,66 @@
                 <h2 class="auth-title">Chào mừng bạn quay lại!</h2>
 
                 <form action="${pageContext.request.contextPath}/perform_login" method="POST">
-                    <!-- Centralized Message Logic (Directly pasted as include failed) -->
-                    <c:if test="${not empty message}">
-                        <div class="alert ${messageType == 'error' ? 'alert-danger' : 'alert-success'} alert-dismissible fade show mb-4"
-                            role="alert">
-                            <i
-                                class="bi ${messageType == 'error' ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'}"></i>
-                            ${message}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <!-- Centralized Message Component (Static Include for maximum reliability) -->
+                    <%@include file="../../component/msg-response.jsp" %>
+
+                        <!-- Alert for Registration Success -->
+                        <c:if test="${not empty param.success}">
+                            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                                <i class="bi bi-check-circle-fill"></i> Đăng ký thành công! Vui lòng đăng nhập.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                    aria-label="Close"></button>
+                            </div>
+                        </c:if>
+
+                        <!-- Alert for Logout Success -->
+                        <c:if test="${not empty param.logout}">
+                            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                                <i class="bi bi-check-circle-fill"></i> Đã đăng xuất thành công.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"
+                                    aria-label="Close"></button>
+                            </div>
+                        </c:if>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Email đăng nhập</label>
+                            <input type="email" name="username" class="form-control" id="username"
+                                placeholder="name@example.com" required autofocus>
                         </div>
-                    </c:if>
 
-                    <!-- Alert for Registration Success -->
-                    <c:if test="${not empty param.success}">
-                        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                            <i class="bi bi-check-circle-fill"></i> Đăng ký thành công! Vui lòng đăng nhập.
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <label for="password" class="form-label">Mật khẩu</label>
+                                <a href="#" class="text-success text-decoration-none fw-600 small">Quên mật khẩu?</a>
+                            </div>
+                            <input type="password" name="password" class="form-control" id="password"
+                                placeholder="••••••••" required>
                         </div>
-                    </c:if>
 
-                    <!-- Alert for Logout Success -->
-                    <c:if test="${not empty param.logout}">
-                        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                            <i class="bi bi-check-circle-fill"></i> Đã đăng xuất thành công.
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <div class="mb-4 form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe" name="remember-me">
+                            <label class="form-check-label small text-muted" for="rememberMe">Ghi nhớ đăng nhập</label>
                         </div>
-                    </c:if>
 
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Email đăng nhập</label>
-                        <input type="email" name="username" class="form-control" id="username"
-                            placeholder="name@example.com" required autofocus>
-                    </div>
+                        <button type="submit" class="btn btn-auth">Đăng nhập ngay</button>
 
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between">
-                            <label for="password" class="form-label">Mật khẩu</label>
-                            <a href="#" class="text-success text-decoration-none fw-600 small">Quên mật khẩu?</a>
+                        <!-- Social Login Divider -->
+                        <div class="auth-footer">
+                            <div class="d-flex align-items-center mb-3">
+                                <hr class="flex-grow-1">
+                                <span class="px-3 text-muted small">hoặc tiếp tục với</span>
+                                <hr class="flex-grow-1">
+                            </div>
+                            <div class="social-login">
+                                <a href="#" class="social-btn"><i class="bi bi-google text-danger"></i></a>
+                                <a href="#" class="social-btn"><i class="bi bi-facebook text-primary"></i></a>
+                                <a href="#" class="social-btn"><i class="bi bi-github text-dark"></i></a>
+                            </div>
                         </div>
-                        <input type="password" name="password" class="form-control" id="password" placeholder="••••••••"
-                            required>
-                    </div>
 
-                    <div class="mb-4 form-check">
-                        <input type="checkbox" class="form-check-input" id="rememberMe" name="remember-me">
-                        <label class="form-check-label small text-muted" for="rememberMe">Ghi nhớ đăng nhập</label>
-                    </div>
-
-                    <button type="submit" class="btn btn-auth">Đăng nhập ngay</button>
-
-                    <!-- Social Login Divider -->
-                    <div class="auth-footer">
-                        <div class="d-flex align-items-center mb-3">
-                            <hr class="flex-grow-1">
-                            <span class="px-3 text-muted small">hoặc tiếp tục với</span>
-                            <hr class="flex-grow-1">
+                        <div class="auth-footer">
+                            Chưa có tài khoản? <a href="${pageContext.request.contextPath}/register">Đăng ký ngay</a>
                         </div>
-                        <div class="social-login">
-                            <a href="#" class="social-btn"><i class="bi bi-google text-danger"></i></a>
-                            <a href="#" class="social-btn"><i class="bi bi-facebook text-primary"></i></a>
-                            <a href="#" class="social-btn"><i class="bi bi-github text-dark"></i></a>
-                        </div>
-                    </div>
-
-                    <div class="auth-footer">
-                        Chưa có tài khoản? <a href="${pageContext.request.contextPath}/register">Đăng ký ngay</a>
-                    </div>
                 </form>
             </div>
 
