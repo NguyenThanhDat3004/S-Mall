@@ -13,9 +13,10 @@
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
             <!-- Custom CSS -->
-            <link rel="stylesheet" href="${url}/css/client/header.css">
-            <link rel="stylesheet" href="${url}/css/client/footer.css">
-            <link rel="stylesheet" href="${url}/css/client/homepage.css">
+            <link rel="stylesheet" href="${url}/resources/css/client/header.css">
+            <link rel="stylesheet" href="${url}/resources/css/client/footer.css">
+            <link rel="stylesheet" href="${url}/resources/css/client/homepage.css">
+
         </head>
 
         <body>

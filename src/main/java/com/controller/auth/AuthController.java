@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+
 import com.dto.request.RegisterDTO;
 import com.entity.User;
 import com.service.AuthService;
@@ -30,14 +33,30 @@ public class AuthController {
     private OtpService otpService;
 
     @GetMapping("/login")
-    public String getLoginPage(Model model) {
+    public String getLoginPage(Model model, HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        System.out
+                .println(">>> [DEBUG] Truy cập trang Login. Session: " + (session != null ? session.getId() : "NULL"));
+
+        if (session != null) {
+            String message = (String) session.getAttribute("message");
+            String messageType = (String) session.getAttribute("messageType");
+            System.out.println(">>> [DEBUG] Tin nhắn trong Session: " + message);
+
+            if (message != null) {
+                model.addAttribute("message", message);
+                model.addAttribute("messageType", messageType);
+                session.removeAttribute("message");
+                session.removeAttribute("messageType");
+            }
+        }
         return "client/auth/login";
     }
 
     @GetMapping("/register")
-    public String getRegisterPage(Model model, 
-                                @RequestParam(required = false) boolean otpSent,
-                                @RequestParam(required = false) String email) {
+    public String getRegisterPage(Model model,
+            @RequestParam(required = false) boolean otpSent,
+            @RequestParam(required = false) String email) {
         model.addAttribute("registerDTO", new RegisterDTO());
         if (otpSent) {
             model.addAttribute("otpSent", true);
@@ -48,8 +67,8 @@ public class AuthController {
 
     @PostMapping("/register")
     public String handleRegister(@ModelAttribute("registerDTO") @Valid RegisterDTO registerDTO,
-                               BindingResult bindingResult, 
-                               Model model) {
+            BindingResult bindingResult,
+            Model model) {
         if (bindingResult.hasErrors()) {
             return "client/auth/register";
         }
@@ -63,35 +82,35 @@ public class AuthController {
             otpService.saveRegisterDTO(registerDTO.getEmail(), registerDTO);
             String otp = otpService.generateOtp(registerDTO.getEmail());
             otpService.sendOtpEmail(registerDTO.getEmail(), otp);
-            
+
             // PRG Pattern: Redirect to GET to prevent resending on F5
             return "redirect:/register?otpSent=true&email=" + registerDTO.getEmail();
         } catch (Exception e) {
-            e.printStackTrace(); 
+            e.printStackTrace();
             model.addAttribute("error", "Có lỗi xảy ra khi gửi mã OTP. Vui lòng thử lại.");
             return "client/auth/register";
         }
     }
 
     @PostMapping("/verify-otp")
-    public String handleVerifyOtp(@RequestParam("email") String email, 
-                                @RequestParam("otp") String otp, 
-                                Model model) {
+    public String handleVerifyOtp(@RequestParam("email") String email,
+            @RequestParam("otp") String otp,
+            Model model) {
         if (otpService.verifyOtp(email, otp)) {
             RegisterDTO registerDTO = otpService.getRegisterDTO(email);
             if (registerDTO != null) {
                 User savedUser = authService.register(registerDTO);
-                
+
                 // Logging success as requested by USER - RAISED VISIBILITY
                 System.out.println("==================================================");
                 System.out.println("[SUCCESS] REGISTRATION COMPLETED!");
                 System.out.println("[INFO] Email: " + savedUser.getEmail());
                 System.out.println("[INFO] User ID in Database: " + savedUser.getId());
                 System.out.println("==================================================");
-                
-                logger.info("[SUCCESS] User registered successfully! Email: {}, ID: {}", 
-                           savedUser.getEmail(), savedUser.getId());
-                
+
+                logger.info("[SUCCESS] User registered successfully! Email: {}, ID: {}",
+                        savedUser.getEmail(), savedUser.getId());
+
                 otpService.clearOtpData(email);
                 return "redirect:/login?success=true";
             }
@@ -99,7 +118,7 @@ public class AuthController {
         } else {
             model.addAttribute("error", "Mã OTP không chính xác hoặc đã hết hạn.");
         }
-        
+
         model.addAttribute("email", email);
         model.addAttribute("otpSent", true);
         model.addAttribute("registerDTO", new RegisterDTO());
