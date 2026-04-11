@@ -8,4 +8,6 @@ public interface LoginAttemptService {
     boolean isBlocked(String key);
 
     long getLockExpiry(String key);
+
+    void sendLockEmail(String email);
 }

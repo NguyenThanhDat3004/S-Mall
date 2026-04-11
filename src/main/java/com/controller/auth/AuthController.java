@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -17,6 +18,7 @@ import jakarta.servlet.http.HttpSession;
 import com.dto.request.RegisterDTO;
 import com.entity.User;
 import com.service.AuthService;
+import com.service.LoginAttemptService;
 import com.service.OtpService;
 
 import jakarta.validation.Valid;
@@ -127,4 +129,16 @@ public class AuthController {
         model.addAttribute("registerDTO", new RegisterDTO());
         return "client/auth/register";
     }
+
+    // mock
+    @Autowired
+    private LoginAttemptService loginAttemptService;
+
+    @GetMapping("/test/unlock")
+    @ResponseBody
+    public String unlockTest(@RequestParam String email) {
+        loginAttemptService.loginSucceeded(email); // Xóa sạch dấu vết trong Redis cho Email này
+        return "Đã mở khóa thành công cho: " + email;
+    }
+
 }
