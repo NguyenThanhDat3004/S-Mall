@@ -1,12 +1,17 @@
 package com.config;
 
+import jakarta.servlet.DispatcherType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -17,21 +22,51 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    @Value("${s-mall.remember-me.key}")
+    private String rememberMeKey;
+
+    @Autowired
+    private CustomAuthenticationSuccessHandler successHandler;
+
+    @Autowired
+    private CustomAuthenticationFailureHandler failureHandler;
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                .requestMatchers(new AntPathRequestMatcher("/resources/**"))
+                .requestMatchers(new AntPathRequestMatcher("/css/**"))
+                .requestMatchers(new AntPathRequestMatcher("/js/**"))
+                .requestMatchers(new AntPathRequestMatcher("/images/**"))
+                .requestMatchers(new AntPathRequestMatcher("/favicon.ico"));
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Disable for development
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/**", "/login/**", "/resources/**", "/css/**", "/js/**").permitAll()
-                .anyRequest().permitAll() // Allow others for now during development
-            )
-            .formLogin(form -> form
-                .loginPage("/login")
-                .permitAll()
-            )
-            .logout(logout -> logout.permitAll());
-        
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers("/", "/login", "/register", "/verify-otp", "/error").permitAll()
+                        .anyRequest().authenticated())
+
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/perform_login")
+                        .successHandler(successHandler)
+                        .failureHandler(failureHandler)
+                        .permitAll())
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout")
+                        .deleteCookies("JSESSIONID")
+                        .invalidateHttpSession(true)
+                        .permitAll())
+                .rememberMe(remember -> remember
+                        .key(rememberMeKey)
+                        .tokenValiditySeconds(86400));
+
         return http.build();
     }
 }
