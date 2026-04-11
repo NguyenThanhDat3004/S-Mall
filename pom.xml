@@ -75,7 +75,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
-		<!-- Email Service (OTP Verification) -->
+		<!-- Email Service (OTP Verification) cáu này dùng để gửi otp xác thực khi đăng kí -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>

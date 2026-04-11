@@ -11,13 +11,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-<<<<<<< HEAD
-import com.dto.CustomUserDetails;
-=======
 import com.entity.User;
 import com.repository.UserRepository;
 import com.service.LoginAttemptService;
->>>>>>> feature/login
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,15 +34,6 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
-<<<<<<< HEAD
-        
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        HttpSession session = request.getSession();
-        
-        session.setAttribute("userId", userDetails.getId());
-        session.setAttribute("fullName", userDetails.getFullName());
-        
-=======
 
         String email = authentication.getName();
         loginAttemptService.loginSucceeded(email);
@@ -55,7 +42,6 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             logger.info("user with id {} login system", user.getId());
         });
 
->>>>>>> feature/login
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
         String redirectUrl = "/";

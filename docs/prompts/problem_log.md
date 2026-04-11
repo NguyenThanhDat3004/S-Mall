@@ -8,6 +8,7 @@
 *   [ ] **Fix cú pháp Java**: Khử toàn bộ SQL-style comments trong các file Entity.
 *   [X] **Configuration**: Cấu hình xong Redis, WebSocket, Security (Spring MVC mode).
 *   [X] **Git Clean-up**: Tối ưu `.gitignore` và untrack folder `target`.
+*   [X] **Security & Brute Force Protection**: Hoàn thành Giao diện Login, tích hợp Spring Security và cơ chế khóa tài khoản 30 phút bằng Redis.
 
 *   [X] **AI Guardrails (Hàng rào bảo vệ AI)**: Thiết kế xong cơ chế chặn gợi ý vô lý (Score Threshold, Category Matrix).
 
@@ -17,7 +18,7 @@
 *   [/] **Feature 3: Advanced Catalog**: Đang xây dựng trang Danh mục sản phẩm dùng Redis Caching và Phân trang (Pagination).
 
 *   [ ] **Feature 4: Order Flow**: Hệ thống Giỏ hàng và Đặt hàng.
-*   [X] **Feature 5: Security & Login**: Đã hoàn thành Giao diện Login và bộ máy xác thực Spring Security (Case 1).
+*   [ ] **Feature 4: Order Flow**: Hệ thống Giỏ hàng và Đặt hàng.
 
 ---
 > [!TIP]
