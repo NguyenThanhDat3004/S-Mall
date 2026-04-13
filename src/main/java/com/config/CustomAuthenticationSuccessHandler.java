@@ -35,10 +35,14 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
 
+        HttpSession session = request.getSession();
         String email = authentication.getName();
         loginAttemptService.loginSucceeded(email);
 
         userRepository.findByEmail(email).ifPresent(user -> {
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("userEmail", user.getEmail());
+            session.setAttribute("roleId", user.getRole().getId());
             logger.info("user with id {} login system", user.getId());
         });
 
@@ -48,6 +52,10 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         for (GrantedAuthority authority : authorities) {
             String role = authority.getAuthority();
+            
+            // Lưu quyền vào session để hiển thị header (bỏ tiền tố ROLE_)
+            session.setAttribute("userRole", role.replace("ROLE_", ""));
+
             if (role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN")) {
                 redirectUrl = "/admin/dashboard";
                 break;

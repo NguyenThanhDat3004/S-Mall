@@ -10,9 +10,15 @@
             <nav class="top-header">
                 <div class="container d-flex justify-content-between align-items-center">
                     <div class="top-header-left">
-                        <a href="#">Kênh người bán</a>
-                        <span class="top-header-divider">|</span>
-                        <a href="#">Trở thành người bán</a>
+                        <c:choose>
+                            <c:when
+                                test="${sessionScope.roleId == 2 || sessionScope.roleId == 3 || sessionScope.roleId == 4}">
+                                <a href="${url}/seller/dashboard">Kênh người bán</a>
+                            </c:when>
+                            <c:otherwise>
+                                <a href="#">Trở thành người bán</a>
+                            </c:otherwise>
+                        </c:choose>
                         <span class="top-header-divider">|</span>
                         <a href="#"><i class="fab fa-facebook me-1"></i>Kết nối FB</a>
                     </div>
