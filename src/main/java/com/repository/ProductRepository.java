@@ -1,5 +1,6 @@
 package com.repository;
 
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,4 +27,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     
     // Lấy tất cả sản phẩm đang hoạt động có phân trang
     Page<Product> findByIsActiveTrue(Pageable pageable);
+
+    // [CASE 1] Lấy 8 sản phẩm đánh giá cao nhất đang hoạt động
+    List<Product> findTop8ByIsActiveTrueOrderByAverageRatingDesc();
 }

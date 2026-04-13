@@ -14,7 +14,7 @@
 
 ## 🚧 Đang thực hiện (In Progress)
 *   [X] **Feature 1: Product Homepage (Phase 1 - Frontend)**: Đã hoàn thành giao diện thanh danh mục (Expandable Grid) và khung lưới sản phẩm.
-*   [/] **Feature 2: Hybrid Recommendation System**: Đang trong giai đoạn phân tích thuật toán và thiết kế sơ đồ luồng dữ liệu (Data Flow).
+*   [/] **Feature 2: Hybrid Recommendation System**: Đã hoàn thành Case 1 (Top Rated Recommendations). Đang chuẩn bị tích hợp Redis cho Case 3.
 *   [/] **Feature 3: Advanced Catalog**: Đang xây dựng trang Danh mục sản phẩm dùng Redis Caching và Phân trang (Pagination).
 
 *   [ ] **Feature 4: Order Flow**: Hệ thống Giỏ hàng và Đặt hàng.

@@ -10,7 +10,7 @@
 
     <ul class="sidebar-menu">
         <li class="menu-item active">
-            <a href="${url}/admin/dashboard" class="menu-link">
+            <a href="${url}/seller/dashboard" class="menu-link">
                 <i class="fas fa-th-large"></i>
                 <span>Tổng quan</span>
             </a>

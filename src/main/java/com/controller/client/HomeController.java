@@ -2,26 +2,22 @@ package com.controller.client;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import com.entity.Product;
-import com.service.ProductService;
+import com.service.ai.RecommendationService;
 
 @Controller
 public class HomeController {
 
     @Autowired
-    private ProductService productService;
+    private RecommendationService recommendationService;
 
     @GetMapping("/")
     public String index(Model model) {
-        // Lấy 8 sản phẩm mới nhất để hiển thị ra trang chủ (Featured Products)
-        // Đây là cách trình bày chuyên nghiệp thay vì lấy toàn bộ
-        Page<Product> productPage = productService.getAllActiveProducts(PageRequest.of(0, 8));
-        List<Product> featuredProducts = productPage.getContent();
+        // [CASE 1] Sử dụng RecommendationService để lấy sản phẩm dựa trên thuật toán (Rating cao nhất cho khách lạ)
+        List<Product> featuredProducts = recommendationService.getHomepageRecommendations(null);
         
         model.addAttribute("featuredProducts", featuredProducts);
         
