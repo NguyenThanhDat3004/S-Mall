@@ -11,7 +11,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import com.entity.User;
 import com.repository.UserRepository;
 import com.service.LoginAttemptService;
 
@@ -39,7 +38,11 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         loginAttemptService.loginSucceeded(email);
 
         userRepository.findByEmail(email).ifPresent(user -> {
-            logger.info("user with id {} login system", user.getId());
+            HttpSession session = request.getSession();
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("userEmail", user.getEmail());
+            session.setAttribute("userRole", user.getRole().getName());
+            logger.info("user with id {} and email {} (Role: {}) login system", user.getId(), user.getEmail(), user.getRole().getName());
         });
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();

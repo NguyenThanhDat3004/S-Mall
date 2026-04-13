@@ -129,16 +129,4 @@ public class AuthController {
         model.addAttribute("registerDTO", new RegisterDTO());
         return "client/auth/register";
     }
-
-    // mock
-    @Autowired
-    private LoginAttemptService loginAttemptService;
-
-    @GetMapping("/test/unlock")
-    @ResponseBody
-    public String unlockTest(@RequestParam String email) {
-        loginAttemptService.loginSucceeded(email); // Xóa sạch dấu vết trong Redis cho Email này
-        return "Đã mở khóa thành công cho: " + email;
-    }
-
 }
