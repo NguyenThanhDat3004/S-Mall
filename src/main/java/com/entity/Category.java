@@ -19,6 +19,9 @@ public class Category {
     @Column(name = "icon_url")
     private String iconUrl;
 
+    @Column(unique = true, length = 10)
+    private String code;
+
     @Column(name = "is_active")
     private boolean isActive = true;
 
@@ -40,6 +43,8 @@ public class Category {
     public void setName(String name) { this.name = name; }
     public String getSlug() { return slug; }
     public void setSlug(String slug) { this.slug = slug; }
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
     public String getIconUrl() { return iconUrl; }
     public void setIconUrl(String iconUrl) { this.iconUrl = iconUrl; }
     public boolean isActive() { return isActive; }

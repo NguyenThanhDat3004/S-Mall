@@ -1,0 +1,169 @@
+/* CSS cho giao diện thêm sản phẩm của Seller */
+.content-wrapper {
+    margin-left: 260px; /* Chừa chỗ cho sidebar */
+    padding: 30px;
+    background: #f1f5f9;
+    min-height: 100vh;
+}
+
+.form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #38bdf8;
+    display: inline-block;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    border-color: #38bdf8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+}
+
+.btn-save {
+    background: #38bdf8;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.btn-save:hover {
+    background: #0ea5e9;
+}
+
+.image-preview-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.image-preview-zone:hover {
+    background: #f8fafc;
+    border-color: #38bdf8;
+}
+
+/* --- Styles cho Bảng Biến Thể --- */
+.variant-section {
+    margin-top: 25px;
+}
+
+.variant-table-container {
+    overflow-x: auto;
+    margin-top: 15px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.variant-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.variant-table th {
+    background: #f8fafc;
+    padding: 12px 15px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.variant-table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.variant-table input {
+    border: 1px solid #e2e8f0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    width: 100%;
+    font-size: 14px;
+}
+
+.variant-table input:focus {
+    border-color: #38bdf8;
+    outline: none;
+}
+
+.btn-add-variant {
+    background: #f0f9ff;
+    color: #0ea5e9;
+    padding: 10px 20px;
+    border: 1px dashed #0ea5e9;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.btn-add-variant:hover {
+    background: #e0f2fe;
+}
+
+.btn-remove-row {
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 18px;
+    transition: transform 0.2s;
+}
+
+.btn-remove-row:hover {
+    transform: scale(1.2);
+}
+
+.slug-info {
+    font-size: 12px;
+    color: #0ea5e9;
+    margin-top: 5px;
+    display: block;
+}
