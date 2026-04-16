@@ -33,7 +33,7 @@ public class UserServiceImpl implements UserService {
         return this.userRepository.findAll();
     }
 
-    public Optional<User> getUsersByEmail(String email) {
+    public Optional<User> getUserByEmail(String email) {
         return this.userRepository.findByEmail(email);
     }
 

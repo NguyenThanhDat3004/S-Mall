@@ -29,6 +29,9 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     private UserRepository userRepository;
 
     @Autowired
+    private com.repository.ShopRepository shopRepository;
+
+    @Autowired
     private LoginAttemptService loginAttemptService;
 
     @Override
@@ -43,6 +46,14 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
             session.setAttribute("userId", user.getId());
             session.setAttribute("userEmail", user.getEmail());
             session.setAttribute("roleId", user.getRole().getId());
+            
+            // Nếu là SELLER (hoặc bất kỳ ai có Shop), hãy lưu thông tin Shop vào session
+            shopRepository.findByUser(user).ifPresent(shop -> {
+                session.setAttribute("shopId", shop.getId());
+                session.setAttribute("shopName", shop.getName());
+                logger.info("Shop associated with user: {} is {}", user.getEmail(), shop.getName());
+            });
+
             logger.info("user with id {} login system", user.getId());
         });
 

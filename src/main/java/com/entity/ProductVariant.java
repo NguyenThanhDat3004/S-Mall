@@ -22,6 +22,9 @@ public class ProductVariant {
     @Column(name = "attributes_json", columnDefinition = "NVARCHAR(MAX)")
     private String attributesJson;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private Product product;
@@ -40,6 +43,8 @@ public class ProductVariant {
     public void setStock(int stock) { this.stock = stock; }
     public String getAttributesJson() { return attributesJson; }
     public void setAttributesJson(String attributesJson) { this.attributesJson = attributesJson; }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public Product getProduct() { return product; }
     public void setProduct(Product product) { this.product = product; }
 }

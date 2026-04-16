@@ -78,11 +78,6 @@ public class AuthController {
             return "client/auth/register";
         }
 
-        if (authService.checkEmailExists(registerDTO.getEmail())) {
-            bindingResult.rejectValue("email", "error.registerDTO", "Email này đã được sử dụng");
-            return "client/auth/register";
-        }
-
         try {
             otpService.saveRegisterDTO(registerDTO.getEmail(), registerDTO);
             String otp = otpService.generateOtp(registerDTO.getEmail());

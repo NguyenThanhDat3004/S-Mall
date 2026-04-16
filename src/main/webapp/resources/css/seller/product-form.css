@@ -167,3 +167,23 @@
     margin-top: 5px;
     display: block;
 }
+
+/* --- Styles cho Thông báo (Alert) --- */
+.alert-custom {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid;
+}
+
+.alert-success-custom {
+    background-color: #dcfce7;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.alert-danger-custom {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}

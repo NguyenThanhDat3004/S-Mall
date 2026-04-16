@@ -10,10 +10,10 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "NVARCHAR(255)")
     private String name;
 
-    @Column(unique = true)
+    @Column(unique = true, columnDefinition = "NVARCHAR(255)")
     private String slug;
 
     @Column(name = "icon_url")
