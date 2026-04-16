@@ -26,6 +26,9 @@ public interface ProductService {
     // Lưu sản phẩm
     Product handleSaveProduct(Product product);
     
+    // Lưu sản phẩm mới từ DTO (bao gồm biến thể và ảnh)
+    Product saveProduct(com.dto.request.ProductCreateDTO dto, org.springframework.web.multipart.MultipartFile[] images, com.entity.User user) throws Exception;
+
     // Xóa mềm (Soft Delete) bằng cách set isActive = false
     void softDelete(Long id);
 }

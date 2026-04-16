@@ -1,5 +1,7 @@
 package com.dto.request;
 
+import com.entity.User;
+import com.validator.UniqueValue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -11,6 +13,7 @@ public class RegisterDTO {
 
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
+    @UniqueValue(entity = User.class, field = "email", message = "Email này đã được sử dụng")
     private String email;
 
     @NotBlank(message = "Mật khẩu không được để trống")

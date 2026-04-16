@@ -9,17 +9,23 @@
     </div>
 
     <ul class="sidebar-menu">
-        <li class="menu-item active">
+        <li class="menu-item dashboard-item">
             <a href="${url}/seller/dashboard" class="menu-link">
                 <i class="fas fa-th-large"></i>
                 <span>Tổng quan</span>
             </a>
         </li>
-        <li class="menu-item">
-            <a href="${url}/admin/product/show" class="menu-link">
+        <li class="menu-item has-submenu">
+            <a href="javascript:void(0)" class="menu-link submenu-toggle">
                 <i class="fas fa-box"></i>
                 <span>Sản phẩm</span>
+                <i class="fas fa-chevron-right ms-auto arrow-icon"></i>
             </a>
+            <ul class="submenu">
+                <li><a href="${url}/seller/product/create">Tạo sản phẩm</a></li>
+                <li><a href="${url}/seller/product/update">Cập nhật sản phẩm</a></li>
+                <li><a href="${url}/seller/product/show">Danh sách sản phẩm</a></li>
+            </ul>
         </li>
         <li class="menu-item">
             <a href="${url}/admin/order/show" class="menu-link">
@@ -54,3 +60,44 @@
         </a>
     </div>
 </aside>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuLinks = document.querySelectorAll('.menu-link');
+        const menuItems = document.querySelectorAll('.menu-item');
+        
+        // Logic xử lý khi nhấp
+        menuLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const menuItem = this.closest('.menu-item');
+                
+                if (menuItem.classList.contains('has-submenu')) {
+                    // Nếu là dropdown, chỉ toggle mở/đóng và tô xanh
+                    e.preventDefault();
+                    menuItem.classList.toggle('open');
+                }
+                
+                // Loại bỏ active ở tất cả các mục khác
+                menuItems.forEach(item => item.classList.remove('active'));
+                // Thêm active vào mục hiện tại
+                menuItem.classList.add('active');
+            });
+        });
+
+        // Tự động tô xanh dựa trên URL hiện tại (để giữ trạng thái khi load lại trang)
+        const currentPath = window.location.pathname;
+        menuLinks.forEach(link => {
+            if (link.getAttribute('href') !== 'javascript:void(0)' && currentPath.includes(link.getAttribute('href'))) {
+                link.closest('.menu-item').classList.add('active');
+                if (link.closest('.submenu')) {
+                    link.closest('.has-submenu').classList.add('open', 'active');
+                }
+            }
+        });
+        
+        // Mặc định tô xanh Tổng quan nếu ở đúng trang
+        if (currentPath.endsWith('/seller/dashboard')) {
+             document.querySelector('.dashboard-item').classList.add('active');
+        }
+    });
+</script>

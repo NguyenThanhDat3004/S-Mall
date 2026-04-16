@@ -62,7 +62,13 @@
 
             <div class="main-wrapper">
                 <main class="dashboard-content">
-                    <h4 class="fw-bold mb-4">Tổng quan người bán</h4>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold mb-0">Tổng quan người bán</h4>
+                        <div class="shop-badge" style="background: #f1f5f9; padding: 8px 16px; border-radius: 20px; border: 1px solid #e2e8f0;">
+                            <i class="fas fa-store text-success me-2"></i>
+                            <span class="fw-semibold text-dark">${sessionScope.shopName}</span>
+                        </div>
+                    </div>
 
                     <!-- Stats Rows -->
                     <div class="row g-4 mb-4">

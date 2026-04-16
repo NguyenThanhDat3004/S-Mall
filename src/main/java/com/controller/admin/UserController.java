@@ -25,13 +25,6 @@ public class UserController {
         this.userRepository = userRepository;
     }
 
-    @RequestMapping("/")
-    public String getHomepage(Model model) {
-        Optional<User> users = this.userService.getUsersByEmail("3004nguyenthanhdat@gmail.com");
-        System.out.println("users: " + users);
-        model.addAttribute("dat", "dat");
-        return "client/home/index";
-    }
 
     @RequestMapping("/admin/user")
     public String getUserpage(Model model) {
