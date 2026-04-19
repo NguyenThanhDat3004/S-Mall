@@ -14,14 +14,20 @@ public class HomeController {
     @Autowired
     private RecommendationService recommendationService;
 
+    @Autowired
+    private com.service.CategoryService categoryService;
+
     @GetMapping("/")
     public String index(Model model) {
-        // [CASE 1] Sử dụng RecommendationService để lấy sản phẩm dựa trên thuật toán (Rating cao nhất cho khách lạ)
+        // 1. Lấy sản phẩm gợi ý
         List<Product> featuredProducts = recommendationService.getHomepageRecommendations(null);
         
-        model.addAttribute("featuredProducts", featuredProducts);
+        // 2. Lấy toàn bộ danh mục để hiển thị thanh điều hướng động
+        List<com.entity.Category> categories = categoryService.getAllCategories();
         
-        // Trả về view: WEB-INF/view/client/home/index.jsp
+        model.addAttribute("featuredProducts", featuredProducts);
+        model.addAttribute("categories", categories);
+        
         return "client/home/index";
     }
 }

@@ -34,11 +34,32 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println(">>> [SMALL-INIT] Checking Categories...");
         
         // Dùng mã Unicode Escape để đảm bảo không bị lỗi font dù biên dịch ở bất kỳ đâu
-        saveCategory("Th\u1EDDi Trang", "thoi-trang", "FASH"); // Thời Trang
-        saveCategory("\u0110i\u1EC7n T\u1EED", "dien-tu", "ELEC"); // Điện Tử
-        saveCategory("Nh\u00E0 C\u1EEDa & \u0110\u1EDDi S\u1ED1ng", "nha-cua-doi-song", "HOME"); // Nhà Cửa & Đời Sống
-        saveCategory("S\u1EE9c Kh\u1ECFe & S\u1EAFc \u0110\u1EB9p", "suc-khoe-sac-dep", "BEAU"); // Sức Khỏe & Sắc Đẹp
-        saveCategory("M\u1EB9 & B\u00E9", "me-va-be", "KIDS"); // Mẹ & Bé
+        saveCategory("Th\u1EDDi Trang Nam", "thoi-trang-nam", "FASH_MAN", "https://img.icons8.com/color/96/t-shirt.png");
+        saveCategory("Th\u1EDDi Trang N\u1EEF", "thoi-trang-nu", "FASH_WOMAN", "https://img.icons8.com/color/96/wedding-dress.png");
+        saveCategory("Gi\u00E0y D\u00E9p", "giay-dep", "SHOES", "https://img.icons8.com/color/96/trainers.png");
+        
+        // Cập nhật cho cả các Slug cũ để không bị lỗi ảnh
+        saveCategory("Th\u1EDDi Trang", "thoi-trang", "FASH", "https://img.icons8.com/color/96/t-shirt.png");
+        saveCategory("S\u1EE9c Kh\u1ECFe & S\u1EAFc \u0110\u1EB9p", "suc-khoe-sac-dep", "BEAU", "https://img.icons8.com/color/96/medical-heart.png");
+        
+        saveCategory("\u0110\u1ED3ng H\u1ED3", "dong-ho", "WATCH", "https://img.icons8.com/color/96/womens-watch.png");
+        saveCategory("T\u00FAi & V\u00ED", "tui-vi", "BAGS", "https://img.icons8.com/color/96/handbag.png");
+        saveCategory("T\u00FAi v\u00E0 V\u00ED", "tui-va-vi", "BAGS_2", "https://img.icons8.com/color/96/handbag.png");
+        saveCategory("\u0110i\u1EC7n Tho\u1EA1i & Ph\u1EE5 Ki\u1EC7n", "dien-thoai-phu-kien", "PHONE", "https://img.icons8.com/color/96/smartphone.png");
+        saveCategory("M\u00E1y T\u00EDnh & Laptop", "may-tinh-laptop", "LAPTOP", "https://img.icons8.com/color/96/laptop.png");
+        saveCategory("M\u00E1y \u1EA3nh & Quay Phim", "may-anh-quay-phim", "CAMERA", "https://img.icons8.com/color/96/compact-camera.png");
+        saveCategory("\u0110i\u1EC7n T\u1EED", "dien-tu", "ELEC", "https://img.icons8.com/color/96/electronics.png");
+        saveCategory("\u0110\u1ED3 Gia D\u1EE5ng", "do-gia-dung", "HOUSE", "https://img.icons8.com/color/96/washing-machine.png");
+        saveCategory("Nh\u00E0 C\u1EEDa & \u0110\u1EDDi S\u1ED1ng", "nha-cua-doi-song", "HOME", "https://img.icons8.com/color/96/home.png");
+        saveCategory("D\u1EE5ng C\u1EE5 Nh\u00E0 B\u1EBFp", "dung-cu-nha-bep", "KITCHEN", "https://img.icons8.com/color/96/blender.png");
+        saveCategory("S\u1EAFc \u0110\u1EB9p", "sac-dep", "BEAUTY", "https://img.icons8.com/color/96/lipstick.png");
+        saveCategory("S\u1EE9c Kh\u1ECFe", "suc-khoe", "HEALTH", "https://img.icons8.com/color/96/medical-heart.png");
+        saveCategory("M\u1EB9 & B\u00E9", "me-va-be", "KIDS", "https://img.icons8.com/color/96/baby-bottle.png");
+        saveCategory("\u0110\u1ED3 Ch\u01A1i", "do-choi", "TOYS", "https://img.icons8.com/color/96/teddy-bear.png");
+        saveCategory("B\u00E1ch H\u00F3a Online", "bach-hoa-online", "GROCERY", "https://img.icons8.com/color/96/shopping-basket.png");
+        saveCategory("V\u1EC7 Sinh Nh\u00E0 C\u1EEDa", "ve-sinh-nha-cua", "CLEAN", "https://img.icons8.com/color/96/broom.png");
+        saveCategory("S\u00E1ch & V\u0103n Ph\u00F2ng Ph\u1EA9m", "sach-van-phong-pham", "BOOKS", "https://img.icons8.com/color/96/books.png");
+        saveCategory("Th\u1EC3 Thao & Du L\u1ECBch", "the-thao-du-lich", "SPORT", "https://img.icons8.com/color/96/football.png");
 
         System.out.println(">>> [SMALL-SUCCESS] Data Seeding complete using Escape Codes!");
     }
@@ -53,15 +74,20 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    private void saveCategory(String name, String slug, String code) {
-        if (categoryRepository.findBySlug(slug) == null) {
-            Category category = new Category();
-            category.setName(name);
+    private void saveCategory(String name, String slug, String code, String iconUrl) {
+        Category category = categoryRepository.findBySlug(slug);
+        if (category == null) {
+            category = new Category();
             category.setSlug(slug);
-            category.setCode(code);
-            category.setActive(true);
-            categoryRepository.save(category);
-            System.out.println(">>> [CAT-INIT] Created category: " + name);
+            System.out.println(">>> [CAT-INIT] Creating new category: " + name);
+        } else {
+            System.out.println(">>> [CAT-INIT] Updating existing category: " + name);
         }
+        
+        category.setName(name);
+        category.setCode(code);
+        category.setIconUrl(iconUrl);
+        category.setActive(true);
+        categoryRepository.save(category);
     }
 }
