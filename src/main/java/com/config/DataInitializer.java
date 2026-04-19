@@ -6,6 +6,7 @@ import com.entity.Category;
 import com.entity.Role;
 import com.repository.CategoryRepository;
 import com.repository.RoleRepository;
+import com.service.CategoryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,36 +16,51 @@ public class DataInitializer implements CommandLineRunner {
     private static final Logger logger = LoggerFactory.getLogger(DataInitializer.class);
     private final CategoryRepository categoryRepository;
     private final RoleRepository roleRepository;
+    private final org.springframework.cache.CacheManager cacheManager;
 
-    public DataInitializer(CategoryRepository categoryRepository, RoleRepository roleRepository) {
+    public DataInitializer(CategoryRepository categoryRepository, 
+                           RoleRepository roleRepository,
+                           org.springframework.cache.CacheManager cacheManager) {
         this.categoryRepository = categoryRepository;
         this.roleRepository = roleRepository;
+        this.cacheManager = cacheManager;
     }
 
     @Override
     public void run(String... args) throws Exception {
+        // 0. Xóa sạch cache cũ để đảm bảo dữ liệu mới được hiển thị ngay lập tức
+        if (cacheManager.getCache("categories") != null) {
+            cacheManager.getCache("categories").clear();
+            System.out.println(">>> [SMALL-CACHE] Logic Cleared categories cache!");
+        }
+
         // 1. Khởi tạo Quyền hạn (Roles)
         System.out.println(">>> [SMALL-INIT] Checking Roles...");
-        saveRole("USER", "Ng\u01B0\u1EDDi d\u00F9ng th\u00F4ng th\u01B0\u1EDDng"); // Người dùng thông thường
-        saveRole("SELLER", "Ng\u01B0\u1EDDi b\u00E1n h\u00E0ng"); // Người bán hàng
-        saveRole("ADMIN", "Qu\u1EA3n tr\u1ECB vi\u00EAn h\u1EC7 th\u1ED1ng"); // Quản trị viên hệ thống
-        saveRole("SUPER_ADMIN", "Qu\u1EA3n tr\u1ECB vi\u00EAn c\u1EA5p cao"); // Quản trị viên cấp cao
+        saveRole("USER", "Ng\u01B0\u1EDDi d\u00F9ng th\u00F4ng th\u01B0\u1EDDng");
+        saveRole("SELLER", "Ng\u01B0\u1EDDi b\u00E1n h\u00E0ng");
+        saveRole("ADMIN", "Qu\u1EA3n tr\u1ECB vi\u00EAn h\u1EC7 th\u1ED1ng");
+        saveRole("SUPER_ADMIN", "Qu\u1EA3n tr\u1ECB vi\u00EAn c\u1EA5p cao");
 
-        // 2. Khởi tạo Danh mục (Categories)
-        System.out.println(">>> [SMALL-INIT] Checking Categories...");
+        // 2. Dọn dẹp danh mục rác bị lặp lại trước khi nạp mới
+        Category oldCat = categoryRepository.findBySlug("tui-va-vi");
+        if (oldCat != null) {
+            System.out.println(">>> [SMALL-INIT] Deleting duplicate category: tui-va-vi");
+            categoryRepository.delete(oldCat);
+        }
+
+        // 3. Khởi tạo Danh mục (Categories)
+        System.out.println(">>> [SMALL-INIT] Seeding Categories...");
         
-        // Dùng mã Unicode Escape để đảm bảo không bị lỗi font dù biên dịch ở bất kỳ đâu
         saveCategory("Th\u1EDDi Trang Nam", "thoi-trang-nam", "FASH_MAN", "https://img.icons8.com/color/96/t-shirt.png");
         saveCategory("Th\u1EDDi Trang N\u1EEF", "thoi-trang-nu", "FASH_WOMAN", "https://img.icons8.com/color/96/wedding-dress.png");
         saveCategory("Gi\u00E0y D\u00E9p", "giay-dep", "SHOES", "https://img.icons8.com/color/96/trainers.png");
-        
-        // Cập nhật cho cả các Slug cũ để không bị lỗi ảnh
         saveCategory("Th\u1EDDi Trang", "thoi-trang", "FASH", "https://img.icons8.com/color/96/t-shirt.png");
         saveCategory("S\u1EE9c Kh\u1ECFe & S\u1EAFc \u0110\u1EB9p", "suc-khoe-sac-dep", "BEAU", "https://img.icons8.com/color/96/medical-heart.png");
-        
         saveCategory("\u0110\u1ED3ng H\u1ED3", "dong-ho", "WATCH", "https://img.icons8.com/color/96/womens-watch.png");
-        saveCategory("T\u00FAi & V\u00ED", "tui-vi", "BAGS", "https://img.icons8.com/color/96/handbag.png");
-        saveCategory("T\u00FAi v\u00E0 V\u00ED", "tui-va-vi", "BAGS_2", "https://img.icons8.com/color/96/handbag.png");
+        
+        // Danh mục túi với icon shopping-bag cực kỳ ổn định
+        saveCategory("T\u00FAi X\u00E1ch & V\u00ED", "tui-vi", "BAGS", "https://img.icons8.com/color/96/shopping-bag.png");
+        
         saveCategory("\u0110i\u1EC7n Tho\u1EA1i & Ph\u1EE5 Ki\u1EC7n", "dien-thoai-phu-kien", "PHONE", "https://img.icons8.com/color/96/smartphone.png");
         saveCategory("M\u00E1y T\u00EDnh & Laptop", "may-tinh-laptop", "LAPTOP", "https://img.icons8.com/color/96/laptop.png");
         saveCategory("M\u00E1y \u1EA3nh & Quay Phim", "may-anh-quay-phim", "CAMERA", "https://img.icons8.com/color/96/compact-camera.png");
@@ -61,7 +77,7 @@ public class DataInitializer implements CommandLineRunner {
         saveCategory("S\u00E1ch & V\u0103n Ph\u00F2ng Ph\u1EA9m", "sach-van-phong-pham", "BOOKS", "https://img.icons8.com/color/96/books.png");
         saveCategory("Th\u1EC3 Thao & Du L\u1ECBch", "the-thao-du-lich", "SPORT", "https://img.icons8.com/color/96/football.png");
 
-        System.out.println(">>> [SMALL-SUCCESS] Data Seeding complete using Escape Codes!");
+        System.out.println(">>> [SMALL-SUCCESS] Data Seeding complete!");
     }
 
     private void saveRole(String name, String description) {
@@ -79,11 +95,7 @@ public class DataInitializer implements CommandLineRunner {
         if (category == null) {
             category = new Category();
             category.setSlug(slug);
-            System.out.println(">>> [CAT-INIT] Creating new category: " + name);
-        } else {
-            System.out.println(">>> [CAT-INIT] Updating existing category: " + name);
         }
-        
         category.setName(name);
         category.setCode(code);
         category.setIconUrl(iconUrl);
