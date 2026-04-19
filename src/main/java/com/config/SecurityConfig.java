@@ -50,8 +50,9 @@ public class SecurityConfig {
                                                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                                                 .requestMatchers("/shop/register").authenticated()
                                                 .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
-                                                .requestMatchers("/login", "/register", "/verify-otp", "/error")
+                                                .requestMatchers("/login", "/register", "/verify-otp", "/error", "/api/**")
                                                 .permitAll()
+
                                                 .anyRequest().authenticated())
 
                                 .formLogin(form -> form

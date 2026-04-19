@@ -28,6 +28,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // Lấy tất cả sản phẩm đang hoạt động có phân trang
     Page<Product> findByIsActiveTrue(Pageable pageable);
 
-    // [CASE 1] Lấy 8 sản phẩm đánh giá cao nhất đang hoạt động
-    List<Product> findTop8ByIsActiveTrueOrderByAverageRatingDesc();
+    // [CASE 1] Lấy tất cả sản phẩm đang hoạt động có phân trang và sắp xếp theo Rating
+    Page<Product> findByIsActiveTrueOrderByAverageRatingDesc(Pageable pageable);
+
+    // [CASE 2] Lấy sản phẩm gợi ý dựa trên danh sách ID danh mục khách quan tâm sắp xếp theo Rating
+    List<Product> findTop30ByCategoryIdInAndIsActiveTrueOrderByAverageRatingDesc(java.util.List<Long> categoryIds);
 }
+
+
+

@@ -14,6 +14,11 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     // Tìm danh mục theo slug (cho SEO URL)
     Category findBySlug(String slug);
     
+    // Tìm danh mục theo mã code
+    Category findByCode(String code);
+
+
     // Tìm danh mục đang hoạt động
     List<Category> findByIsActiveTrue();
+
 }

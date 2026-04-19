@@ -4,8 +4,6 @@ body {
     color: #333;
 }
 
-/* Hero section CSS removed by user request */
-
 /* Category Navigation Styling */
 .category-section {
     background-color: #fff;
@@ -70,39 +68,19 @@ body {
     color: #27ae60;
 }
 
-/* Toggle Button Logic */
-#btnToggleCats {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    z-index: 10;
-}
-
-#btnToggleCats i {
-    transition: transform 0.3s ease;
-}
-
-.collapsed-icon {
-    transform: rotate(0deg);
-}
-
-.expanded-icon {
-    transform: rotate(180deg);
-}
-
-
 /* Featured Section Title */
 .section-title {
     font-weight: 700;
     color: #2c3e50;
     font-size: 1.5rem;
+    margin-bottom: 25px;
 }
 
-/* Product Card Styling */
+/* Product Card Styling - 6 ITEMS PER ROW GRID */
 .product-grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 15px !important;
 }
 
 .product-card {
@@ -112,9 +90,9 @@ body {
     transition: all 0.3s cubic-bezier(.25,.8,.25,1);
     border: 1px solid #f0f0f0;
     text-decoration: none;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+    display: flex !important;
+    flex-direction: column !important; /* Back to vertical */
+    height: 100% !important;
 }
 
 .product-card:hover {
@@ -124,17 +102,19 @@ body {
 }
 
 .product-image-wrapper {
-    position: relative;
-    padding-top: 100%; /* Square aspect ratio */
+    position: relative !important;
+    padding-top: 100% !important; /* Square aspect ratio */
+    width: 100% !important;
+    background: #f9f9f9;
 }
 
 .product-image-wrapper img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
 }
 
 .product-badge {
@@ -144,17 +124,18 @@ body {
     background-color: #ee4d2d;
     color: white;
     padding: 2px 8px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
     border-top-right-radius: 2px;
     border-bottom-right-radius: 2px;
+    z-index: 2;
 }
 
 .product-info {
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
+    padding: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-grow: 1 !important;
 }
 
 .product-name {
@@ -171,6 +152,7 @@ body {
 
 .product-price-row {
     margin-top: auto;
+    margin-bottom: 8px;
 }
 
 .price-tag {
@@ -179,29 +161,41 @@ body {
     font-weight: 600;
 }
 
-.price-tag::before {
-    content: '₫';
+.price-tag::after {
+    content: ' ₫';
     font-size: 0.8rem;
-    margin-right: 2px;
 }
 
 .product-meta {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 8px;
     font-size: 0.75rem;
     color: #757575;
 }
 
 .rating-stars {
     color: #ffce3d;
+    display: flex;
+    align-items: center;
+    gap: 2px;
 }
 
+/* Load More Section Styles */
+.product-card.d-none-custom {
+    display: none !important;
+}
+
+
 /* Responsive adjustments */
-@media (max-width: 576px) {
+@media (max-width: 1200px) {
     .product-grid-container {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .product-grid-container {
+        grid-template-columns: repeat(2, 1fr) !important;
     }
 }

@@ -25,7 +25,6 @@ public class UserController {
         this.userRepository = userRepository;
     }
 
-
     @RequestMapping("/admin/user")
     public String getUserpage(Model model) {
         model.addAttribute("userProfile", new com.entity.User());
