@@ -9,6 +9,12 @@
     </div>
 
     <ul class="sidebar-menu">
+        <li class="menu-item">
+            <a href="${url}/" class="menu-link">
+                <i class="fas fa-home"></i>
+                <span>Trang chủ</span>
+            </a>
+        </li>
         <li class="menu-item dashboard-item">
             <a href="${url}/seller/dashboard" class="menu-link">
                 <i class="fas fa-th-large"></i>
@@ -86,11 +92,21 @@
 
         // Tự động tô xanh dựa trên URL hiện tại (để giữ trạng thái khi load lại trang)
         const currentPath = window.location.pathname;
+        const contextPath = '${url}';
+
         menuLinks.forEach(link => {
-            if (link.getAttribute('href') !== 'javascript:void(0)' && currentPath.includes(link.getAttribute('href'))) {
-                link.closest('.menu-item').classList.add('active');
-                if (link.closest('.submenu')) {
-                    link.closest('.has-submenu').classList.add('open', 'active');
+            const href = link.getAttribute('href');
+            if (href !== 'javascript:void(0)' && href !== '#' && href !== '') {
+                // Không tự động tô xanh "Trang chủ" trong menu Seller trừ khi ở đúng trang chủ
+                if (href === contextPath + '/' || href === '/') {
+                    if (currentPath === href) {
+                        link.closest('.menu-item').classList.add('active');
+                    }
+                } else if (currentPath.includes(href)) {
+                    link.closest('.menu-item').classList.add('active');
+                    if (link.closest('.submenu')) {
+                        link.closest('.has-submenu').classList.add('open', 'active');
+                    }
                 }
             }
         });

@@ -64,8 +64,21 @@
                 <main class="dashboard-content">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="fw-bold mb-0">Tổng quan người bán</h4>
-                        <div class="shop-badge" style="background: #f1f5f9; padding: 8px 16px; border-radius: 20px; border: 1px solid #e2e8f0;">
-                            <i class="fas fa-store text-success me-2"></i>
+                        <div class="shop-badge"
+                            style="background: #f1f5f9; padding: 6px 16px; border-radius: 20px; border: 1px solid #e2e8f0; display: flex; align-items: center;">
+                            <c:choose>
+                                <c:when test="${not empty sessionScope.shopLogoUrl}">
+                                    <img src="${url}${sessionScope.shopLogoUrl}" alt="Shop Logo"
+                                        style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid #dee2e6;">
+                                </c:when>
+                                <c:when test="${not empty sessionScope.userAvatarUrl}">
+                                    <img src="${url}${sessionScope.userAvatarUrl}" alt="User Avatar" 
+                                         style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid #dee2e6;">
+                                </c:when>
+                                <c:otherwise>
+                                    <i class="fas fa-store text-success me-2"></i>
+                                </c:otherwise>
+                            </c:choose>
                             <span class="fw-semibold text-dark">${sessionScope.shopName}</span>
                         </div>
                     </div>

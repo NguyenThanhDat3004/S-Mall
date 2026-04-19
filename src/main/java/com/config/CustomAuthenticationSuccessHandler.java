@@ -33,6 +33,9 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     @Autowired
     private LoginAttemptService loginAttemptService;
 
+    @Autowired
+    private org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
@@ -42,26 +45,40 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         loginAttemptService.loginSucceeded(email);
 
         userRepository.findByEmail(email).ifPresent(user -> {
-<<<<<<< HEAD
-            HttpSession session = request.getSession();
-            session.setAttribute("userId", user.getId());
-            session.setAttribute("userEmail", user.getEmail());
-            session.setAttribute("userRole", user.getRole().getName());
-            logger.info("user with id {} and email {} (Role: {}) login system", user.getId(), user.getEmail(), user.getRole().getName());
-=======
             session.setAttribute("userId", user.getId());
             session.setAttribute("userEmail", user.getEmail());
             session.setAttribute("roleId", user.getRole().getId());
-            
-            // Nếu là SELLER (hoặc bất kỳ ai có Shop), hãy lưu thông tin Shop vào session
-            shopRepository.findByUser(user).ifPresent(shop -> {
+
+            logger.info(">>> LOGIN SUCCESS: Processing user ID: {}, Email: {}, Role: {}", user.getId(), user.getEmail(),
+                    user.getRole().getName());
+
+            // 1. Lưu thông tin Shop vào session và Redis Cache (để lấy nhanh bên ngoài)
+            shopRepository.findByUser(user).ifPresentOrElse(shop -> {
                 session.setAttribute("shopId", shop.getId());
                 session.setAttribute("shopName", shop.getName());
-                logger.info("Shop associated with user: {} is {}", user.getEmail(), shop.getName());
+                session.setAttribute("shopLogoUrl", shop.getLogoUrl());
+                
+                // Lưu thủ công vào Redis một bản nữa như yêu cầu của bạn
+                redisTemplate.opsForValue().set("USER_LOGO:" + email, shop.getLogoUrl());
+                
+                logger.info(">>> SHOP & REDIS CACHE UPDATED: ID={}, Name={}", shop.getId(), shop.getName());
+            }, () -> {
+                session.removeAttribute("shopId");
+                session.removeAttribute("shopName");
+                session.removeAttribute("shopLogoUrl");
+                redisTemplate.delete("USER_LOGO:" + email);
+                logger.warn(">>> NO SHOP FOUND for user: {}", user.getEmail());
             });
 
-            logger.info("user with id {} login system", user.getId());
->>>>>>> feature/dashboard_seller
+            // 2. Lưu Avatar của người dùng vào session và Redis Cache
+            if (user.getProfile() != null && user.getProfile().getAvatarUrl() != null) {
+                String avatarUrl = user.getProfile().getAvatarUrl();
+                session.setAttribute("userAvatarUrl", avatarUrl);
+                redisTemplate.opsForValue().set("USER_AVATAR:" + email, avatarUrl);
+            } else {
+                session.removeAttribute("userAvatarUrl");
+                redisTemplate.delete("USER_AVATAR:" + email);
+            }
         });
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
@@ -70,13 +87,19 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         for (GrantedAuthority authority : authorities) {
             String role = authority.getAuthority();
-            
-            // Lưu quyền vào session để hiển thị header (bỏ tiền tố ROLE_)
-            session.setAttribute("userRole", role.replace("ROLE_", ""));
+            String roleName = role.replace("ROLE_", "");
 
-            if (role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN")) {
+            // Ưu tiên lưu quyền cao nhất vào session (ADMIN > SELLER > USER)
+            String currentRoleInSession = (String) session.getAttribute("userRole");
+            if (currentRoleInSession == null || currentRoleInSession.equals("USER") ||
+                    roleName.equals("ADMIN") || roleName.equals("SUPER_ADMIN")) {
+                session.setAttribute("userRole", roleName);
+            }
+
+            if (roleName.equals("ADMIN") || roleName.equals("SUPER_ADMIN")) {
                 redirectUrl = "/admin/dashboard";
-                break;
+            } else if (roleName.equals("SELLER") && !redirectUrl.startsWith("/admin")) {
+                redirectUrl = "/seller/dashboard";
             }
         }
 

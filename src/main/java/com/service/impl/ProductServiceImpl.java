@@ -28,10 +28,10 @@ public class ProductServiceImpl implements ProductService {
     private final ShopRepository shopRepository;
     private final UploadService uploadService;
 
-    public ProductServiceImpl(ProductRepository productRepository, 
-                              CategoryRepository categoryRepository,
-                              ShopRepository shopRepository,
-                              UploadService uploadService) {
+    public ProductServiceImpl(ProductRepository productRepository,
+            CategoryRepository categoryRepository,
+            ShopRepository shopRepository,
+            UploadService uploadService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.shopRepository = shopRepository;
@@ -69,13 +69,13 @@ public class ProductServiceImpl implements ProductService {
             variant.setPrice(varDto.getPrice());
             variant.setStock(varDto.getStock());
             variant.setProduct(product);
-            
+
             // Xử lý ảnh riêng cho biến thể
             if (varDto.getVariantImage() != null && !varDto.getVariantImage().isEmpty()) {
                 String varImgUrl = uploadService.saveImage(varDto.getVariantImage());
                 variant.setImageUrl(varImgUrl);
             }
-            
+
             variant.setAttributesJson("{\"name\": \"" + varDto.getName() + "\"}");
             variants.add(variant);
         }
@@ -104,12 +104,12 @@ public class ProductServiceImpl implements ProductService {
         List<Long> variantIds = savedProduct.getVariants().stream()
                 .map(ProductVariant::getId)
                 .toList();
-        
+
         List<Long> imageIds = savedProduct.getImages().stream()
                 .map(ProductImage::getId)
                 .toList();
 
-        logger.info(">>> [SUCCESS] Shop {} (ID: {}) đã thêm mặt hàng (ID: {})", 
+        logger.info(">>> [SUCCESS] Shop {} (ID: {}) đã thêm mặt hàng (ID: {})",
                 shop.getName(), shop.getId(), savedProduct.getId());
         logger.info(">>> Chi tiết: {} biến thể (IDs: {}) | {} ảnh (IDs: {})",
                 variantIds.size(), variantIds, imageIds.size(), imageIds);

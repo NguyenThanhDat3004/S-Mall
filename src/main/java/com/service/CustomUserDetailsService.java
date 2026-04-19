@@ -47,9 +47,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         System.out.println(">>> [OK] Đã tìm thấy User. Password trong DB (BCrypt): " + user.getPassword());
 
-        // Tên role trong DB (ví dụ ADMIN) cần được thêm tiền tố "ROLE_" cho Spring
-        // Security
-        String roleName = "ROLE_" + user.getRole().getName();
+        // Tên role trong DB (ví dụ ADMIN) cần được thêm tiền tố "ROLE_" cho Spring Security
+        // Nếu DB đã có sẵn ROLE_ thì không thêm nữa để tránh lỗi ROLE_ROLE_...
+        String rawRoleName = user.getRole().getName();
+        String roleName = rawRoleName.startsWith("ROLE_") ? rawRoleName : "ROLE_" + rawRoleName;
         System.out.println(">>> [OK] Quyền của người dùng: " + roleName);
 
         // Lấy tên đầy đủ từ Profile (nếu có)

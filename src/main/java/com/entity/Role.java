@@ -10,9 +10,10 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, columnDefinition = "nvarchar(255)")
     private String name;
 
+    @Column(columnDefinition = "nvarchar(255)")
     private String description;
 
     @OneToMany(mappedBy = "role")

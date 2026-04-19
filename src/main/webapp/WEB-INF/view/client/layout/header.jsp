@@ -11,12 +11,11 @@
                 <div class="container d-flex justify-content-between align-items-center">
                     <div class="top-header-left">
                         <c:choose>
-                            <c:when
-                                test="${sessionScope.roleId == 2 || sessionScope.roleId == 3 || sessionScope.roleId == 4}">
+                            <c:when test="${not empty sessionScope.shopId || sessionScope.userRole == 'SELLER' || sessionScope.userRole == 'ADMIN' || sessionScope.userRole == 'SUPER_ADMIN'}">
                                 <a href="${url}/seller/dashboard">Kênh người bán</a>
                             </c:when>
                             <c:otherwise>
-                                <a href="#">Trở thành người bán</a>
+                                <a href="${url}/shop/register">Trở thành người bán</a>
                             </c:otherwise>
                         </c:choose>
                         <span class="top-header-divider">|</span>
@@ -39,7 +38,10 @@
                         <div class="ms-2 d-flex align-items-center">
                             <c:choose>
                                 <c:when test="${not empty pageContext.request.userPrincipal}">
+                                    <span class="me-2 text-white" style="font-size: 0.9rem;">Chào, ${sessionScope.userEmail}</span>
                                     <a href="${url}/profile">Profile</a>
+                                    <span class="top-header-divider">|</span>
+                                    <a href="${url}/logout" class="text-danger fw-bold">Đăng xuất</a>
                                 </c:when>
                                 <c:otherwise>
                                     <a href="${url}/register" class="fw-bold">Đăng ký</a>

@@ -17,57 +17,60 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Value("${s-mall.remember-me.key}")
-    private String rememberMeKey;
+        @Value("${s-mall.remember-me.key}")
+        private String rememberMeKey;
 
-    @Autowired
-    private CustomAuthenticationSuccessHandler successHandler;
+        @Autowired
+        private CustomAuthenticationSuccessHandler successHandler;
 
-    @Autowired
-    private CustomAuthenticationFailureHandler failureHandler;
+        @Autowired
+        private CustomAuthenticationFailureHandler failureHandler;
 
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring()
-                .requestMatchers(new AntPathRequestMatcher("/resources/**"))
-                .requestMatchers(new AntPathRequestMatcher("/css/**"))
-                .requestMatchers(new AntPathRequestMatcher("/js/**"))
-                .requestMatchers(new AntPathRequestMatcher("/images/**"))
-                .requestMatchers(new AntPathRequestMatcher("/favicon.ico"));
-    }
+        @Bean
+        public WebSecurityCustomizer webSecurityCustomizer() {
+                return (web) -> web.ignoring()
+                                .requestMatchers(new AntPathRequestMatcher("/resources/**"))
+                                .requestMatchers(new AntPathRequestMatcher("/css/**"))
+                                .requestMatchers(new AntPathRequestMatcher("/js/**"))
+                                .requestMatchers(new AntPathRequestMatcher("/images/**"))
+                                .requestMatchers(new AntPathRequestMatcher("/favicon.ico"));
+        }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
-                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
-                        .requestMatchers("/", "/login", "/register", "/verify-otp", "/error").permitAll()
-                        .anyRequest().authenticated())
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(csrf -> csrf.disable())
+                                .authorizeHttpRequests(auth -> auth
+                                                .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
+                                                .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                                                .requestMatchers("/shop/register").authenticated()
+                                                .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
+                                                .requestMatchers("/login", "/register", "/verify-otp", "/error")
+                                                .permitAll()
+                                                .anyRequest().authenticated())
 
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .loginProcessingUrl("/perform_login")
-                        .successHandler(successHandler)
-                        .failureHandler(failureHandler)
-                        .permitAll())
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout")
-                        .deleteCookies("JSESSIONID")
-                        .invalidateHttpSession(true)
-                        .permitAll())
-                .rememberMe(remember -> remember
-                        .key(rememberMeKey)
-                        .tokenValiditySeconds(86400));
+                                .formLogin(form -> form
+                                                .loginPage("/login")
+                                                .loginProcessingUrl("/perform_login")
+                                                .successHandler(successHandler)
+                                                .failureHandler(failureHandler)
+                                                .permitAll())
+                                .logout(logout -> logout
+                                                .logoutUrl("/logout")
+                                                .logoutSuccessUrl("/login?logout")
+                                                .clearAuthentication(true)
+                                                .invalidateHttpSession(true)
+                                                .deleteCookies("JSESSIONID", "remember-me")
+                                                .permitAll())
+                                .rememberMe(remember -> remember
+                                                .key(rememberMeKey)
+                                                .tokenValiditySeconds(86400));
 
-        return http.build();
-    }
+                return http.build();
+        }
 }
