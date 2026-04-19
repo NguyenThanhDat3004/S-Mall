@@ -31,10 +31,7 @@ public class DataInitializer implements CommandLineRunner {
         saveRole("SUPER_ADMIN", "Qu\u1EA3n tr\u1ECB vi\u00EAn c\u1EA5p cao"); // Quản trị viên cấp cao
 
         // 2. Khởi tạo Danh mục (Categories)
-        // PHƯƠNG ÁN QUYẾT LIỆT: Xóa sạch dữ liệu cũ để đảm bảo không còn dấu hỏi chấm
-        categoryRepository.deleteAll();
-        
-        System.out.println(">>> [SMALL-INIT] Refreshed with Unicode Escape Seeding...");
+        System.out.println(">>> [SMALL-INIT] Checking Categories...");
         
         // Dùng mã Unicode Escape để đảm bảo không bị lỗi font dù biên dịch ở bất kỳ đâu
         saveCategory("Th\u1EDDi Trang", "thoi-trang", "FASH"); // Thời Trang
@@ -57,11 +54,14 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void saveCategory(String name, String slug, String code) {
-        Category category = new Category();
-        category.setName(name);
-        category.setSlug(slug);
-        category.setCode(code);
-        category.setActive(true);
-        categoryRepository.save(category);
+        if (categoryRepository.findBySlug(slug) == null) {
+            Category category = new Category();
+            category.setName(name);
+            category.setSlug(slug);
+            category.setCode(code);
+            category.setActive(true);
+            categoryRepository.save(category);
+            System.out.println(">>> [CAT-INIT] Created category: " + name);
+        }
     }
 }
