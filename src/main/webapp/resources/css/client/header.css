@@ -255,9 +255,11 @@
     position: absolute;
     top: 100%;
     right: 0;
-    width: 250px;
+    width: max-content;
+    min-width: 220px;
+    white-space: nowrap;
     background: white;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     border-radius: 6px;
     margin-top: 12px;
     display: none;
@@ -271,8 +273,15 @@
 }
 
 .noti-content {
-    max-height: 300px;
+    max-height: 400px;
     overflow-y: auto;
+}
+
+.noti-content a {
+    padding: 12px 20px !important;
+    display: flex !important;
+    align-items: center;
+    transition: background 0.2s;
 }
 
 .noti-empty {

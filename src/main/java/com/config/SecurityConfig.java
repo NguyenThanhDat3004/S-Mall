@@ -46,12 +46,13 @@ public class SecurityConfig {
                 http
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
-                                                .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
+                                                .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE).permitAll()
                                                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                                                 .requestMatchers("/shop/register").authenticated()
                                                 .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
                                                 .requestMatchers("/", "/search", "/product/**").permitAll()
                                                 .requestMatchers("/login", "/register", "/verify-otp", "/error", "/api/**").permitAll()
+                                                .requestMatchers("/WEB-INF/view/**").permitAll()
 
                                                 .anyRequest().authenticated())
 

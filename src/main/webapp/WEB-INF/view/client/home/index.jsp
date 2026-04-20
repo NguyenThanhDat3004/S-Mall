@@ -25,7 +25,7 @@
             <body>
 
                 <!-- Include Header -->
-                <jsp:include page="../layout/header.jsp" />
+                <jsp:include page="/WEB-INF/view/client/layout/header.jsp" />
 
 
                 <!-- Main Content Area -->
