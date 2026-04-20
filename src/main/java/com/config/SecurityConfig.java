@@ -50,8 +50,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                                                 .requestMatchers("/shop/register").authenticated()
                                                 .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
-                                                .requestMatchers("/login", "/register", "/verify-otp", "/error", "/api/**")
-                                                .permitAll()
+                                                .requestMatchers("/", "/search", "/product/**").permitAll()
+                                                .requestMatchers("/login", "/register", "/verify-otp", "/error", "/api/**").permitAll()
 
                                                 .anyRequest().authenticated())
 
@@ -63,7 +63,7 @@ public class SecurityConfig {
                                                 .permitAll())
                                 .logout(logout -> logout
                                                 .logoutUrl("/logout")
-                                                .logoutSuccessUrl("/login?logout")
+                                                .logoutSuccessUrl("/")
                                                 .clearAuthentication(true)
                                                 .invalidateHttpSession(true)
                                                 .deleteCookies("JSESSIONID", "remember-me")

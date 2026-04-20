@@ -213,6 +213,80 @@
     transform: scale(1.05);
 }
 
+/* Nút Thông báo trên Top Header (Thay thế Thanh toán) */
+.btn-notification-top {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 4px 12px !important;
+    border-radius: 4px;
+    font-weight: 600 !important;
+    color: white !important;
+    font-size: 0.8rem;
+    margin-right: 10px !important;
+    transition: all 0.3s ease;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-notification-top:hover {
+    background: #ffeb3b !important;
+    color: #2c3e50 !important;
+    border-color: #ffeb3b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.badge-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background-color: #ff4d4f;
+    border-radius: 50%;
+    border: 1px solid white;
+    display: none; /* Hiện khi có thông báo */
+}
+
+/* Dropdown cho Thông báo */
+.notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 250px;
+    background: white;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    border-radius: 6px;
+    margin-top: 12px;
+    display: none;
+    z-index: 9999;
+    border: 1px solid #eee;
+    animation: slideDown 0.2s ease-out;
+}
+
+.notification-dropdown.active {
+    display: block;
+}
+
+.noti-content {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.noti-empty {
+    padding: 20px 15px;
+    text-align: center;
+    color: #666;
+    font-size: 0.85rem;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 768px) {
     .header-content {
         flex-wrap: wrap;
