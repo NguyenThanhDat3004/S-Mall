@@ -67,9 +67,15 @@
                 <a href="#" class="btn-notification-top me-3"><i class="fas fa-question-circle me-1"></i>Hỗ trợ</a>
                 
                 <div class="top-header-item me-3">
-                    <a href="javascript:void(0)" class="btn-notification-top">
+                    <a href="javascript:void(0)" class="btn-notification-top" id="langTrigger">
                         <i class="fas fa-globe me-1"></i>Tiếng Việt <i class="fas fa-chevron-down ms-1" style="font-size: 0.7rem;"></i>
                     </a>
+                    <div class="notification-dropdown" id="langDropdown" style="min-width: 120px;">
+                        <div class="noti-content">
+                            <a href="?lang=vi">Tiếng Việt</a>
+                            <a href="?lang=en">Tiếng Anh</a>
+                        </div>
+                    </div>
                 </div>
 
                 <span class="me-3" style="opacity: 0.5;">|</span>
@@ -138,8 +144,9 @@
                 </form>
             </div>
             <div class="cart-section d-flex align-items-center">
-                <a href="${url}/messages" class="me-4" style="color: #1a7a42; font-size: 24px; transition: all 0.3s ease;" title="Tin nhắn">
+                <a href="${url}/messages" class="me-4" style="color: #1a7a42; font-size: 24px; transition: all 0.3s ease; position: relative;" title="Tin nhắn">
                     <i class="fas fa-comment-dots"></i>
+                    <span style="position: absolute; top: -8px; right: -10px; background: #ef4444; color: white; font-size: 11px; padding: 2px 6px; border-radius: 50%; font-weight: bold;">0</span>
                 </a>
                 <a href="${url}/cart" style="color: #1a7a42; font-size: 26px; position: relative;">
                     <i class="fa fa-shopping-cart"></i>
@@ -167,6 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     setupDropdown('notificationTrigger', 'notificationDropdown');
     setupDropdown('profileTrigger', 'profileDropdown');
+    setupDropdown('langTrigger', 'langDropdown');
     
     document.addEventListener('click', function(e) {
         document.querySelectorAll('.notification-dropdown').forEach(d => {
