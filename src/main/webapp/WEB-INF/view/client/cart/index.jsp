@@ -157,11 +157,11 @@
     });
 
     function fixImagePath(path) {
-        if (!path) return 'https://placehold.co/400x400/f1f5f9/1a7a42?text=S-Mall';
+        if (!path || path.trim() === '') return 'https://placehold.co/400x400/f1f5f9/1a7a42?text=S-Mall';
         path = path.trim();
         if (path.startsWith('http')) return path;
         if (path.startsWith('/')) return baseUrl + path;
-        return path;
+        return baseUrl + '/' + path;
     }
 
     function toggleSelectAll() {
@@ -236,18 +236,24 @@
     }
 
     function loadRecommendations() {
-        fetch(`\${baseUrl}/api/recommendations/more?size=6`)
+        fetch(baseUrl + '/api/recommendations/more?size=6')
             .then(res => res.json()).then(data => {
                 const container = document.getElementById('recommendations-container');
                 if (data && data.products) {
-                    container.innerHTML = data.products.map(p => `
-                        <div class="product-card-mini" onclick="window.location.href='\${baseUrl}/product/` + p.slug + `'">
-                            <div class="reco-img-box">
-                                <img src="\${fixImagePath(p.mainImage)}" alt="` + p.name + `">
-                            </div>
-                            <h4 class="reco-name text-truncate">` + p.name + `</h4>
-                            <div class="reco-price">` + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price).replace('₫', 'đ') + `</div>
-                        </div>`).join('');
+                    container.innerHTML = data.products.map(p => {
+                        const discountBadge = (p.discountPercentage && p.discountPercentage > 0) 
+                            ? '<div class="reco-badge">-' + p.discountPercentage + '% GIẢM</div>' 
+                            : '';
+                        
+                        return '<div class="product-card-mini" onclick="window.location.href=\'' + baseUrl + '/product/' + p.slug + '\'">' +
+                                    '<div class="reco-img-box">' +
+                                        '<img src="' + fixImagePath(p.mainImageUrl) + '" alt="' + p.name + '">' +
+                                        discountBadge +
+                                    '</div>' +
+                                    '<h4 class="reco-name text-truncate">' + p.name + '</h4>' +
+                                    '<div class="reco-price">' + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price).replace('₫', 'đ') + '</div>' +
+                                '</div>';
+                    }).join('');
                 }
             });
     }
@@ -256,8 +262,9 @@
 <style>
 .product-card-mini { background: #F8FAFC; border-radius: 20px; padding: 12px; cursor: pointer; transition: all 0.3s ease; }
 .product-card-mini:hover { background: white; box-shadow: 0 10px 20px rgba(0,0,0,0.05); transform: translateY(-5px); border: 1px solid #1A7A42; }
-.reco-img-box { width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+.reco-img-box { width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden; margin-bottom: 12px; position: relative; }
 .reco-img-box img { width: 100%; height: 100%; object-fit: cover; }
+.reco-badge { position: absolute; top: 8px; right: 8px; background: #EF4444; color: white; padding: 4px 10px; border-radius: 10px; font-size: 11px; font-weight: 800; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .reco-name { font-size: 14px; font-weight: 600; color: #1E293B; margin-bottom: 4px; }
 .reco-price { font-size: 15px; font-weight: 800; color: #EF4444; }
 </style>

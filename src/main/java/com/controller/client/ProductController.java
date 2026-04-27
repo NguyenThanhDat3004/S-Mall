@@ -31,7 +31,7 @@ public class ProductController {
             String identifier = (principal != null) ? principal.getName() : session.getId();
             
             if (product.getCategory() != null) {
-                userBehaviorService.logProductView(identifier, product.getCategory().getId());
+                userBehaviorService.logProductView(identifier, product.getCategory().getId(), product.getName());
             }
             
             model.addAttribute("product", product);

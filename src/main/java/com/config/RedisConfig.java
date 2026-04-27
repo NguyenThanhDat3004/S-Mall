@@ -1,7 +1,10 @@
 package com.config;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +31,13 @@ public class RedisConfig {
 
     private ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        // Giúp Jackson không báo lỗi khi gặp các đối tượng Proxy của Hibernate
+        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        
+        // CHỈNH SỬA: Gỡ bỏ Default Typing để tương thích với dữ liệu cũ và tránh lỗi JSON
+        // Chúng ta sẽ xử lý ép kiểu thủ công trong Service bằng objectMapper.convertValue()
+        
+        mapper.registerModule(new JavaTimeModule());
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         return mapper;
     }
@@ -37,8 +46,17 @@ public class RedisConfig {
     public RedisTemplate<String, Object> redisTemplate() {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory());
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper()));
+        
+        StringRedisSerializer stringSerializer = new StringRedisSerializer();
+        // Sử dụng một Serializer "hiền" hơn, không bắt buộc class metadata
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper());
+
+        template.setKeySerializer(stringSerializer);
+        template.setValueSerializer(jsonSerializer);
+        template.setHashKeySerializer(stringSerializer);
+        template.setHashValueSerializer(jsonSerializer);
+        
+        template.afterPropertiesSet();
         return template;
     }
 

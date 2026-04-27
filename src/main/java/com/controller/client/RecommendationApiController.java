@@ -25,11 +25,12 @@ public class RecommendationApiController {
 
 
 
-            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "18") int size,
-            HttpSession session) {
+            HttpSession session,
+            java.security.Principal principal) {
         
-        String identifier = (String) session.getAttribute("userIdentifier");
+        String identifier = (principal != null) ? principal.getName() : session.getId();
         RecommendationResponse response = recommendationService.getPaginatedRecommendations(identifier, page, size);
         return ResponseEntity.ok(response);
     }

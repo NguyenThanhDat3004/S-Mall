@@ -14,6 +14,7 @@ public class ProductDTO implements Serializable {
     private Double averageRating;
     private Integer soldCount;
     private Integer discountPercentage;
+    private Double aiScore;
 
     public ProductDTO() {}
 
