@@ -3,6 +3,7 @@ package com.service.impl;
 import com.dto.CartDTO;
 import com.dto.CartItemDTO;
 import com.entity.ProductVariant;
+import com.entity.ProductImage;
 import com.repository.ProductVariantRepository;
 import com.service.CartService;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -60,7 +61,18 @@ public class CartServiceImpl implements CartService {
             newItem.setProductName(variant.getProduct().getName());
             newItem.setSku(variant.getSku());
             newItem.setPrice(variant.getDiscountPrice() != null ? variant.getDiscountPrice() : variant.getPrice());
-            newItem.setImageUrl(variant.getImageUrl());
+            
+            // Lấy ảnh: Ưu tiên ảnh biến thể -> Ảnh chính sản phẩm -> Ảnh đầu tiên -> null
+            String finalImageUrl = variant.getImageUrl();
+            if (finalImageUrl == null || finalImageUrl.isEmpty()) {
+                finalImageUrl = variant.getProduct().getImages().stream()
+                        .filter(ProductImage::isMain)
+                        .map(ProductImage::getUrl)
+                        .findFirst()
+                        .orElse(variant.getProduct().getImages().isEmpty() ? null : variant.getProduct().getImages().get(0).getUrl());
+            }
+            newItem.setImageUrl(finalImageUrl);
+            
             newItem.setQuantity(quantity);
 
             cart.getItems().add(newItem);

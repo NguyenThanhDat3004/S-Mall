@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <c:set var="url" value="${pageContext.request.contextPath}" />
 
@@ -7,9 +8,11 @@
 
 <!-- Premium Inter Font -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="${url}/resources/css/client/cart.css?v=2.4">
+<link rel="stylesheet" href="${url}/resources/css/client/cart.css?v=3.0">
+<link rel="stylesheet" href="${url}/resources/css/client/footer.css">
 
-<div class="cart-container" style="margin-bottom: 120px;">
+<div class="cart-container">
+    <!-- Main Cart Header -->
     <div class="cart-header-section">
         <div>
             <h1 class="cart-title">Giỏ hàng của bạn</h1>
@@ -42,7 +45,18 @@
                             </div>
 
                             <div class="cart-item-image-box">
-                                <img src="${item.imageUrl}" alt="${item.productName}">
+                                <c:set var="rawImg" value="${fn:trim(item.imageUrl)}" />
+                                <c:choose>
+                                    <c:when test="${empty rawImg}">
+                                        <img src="https://placehold.co/400x400/f1f5f9/1a7a42?text=S-Mall" alt="${item.productName}">
+                                    </c:when>
+                                    <c:when test="${fn:startsWith(rawImg, 'http')}">
+                                        <img src="${rawImg}" alt="${item.productName}">
+                                    </c:when>
+                                    <c:otherwise>
+                                        <img src="${url}${rawImg}" alt="${item.productName}">
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
                             <div class="cart-item-details">
                                 <div>
@@ -90,15 +104,24 @@
         </c:otherwise>
     </c:choose>
 
-    <!-- Recommendations Section -->
-    <div class="reco-section">
-        <div class="reco-title-box">
-            <i class="fas fa-sparkles text-success fa-lg"></i>
-            <h2 class="m-0 fs-3 fw-bold text-dark">Gợi ý cho bạn</h2>
+    <!-- Recommendation Header (Now OUTSIDE the white box) -->
+    <div class="cart-header-section" style="margin-top: 80px; margin-bottom: 32px; max-width: 1200px; margin-left: auto; margin-right: auto;">
+        <div>
+            <h2 class="cart-title">Gợi ý cho bạn</h2>
+            <p class="cart-subtitle">Dựa trên hành vi mua sắm của bạn</p>
         </div>
+        <i class="fas fa-sparkles text-success fa-2x opacity-25"></i>
+    </div>
+
+    <!-- Recommendation Content Box -->
+    <div class="reco-section" style="margin-top: 0;">
         <div class="reco-grid" id="recommendations-container"></div>
     </div>
 </div>
+
+<div class="footer-spacer" style="height: 120px;"></div>
+
+<jsp:include page="../layout/footer.jsp" />
 
 <!-- STICKY BOTTOM CHECKOUT BAR -->
 <c:if test="${not empty cart.items}">
@@ -125,22 +148,28 @@
     </div>
 </c:if>
 
-<jsp:include page="../layout/footer.jsp" />
-
 <script>
+    const baseUrl = '${url}';
+
     document.addEventListener('DOMContentLoaded', function() {
         loadRecommendations();
         updateSummary();
     });
 
+    function fixImagePath(path) {
+        if (!path) return 'https://placehold.co/400x400/f1f5f9/1a7a42?text=S-Mall';
+        path = path.trim();
+        if (path.startsWith('http')) return path;
+        if (path.startsWith('/')) return baseUrl + path;
+        return path;
+    }
+
     function toggleSelectAll() {
         const headerCheckbox = document.getElementById('selectAllHeader');
         const bottomCheckbox = document.getElementById('selectAllBottom');
         const isChecking = !headerCheckbox.classList.contains('checked');
-        
         headerCheckbox.classList.toggle('checked', isChecking);
         if (bottomCheckbox) bottomCheckbox.classList.toggle('checked', isChecking);
-        
         document.querySelectorAll('.item-selector').forEach(cb => cb.classList.toggle('checked', isChecking));
         updateSummary();
     }
@@ -150,18 +179,15 @@
         const allItems = document.querySelectorAll('.item-selector');
         const checkedItems = document.querySelectorAll('.item-selector.checked');
         const isAllSelected = allItems.length === checkedItems.length;
-        
         document.getElementById('selectAllHeader').classList.toggle('checked', isAllSelected);
         const bottomBox = document.getElementById('selectAllBottom');
         if (bottomBox) bottomBox.classList.toggle('checked', isAllSelected);
-        
         updateSummary();
     }
 
     function updateSummary() {
         let total = 0, count = 0, selectedUnique = 0;
         const checkedItems = document.querySelectorAll('.item-selector.checked');
-        
         checkedItems.forEach(cb => {
             selectedUnique++;
             const variantId = cb.getAttribute('data-id');
@@ -170,27 +196,19 @@
             total += price * qty;
             count += qty;
         });
-
         const formatter = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(total).replace('₫', 'đ');
-        
-        // Update Sticky Bar
-        const totalEl = document.getElementById('sticky-total');
-        if (totalEl) totalEl.textContent = formatter;
-        const qtyLabel = document.getElementById('sticky-qty-label');
-        if (qtyLabel) qtyLabel.textContent = `Tạm tính (` + count + ` sản phẩm):`;
-
-        const btn = document.getElementById('checkoutBtnSticky');
-        if (btn) btn.disabled = selectedUnique === 0;
+        document.getElementById('sticky-total').textContent = formatter;
+        document.getElementById('sticky-qty-label').textContent = `Tạm tính (` + count + ` sản phẩm):`;
+        if (document.getElementById('checkoutBtnSticky')) 
+            document.getElementById('checkoutBtnSticky').disabled = selectedUnique === 0;
     }
 
     function updateCartQty(variantId, delta) {
         const valSpan = document.getElementById(`qty-` + variantId);
         let newQty = parseInt(valSpan.textContent) + delta;
         if (newQty < 1) return;
-
-        fetch(`${url}/api/cart/update?variantId=` + variantId + `&quantity=` + newQty, { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
+        fetch(`\${baseUrl}/api/cart/update?variantId=` + variantId + `&quantity=` + newQty, { method: 'POST' })
+        .then(res => res.json()).then(data => {
             if (data.status === 'success') {
                 valSpan.textContent = newQty;
                 updateSummary();
@@ -201,9 +219,8 @@
 
     function removeItem(variantId) {
         if (!confirm('Xóa sản phẩm này khỏi giỏ hàng?')) return;
-        fetch(`${url}/api/cart/remove?variantId=` + variantId, { method: 'POST' })
-        .then(res => res.json())
-        .then(data => {
+        fetch(`\${baseUrl}/api/cart/remove?variantId=` + variantId, { method: 'POST' })
+        .then(res => res.json()).then(data => {
             if (data.status === 'success') {
                 document.getElementById(`cart-item-` + variantId).remove();
                 if (document.querySelectorAll('.cart-item-card').length === 0) location.reload();
@@ -215,18 +232,19 @@
 
     function proceedToCheckout() {
         const selectedIds = Array.from(document.querySelectorAll('.item-selector.checked')).map(cb => cb.getAttribute('data-id'));
-        window.location.href = `${url}/checkout?ids=` + selectedIds.join(',');
+        window.location.href = `\${baseUrl}/checkout?ids=` + selectedIds.join(',');
     }
 
     function loadRecommendations() {
-        fetch(`${url}/api/recommendations/more?size=6`)
-            .then(res => res.json())
-            .then(data => {
+        fetch(`\${baseUrl}/api/recommendations/more?size=6`)
+            .then(res => res.json()).then(data => {
                 const container = document.getElementById('recommendations-container');
                 if (data && data.products) {
                     container.innerHTML = data.products.map(p => `
-                        <div class="product-card-mini" onclick="window.location.href='${url}/product/` + p.slug + `'">
-                            <div class="reco-img-box"><img src="` + p.mainImage + `" alt="` + p.name + `"></div>
+                        <div class="product-card-mini" onclick="window.location.href='\${baseUrl}/product/` + p.slug + `'">
+                            <div class="reco-img-box">
+                                <img src="\${fixImagePath(p.mainImage)}" alt="` + p.name + `">
+                            </div>
                             <h4 class="reco-name text-truncate">` + p.name + `</h4>
                             <div class="reco-price">` + new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(p.price).replace('₫', 'đ') + `</div>
                         </div>`).join('');

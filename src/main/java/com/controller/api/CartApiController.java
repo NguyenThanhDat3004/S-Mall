@@ -43,6 +43,7 @@ public class CartApiController {
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
+            response.put("message", "Sản phẩm đã được thêm vào giỏ hàng");
             response.put("cartCount", count);
             return ResponseEntity.ok(response);
         } catch (Exception e) {

@@ -81,10 +81,14 @@ body {
     font-size: 18px;
 }
 
+.cart-grid, .reco-section {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .cart-grid {
-    display: block; /* Chuyển từ grid sang block để full width */
-    max-width: 1000px; /* Thu hẹp một chút để đọc tốt nhất trên màn hình lớn */
-    margin: 0 auto;
+    display: block;
 }
 
 /* Ẩn sidebar trên mọi thiết bị vì đã có bar dưới */
@@ -375,7 +379,7 @@ body {
 
 /* Recommendations */
 .reco-section {
-    margin-top: 48px;
+    margin-top: 60px;
     background: white;
     border-radius: 32px;
     padding: 40px;
