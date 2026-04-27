@@ -22,9 +22,9 @@ public class CartApiController {
 
     private String getCartKey(Principal principal, HttpSession session) {
         if (principal != null) {
-            return "cart:user:" + principal.getName();
+            return "user:" + principal.getName();
         }
-        return "cart:guest:" + session.getId();
+        return "session:" + session.getId();
     }
 
     @PostMapping("/add")
@@ -37,23 +37,16 @@ public class CartApiController {
         try {
             String cartKey = getCartKey(principal, session);
             String buyerEmail = (principal != null) ? principal.getName() : null;
-            System.out.println(">>> [CART-DEBUG] Adding to cart. Key: " + cartKey + ", VariantId: " + variantId + ", Buyer: " + buyerEmail);
             
             cartService.addToCart(cartKey, variantId, quantity, buyerEmail);
-            
             int count = cartService.getCartCount(cartKey);
-            System.out.println(">>> [CART-DEBUG] Success. New Count: " + count);
             
             Map<String, Object> response = new HashMap<>();
             response.put("status", "success");
-            response.put("message", "Đã thêm sản phẩm vào giỏ hàng");
             response.put("cartCount", count);
-            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            System.err.println(">>> [CART-ERROR] Error adding to cart: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("status", "error", "message", e.getMessage()));
+            return ResponseEntity.ok(Map.of("status", "error", "message", e.getMessage()));
         }
     }
 
@@ -61,11 +54,7 @@ public class CartApiController {
     public ResponseEntity<?> getCartCount(Principal principal, HttpSession session) {
         String cartKey = getCartKey(principal, session);
         int count = cartService.getCartCount(cartKey);
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("cartCount", count);
-        
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of("count", count));
     }
 
     @GetMapping
@@ -80,22 +69,18 @@ public class CartApiController {
             @RequestParam int quantity,
             Principal principal,
             HttpSession session) {
-        
         String cartKey = getCartKey(principal, session);
         cartService.updateQuantity(cartKey, variantId, quantity);
-        
         return ResponseEntity.ok(Map.of("status", "success"));
     }
 
-    @DeleteMapping("/remove")
+    @PostMapping("/remove")
     public ResponseEntity<?> removeFromCart(
             @RequestParam Long variantId,
             Principal principal,
             HttpSession session) {
-        
         String cartKey = getCartKey(principal, session);
         cartService.removeFromCart(cartKey, variantId);
-        
         return ResponseEntity.ok(Map.of("status", "success"));
     }
 }

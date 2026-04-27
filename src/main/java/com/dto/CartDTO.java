@@ -15,7 +15,7 @@ public class CartDTO implements Serializable {
     public void setItems(List<CartItemDTO> items) { this.items = items; }
 
     public int getTotalItems() {
-        return items.stream().mapToInt(CartItemDTO::getQuantity).sum();
+        return items.size();
     }
 
     public double getTotalPrice() {

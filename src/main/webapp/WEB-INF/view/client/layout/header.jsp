@@ -158,11 +158,11 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`${url}/api/cart/count`)
             .then(res => res.json())
             .then(data => {
-                console.log('Current cart count:', data.cartCount);
                 const badge = document.getElementById('cartBadge');
                 if (badge) {
-                    badge.innerText = data.cartCount || 0;
-                    badge.style.display = 'flex'; // Luôn hiện để dễ theo dõi
+                    const count = data.count || 0;
+                    badge.innerText = count;
+                    badge.style.display = count > 0 ? 'flex' : 'none';
                 }
             })
             .catch(err => console.error('Error fetching cart count:', err));
