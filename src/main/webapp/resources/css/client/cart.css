@@ -22,6 +22,51 @@ body {
 
 .cart-header-section {
     margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+/* Custom Checkbox Style */
+.custom-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #E2E8F0;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    background: white;
+}
+
+.custom-checkbox i {
+    color: white;
+    font-size: 12px;
+    display: none;
+}
+
+.custom-checkbox.checked {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.custom-checkbox.checked i {
+    display: block;
+}
+
+.select-all-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-main);
 }
 
 .cart-title {
@@ -37,10 +82,14 @@ body {
 }
 
 .cart-grid {
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 32px;
-    align-items: start;
+    display: block; /* Chuyển từ grid sang block để full width */
+    max-width: 1000px; /* Thu hẹp một chút để đọc tốt nhất trên màn hình lớn */
+    margin: 0 auto;
+}
+
+/* Ẩn sidebar trên mọi thiết bị vì đã có bar dưới */
+.cart-sidebar {
+    display: none !important;
 }
 
 /* Item Card Style */
@@ -350,3 +399,81 @@ body {
     .cart-grid { grid-template-columns: 1fr; }
     .reco-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* Sticky Bottom Checkout Bar */
+.sticky-checkout-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.08);
+    z-index: 1000;
+    padding: 16px 0;
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    display: none;
+    transition: var(--transition);
+}
+
+.sticky-bar-content {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sticky-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.sticky-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.sticky-total-label {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.sticky-total-price {
+    font-size: 24px;
+    font-weight: 900;
+    color: #EF4444;
+}
+
+.btn-checkout-sticky {
+    padding: 14px 48px;
+    border-radius: 14px;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    font-weight: 700;
+    font-size: 16px;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.btn-checkout-sticky:hover {
+    box-shadow: 0 8px 15px rgba(26, 122, 66, 0.3);
+    transform: translateY(-2px);
+}
+
+.btn-checkout-sticky:disabled {
+    background: #E2E8F0;
+    color: #94A3B8;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.show-sticky-bar {
+    display: block !important;
+}
+
