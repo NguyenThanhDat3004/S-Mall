@@ -44,15 +44,10 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // 0. Sửa cấu trúc bảng và xóa dữ liệu lỗi (Chạy 1 lần để fix font)
+        // 0. Sửa cấu trúc bảng (Chạy 1 lần để fix font)
         try {
             System.out.println(">>> [SMALL-FIX] Altering products table to NVARCHAR...");
             jdbcTemplate.execute("ALTER TABLE products ALTER COLUMN name NVARCHAR(255) NOT NULL");
-            
-            System.out.println(">>> [SMALL-FIX] Wiping corrupted product data...");
-            productImageRepository.deleteAll();
-            productVariantRepository.deleteAll();
-            productRepository.deleteAll();
         } catch (Exception e) {
             System.err.println(">>> [SMALL-FIX] Schema already correct or error: " + e.getMessage());
         }

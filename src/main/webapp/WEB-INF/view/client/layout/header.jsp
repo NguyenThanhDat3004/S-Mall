@@ -107,12 +107,12 @@
                 <a href="${url}/messages" class="cart-icon-wrapper">
                     <i class="fas fa-comment-dots cart-icon"></i>
                     <span class="d-none d-lg-inline" style="font-size: 14px; font-weight: 500;">Chat</span>
-                    <span class="cart-badge">0</span>
+                    <span class="cart-badge" id="chatBadge">0</span>
                 </a>
                 <a href="${url}/cart" class="cart-icon-wrapper">
                     <i class="fa fa-shopping-cart cart-icon"></i>
                     <span class="d-none d-lg-inline" style="font-size: 14px; font-weight: 500;">Giỏ hàng</span>
-                    <span class="cart-badge">0</span>
+                    <span class="cart-badge" id="cartBadge">0</span>
                 </a>
             </div>
         </div>
@@ -152,5 +152,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!d.contains(e.target)) d.style.display = 'none';
         });
     });
+
+    // Global Cart Count Update
+    window.updateCartCount = function() {
+        fetch(`${url}/api/cart/count`)
+            .then(res => res.json())
+            .then(data => {
+                console.log('Current cart count:', data.cartCount);
+                const badge = document.getElementById('cartBadge');
+                if (badge) {
+                    badge.innerText = data.cartCount || 0;
+                    badge.style.display = 'flex'; // Luôn hiện để dễ theo dõi
+                }
+            })
+            .catch(err => console.error('Error fetching cart count:', err));
+    };
+    
+    updateCartCount();
 });
 </script>

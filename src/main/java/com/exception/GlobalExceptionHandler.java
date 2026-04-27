@@ -9,9 +9,17 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public String handleAllExceptions(Exception ex, Model model) {
+    public Object handleAllExceptions(Exception ex, jakarta.servlet.http.HttpServletRequest request, org.springframework.ui.Model model) {
+        // Kiểm tra nếu là request AJAX hoặc API (bắt đầu bằng /api)
+        String requestUri = request.getRequestURI();
+        if (requestUri.contains("/api/")) {
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("status", "error");
+            response.put("message", ex.getMessage());
+            return org.springframework.http.ResponseEntity.status(500).body(response);
+        }
+        
         model.addAttribute("errorMessage", ex.getMessage());
-        // Trả về trang error chung trong thư mục view
         return "error/generic";
     }
 

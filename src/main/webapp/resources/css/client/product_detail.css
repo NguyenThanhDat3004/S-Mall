@@ -1,3 +1,5 @@
+/* VERSION 2.0 - REFRESHED SELLER TOOLS */
+
 :root {
     --primary-color: #1A7A42;
     --accent-color: #EF4444;
@@ -9,6 +11,52 @@
     --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
+/* Seller Tools Styling */
+.seller-tools-box {
+    background-color: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+    border-left: 5px solid var(--primary-color) !important;
+    padding: 24px !important;
+    border-radius: 16px !important;
+    margin-bottom: 32px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.seller-tools-title {
+    color: #166534 !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    margin-bottom: 20px !important;
+    display: flex;
+    align-items: center;
+    letter-spacing: 0.5px;
+}
+
+.seller-actions-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+}
+
+.btn-seller-action {
+    padding: 10px 20px !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    transition: var(--transition) !important;
+    text-decoration: none !important;
+}
+
+.btn-seller-edit { background-color: var(--primary-color) !important; color: white !important; border: none !important; }
+.btn-seller-inventory { background-color: #0ea5e9 !important; color: white !important; border: none !important; }
+.btn-seller-stats { background-color: #6366f1 !important; color: white !important; border: none !important; }
+.btn-seller-delete { background-color: #fff !important; color: #ef4444 !important; border: 1px solid #fecaca !important; }
+.btn-seller-action:hover { transform: translateY(-3px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important; }
+
+/* Main Styles */
 .detail-container {
     max-width: 1280px;
     margin: 40px auto 80px;
@@ -168,6 +216,82 @@
 .badge-desc {
     font-size: 12px;
     color: #64748b;
+}
+
+/* Quantity Selector */
+.quantity-selector {
+    display: flex;
+    align-items: center;
+    border: 1px solid #e2e8f0;
+    width: fit-content;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.qty-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: #f8fafc;
+    color: #1e293b;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.qty-btn:hover {
+    background: #e2e8f0;
+}
+
+#quantityInput {
+    width: 60px;
+    height: 40px;
+    border: none;
+    border-left: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    text-align: center;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom Toast Notification */
+.custom-toast {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    padding: 16px 24px;
+    background: white;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    z-index: 10000;
+    transform: translateX(120%);
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    font-weight: 500;
+    color: #1e293b;
+    font-family: 'Inter', sans-serif;
+}
+
+.custom-toast.show {
+    transform: translateX(0);
+}
+
+.custom-toast.success {
+    border-left: 5px solid #1A7A42;
+}
+
+.custom-toast.success i {
+    color: #1A7A42;
+    font-size: 1.2rem;
+}
+
+.custom-toast.error {
+    border-left: 5px solid #ef4444;
+}
+
+.custom-toast.error i {
+    color: #ef4444;
 }
 
 .action-buttons {

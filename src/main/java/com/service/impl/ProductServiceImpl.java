@@ -24,15 +24,18 @@ public class ProductServiceImpl implements ProductService {
     private static final Logger logger = LoggerFactory.getLogger(ProductServiceImpl.class);
 
     private final ProductRepository productRepository;
+    private final ReviewRepository reviewRepository;
     private final CategoryRepository categoryRepository;
     private final ShopRepository shopRepository;
     private final UploadService uploadService;
 
     public ProductServiceImpl(ProductRepository productRepository,
+            ReviewRepository reviewRepository,
             CategoryRepository categoryRepository,
             ShopRepository shopRepository,
             UploadService uploadService) {
         this.productRepository = productRepository;
+        this.reviewRepository = reviewRepository;
         this.categoryRepository = categoryRepository;
         this.shopRepository = shopRepository;
         this.uploadService = uploadService;
@@ -134,12 +137,23 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product getBySlug(String slug) {
-        return this.productRepository.findBySlug(slug);
+        Product product = this.productRepository.findBySlug(slug);
+        if (product != null) {
+            // Lấy số lượng đánh giá thực tế từ Database thông qua ReviewRepository
+            int count = reviewRepository.countByProductId(product.getId());
+            product.setReviewCount(count);
+        }
+        return product;
     }
 
     @Override
     public Product findById(Long id) {
-        return this.productRepository.findById(id).orElse(null);
+        Product product = this.productRepository.findById(id).orElse(null);
+        if (product != null) {
+            int count = reviewRepository.countByProductId(product.getId());
+            product.setReviewCount(count);
+        }
+        return product;
     }
 
     @Override

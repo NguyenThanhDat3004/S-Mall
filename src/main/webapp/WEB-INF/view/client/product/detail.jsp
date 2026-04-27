@@ -5,8 +5,9 @@
 
 <jsp:include page="../layout/header.jsp" />
 
-<link rel="stylesheet" href="${url}/resources/css/client/product_detail.css">
+<link rel="stylesheet" href="${url}/resources/css/client/product_detail.css?v=2.0">
 <link rel="stylesheet" href="${url}/resources/css/client/footer.css">
+
 
 <main class="container py-5">
     <div class="product-main">
@@ -38,7 +39,7 @@
                     </c:forEach>
                 </div>
                 <div class="stat-item">
-                    <span class="text-dark fw-medium">2.5k</span> Đánh giá
+                    <span class="text-dark fw-medium">${product.reviewCount}</span> Đánh giá
                 </div>
                 <div class="stat-item border-0">
                     <span class="text-dark fw-medium">${product.soldCount}</span> Đã bán
@@ -67,12 +68,51 @@
                 </c:choose>
             </div>
 
+            <c:set var="currentUserEmail" value="${pageContext.request.userPrincipal.name}" />
+            <c:set var="isOwner" value="${currentUserEmail != null && currentUserEmail == product.shop.user.email}" />
+
+            <c:if test="${!isOwner}">
+                <div class="quantity-section mb-4">
+                    <div class="fw-bold text-dark mb-2">Số Lượng</div>
+                    <div class="quantity-selector">
+                        <button class="qty-btn" onclick="updateQty(-1)">-</button>
+                        <input type="number" id="quantityInput" value="1" min="1" readonly>
+                        <button class="qty-btn" onclick="updateQty(1)">+</button>
+                        <span class="ms-3 text-muted" style="font-size: 0.9rem;">${product.variants[0].stock} sản phẩm có sẵn</span>
+                    </div>
+                </div>
+            </c:if>
+
             <div class="action-buttons">
-                <button class="btn-cart">
-                    <i class="fas fa-cart-plus me-2"></i>
-                    Thêm Vào Giỏ Hàng
-                </button>
-                <button class="btn-buy">Mua Ngay</button>
+                <c:choose>
+                    <c:when test="${isOwner}">
+                        <div class="seller-tools-box shadow-sm mb-4">
+                            <div class="seller-tools-title mb-3">
+                                <i class="fas fa-tools me-2"></i> QUẢN LÝ SẢN PHẨM CỦA BẠN
+                            </div>
+                            <div class="seller-actions-grid">
+                                <a href="${url}/seller/product/edit/${product.id}" class="btn-seller-action btn-seller-edit">
+                                    <i class="fas fa-edit"></i> Chỉnh sửa
+                                </a>
+                                <a href="${url}/seller/inventory/${product.id}" class="btn-seller-action btn-seller-inventory">
+                                    <i class="fas fa-boxes"></i> Quản lý kho
+                                </a>
+                                <a href="${url}/seller/stats/product/${product.id}" class="btn-seller-action btn-seller-stats">
+                                    <i class="fas fa-chart-line"></i> Thống kê
+                                </a>
+                                <button class="btn-seller-action btn-seller-delete" onclick="confirmDeleteProduct('${product.id}')">
+                                    <i class="fas fa-trash-alt"></i> Xóa sản phẩm
+                                </button>
+                            </div>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <button class="btn-cart" id="addToCartBtn">
+                            <i class="fas fa-cart-plus me-2"></i> Thêm Vào Giỏ Hàng
+                        </button>
+                        <button class="btn-buy">Mua Ngay</button>
+                    </c:otherwise>
+                </c:choose>
             </div>
 
             <div class="trust-badges">
@@ -103,11 +143,91 @@
 </main>
 
 <script>
-function changeImage(url, el) {
-    document.getElementById('mainImage').src = url;
-    document.querySelectorAll('.thumb-item').forEach(item => item.classList.remove('active'));
-    el.classList.add('active');
-}
+document.addEventListener('DOMContentLoaded', function() {
+    const contextPath = '${url}';
+    const variantId = ${product.variants[0].id};
+    const maxStock = parseInt('${product.variants[0].stock}');
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `custom-toast \${type}`;
+        toast.innerHTML = `
+            <i class="fas \${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
+            \${message}
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.classList.add('show'), 100);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
+
+    window.updateQty = function(delta) {
+        const input = document.getElementById('quantityInput');
+        let val = parseInt(input.value) + delta;
+        if (val < 1) val = 1;
+        if (val > maxStock) val = maxStock;
+        input.value = val;
+    }
+
+    const addBtn = document.getElementById('addToCartBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', function() {
+            const quantity = document.getElementById('quantityInput').value;
+            const btn = this;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> ...';
+
+            const params = new URLSearchParams();
+            params.append('variantId', variantId);
+            params.append('quantity', quantity);
+
+            fetch(`\${contextPath}/api/cart/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params
+            })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(json => { throw new Error(json.message || 'Lỗi server'); });
+                }
+                return res.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                showToast(data.message);
+                const badge = document.getElementById('cartBadge');
+                if (badge && data.cartCount !== undefined) {
+                    badge.innerText = data.cartCount;
+                    badge.style.display = 'flex';
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Lỗi thêm giỏ hàng: ' + err.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-cart-plus me-2"></i>Thêm Vào Giỏ Hàng';
+            });
+        });
+    }
+
+    window.changeImage = function(url, el) {
+        document.getElementById('mainImage').src = url;
+        document.querySelectorAll('.thumb-item').forEach(item => item.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    window.confirmDeleteProduct = function(id) {
+        if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác.')) {
+            window.location.href = `${url}/seller/product/delete/` + id;
+        }
+    }
+});
 </script>
 
 <jsp:include page="../layout/footer.jsp" />
