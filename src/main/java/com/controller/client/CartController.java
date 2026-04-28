@@ -6,9 +6,11 @@ import com.entity.UserProfile;
 import com.service.CartService;
 import com.service.UserService;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.Principal;
 import java.util.Optional;
@@ -52,8 +54,15 @@ public class CartController {
         return "client/cart/index";
     }
 
+    @Autowired
+    private com.service.UserAddressRedisService addressRedisService;
+
     @GetMapping("/payment")
-    public String getPaymentPage(Model model, Principal principal, HttpSession session) {
+    public String getPaymentPage(
+            @RequestParam("ids") String ids,
+            Model model, 
+            Principal principal, 
+            HttpSession session) {
         if (principal == null) {
             return "redirect:/login";
         }
@@ -75,10 +84,27 @@ public class CartController {
                 return "redirect:/cart?error=profile_incomplete";
             }
             
+            // Lấy địa chỉ từ Redis nếu có
+            String redisAddress = addressRedisService.getAddress(user.getEmail());
+            model.addAttribute("redisAddress", redisAddress);
             model.addAttribute("userProfile", profile);
             
             String cartKey = getCartKey(principal, session);
             CartDTO cart = cartService.getCart(cartKey);
+            
+            // LỌC SẢN PHẨM: Chỉ lấy các item được chọn từ params ids
+            if (ids != null && !ids.isEmpty()) {
+                java.util.List<Long> selectedIds = java.util.Arrays.stream(ids.split(","))
+                        .map(Long::parseLong)
+                        .collect(java.util.stream.Collectors.toList());
+                
+                java.util.List<com.dto.CartItemDTO> filteredItems = cart.getItems().stream()
+                        .filter(item -> selectedIds.contains(item.getVariantId()))
+                        .collect(java.util.stream.Collectors.toList());
+                
+                cart.setItems(filteredItems);
+            }
+            
             model.addAttribute("cart", cart);
         }
 

@@ -78,6 +78,7 @@ public class CartServiceImpl implements CartService {
             newItem.setProductName(variant.getProduct().getName());
             newItem.setSku(variant.getSku());
             newItem.setPrice(variant.getDiscountPrice() != null ? variant.getDiscountPrice() : variant.getPrice());
+            newItem.setAttributesJson(variant.getAttributesJson());
             
             String finalImageUrl = variant.getImageUrl();
             if (finalImageUrl == null || finalImageUrl.isEmpty()) {

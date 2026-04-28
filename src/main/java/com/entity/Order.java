@@ -22,8 +22,17 @@ public class Order {
     @Column(name = "shipping_address", columnDefinition = "NVARCHAR(MAX)")
     private String shippingAddress;
 
+    @Column(name = "shipping_method")
+    private String shippingMethod; // economy, standard, express
+
+    @Column(name = "shipping_fee")
+    private double shippingFee;
+
+    @Column(name = "shipping_insurance")
+    private boolean shippingInsurance;
+
     @Column(name = "payment_method")
-    private String paymentMethod = "COD";
+    private String paymentMethod = "COD"; // COD, QR
 
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String note;
@@ -59,6 +68,12 @@ public class Order {
     public void setStatus(String status) { this.status = status; }
     public String getShippingAddress() { return shippingAddress; }
     public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }
+    public String getShippingMethod() { return shippingMethod; }
+    public void setShippingMethod(String shippingMethod) { this.shippingMethod = shippingMethod; }
+    public double getShippingFee() { return shippingFee; }
+    public void setShippingFee(double shippingFee) { this.shippingFee = shippingFee; }
+    public boolean isShippingInsurance() { return shippingInsurance; }
+    public void setShippingInsurance(boolean shippingInsurance) { this.shippingInsurance = shippingInsurance; }
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public String getNote() { return note; }

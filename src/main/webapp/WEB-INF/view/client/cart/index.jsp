@@ -63,7 +63,7 @@
                                     <h3 class="cart-item-name">${item.productName}</h3>
                                     <div class="cart-item-meta">
                                         <span class="meta-label">Phân loại:</span>
-                                        <span class="meta-value">${item.sku}</span>
+                                        <span class="meta-value">${not empty item.attributesJson ? item.attributesJson : item.sku}</span>
                                     </div>
                                 </div>
                                 

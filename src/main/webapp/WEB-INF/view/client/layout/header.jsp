@@ -184,5 +184,40 @@
                 }
 
                 updateCartCount();
+
+                // [ORDER SUCCESS TOAST]
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('order_success') === 'true') {
+                    const toastHtml = `
+                        <div id="orderSuccessToast" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 10000;">
+                            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 16px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+                                <div class="toast-header" style="background: #FFF7F5; border-bottom: none; border-radius: 16px 16px 0 0; padding: 12px 16px;">
+                                    <div style="background: #EE4D2D; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                                        <i class="fas fa-check text-white" style="font-size: 0.7rem;"></i>
+                                    </div>
+                                    <strong class="me-auto" style="color: #EE4D2D;">Đặt hàng thành công!</strong>
+                                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                                </div>
+                                <div class="toast-body" style="padding: 16px;">
+                                    <p class="mb-3" style="font-size: 0.9rem; color: #475569;">Đơn hàng của bạn đã được tiếp nhận. Bạn có muốn xem tình trạng đơn hàng ngay không?</p>
+                                    <div class="d-flex gap-2">
+                                        <a href="${url}/my-orders" class="btn btn-sm text-white" style="background: #EE4D2D; border-radius: 8px; font-weight: 600; padding: 6px 16px;">Xem đơn hàng</a>
+                                        <button type="button" class="btn btn-sm btn-light" data-bs-dismiss="toast" style="border-radius: 8px; font-weight: 600; padding: 6px 16px;">Để sau</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', toastHtml);
+                    
+                    // Tự động xóa param trên URL để không hiện lại khi reload
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    // Tự động ẩn sau 10s
+                    setTimeout(() => {
+                        const toast = document.getElementById('orderSuccessToast');
+                        if (toast) toast.remove();
+                    }, 10000);
+                }
             });
         </script>

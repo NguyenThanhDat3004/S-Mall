@@ -9,6 +9,7 @@ public class CartItemDTO implements Serializable {
     private double price;
     private String imageUrl;
     private int quantity;
+    private String attributesJson;
 
     public CartItemDTO() {}
 
@@ -25,4 +26,6 @@ public class CartItemDTO implements Serializable {
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
+    public String getAttributesJson() { return attributesJson; }
+    public void setAttributesJson(String attributesJson) { this.attributesJson = attributesJson; }
 }
