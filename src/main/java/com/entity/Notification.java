@@ -14,13 +14,18 @@ public class Notification {
     private String content;
 
     private String type; // ORDER_STATUS, PROMOTION, SYSTEM
+    
+    @Column(name = "link_url")
+    private String linkUrl;
 
     @Column(name = "is_read")
     private boolean isRead = false;
 
     @Column(name = "created_at")
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User recipient;
@@ -33,6 +38,8 @@ public class Notification {
     public void setContent(String content) { this.content = content; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+    public String getLinkUrl() { return linkUrl; }
+    public void setLinkUrl(String linkUrl) { this.linkUrl = linkUrl; }
     public boolean isRead() { return isRead; }
     public void setRead(boolean read) { isRead = read; }
     public LocalDateTime getCreatedAt() { return createdAt; }

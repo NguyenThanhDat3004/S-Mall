@@ -408,20 +408,39 @@
                     <div class="text-muted small">Tổng thanh toán:</div>
                     <div class="fw-bold text-danger fs-3" id="stickyTotal">0đ</div>
                 </div>
-                <div class="col-6 col-md-4">
+                <div class="col-6 col-md-4 text-end">
                     <button class="btn-place-order" id="btnSubmitOrder" onclick="placeOrder()">Đặt Hàng</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <style>
+        /* Làm backdrop modal hoàn toàn trong suốt nhưng vẫn cho phép đóng khi click ngoài */
+        .modal-backdrop { 
+            background-color: transparent !important;
+            opacity: 0 !important; 
+            z-index: 9998 !important;
+        }
+        .modal {
+            z-index: 9999 !important;
+        }
+        .modal-content { 
+            border-radius: 20px; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+            border: 1px solid #eee;
+        }
+    </style>
     <script>
-        // Sửa lỗi font hiển thị ngay khi load trang
+        let qrModalInstance = null; // Tránh tạo nhiều instance gây tối màn hình
+        
         document.addEventListener('DOMContentLoaded', function() {
             const addr = document.getElementById('displayAddress');
             if(addr && addr.innerText.includes('Qu?ng')) {
                 addr.innerText = addr.innerText.replace('Qu?ng', 'Quảng');
             }
+            // Khởi tạo modal một lần duy nhất
+            qrModalInstance = new bootstrap.Modal(document.getElementById('qrModal'));
         });
     </script>
 
@@ -532,6 +551,124 @@
     document.addEventListener('DOMContentLoaded', updateSummary);
 
     function placeOrder() {
+        const payMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+        
+        if (payMethod === 'qr') {
+            const totalStr = document.getElementById('totalVal').textContent;
+            const urlParams = new URLSearchParams(window.location.search);
+            const ids = urlParams.get('ids');
+            const shipMethod = document.querySelector('input[name="shippingMethod"]:checked').value;
+            const insurance = document.getElementById('insuranceCheck').checked;
+            const address = document.getElementById('displayAddress').textContent.trim();
+            
+            // Simulation URL: This will trigger the email when visited
+            const simulationUrl = window.location.origin + '${pageContext.request.contextPath}/payment/simulation' 
+                                + '?userId=${userProfile.id}'
+                                + '&amount=' + encodeURIComponent(totalStr)
+                                + '&ids=' + ids
+                                + '&ship=' + shipMethod
+                                + '&addr=' + encodeURIComponent(address)
+                                + '&ins=' + insurance;
+            
+            // Generate QR pointing to our simulation endpoint
+            updateSimulationQR();
+            
+            if (qrModalInstance) qrModalInstance.show();
+            return;
+        }
+        
+        submitOrder();
+    }
+
+    let statusCheckInterval = null;
+
+    function updateSimulationQR() {
+        const totalStr = document.getElementById('totalVal').textContent;
+        const urlParams = new URLSearchParams(window.location.search);
+        const ids = urlParams.get('ids');
+        const shipMethod = document.querySelector('input[name="shippingMethod"]:checked').value;
+        const insurance = document.getElementById('insuranceCheck').checked;
+        const address = document.getElementById('displayAddress').textContent.trim();
+        
+        // Get IP from input, or localStorage, or use current origin
+        let customIp = document.getElementById('localIpInput').value.trim();
+        if (!customIp) {
+            customIp = localStorage.getItem('s_mall_local_ip') || '';
+            document.getElementById('localIpInput').value = customIp;
+        } else {
+            localStorage.setItem('s_mall_local_ip', customIp);
+        }
+
+        let baseOrigin = window.location.origin;
+        if (customIp) {
+            baseOrigin = (window.location.protocol + "//" + customIp + (window.location.port ? ":" + window.location.port : ""));
+        }
+
+        const simulationUrl = baseOrigin + '${pageContext.request.contextPath}/payment/simulation' 
+                            + '?userId=${userProfile.id}'
+                            + '&amount=' + encodeURIComponent(totalStr)
+                            + '&ids=' + ids
+                            + '&ship=' + shipMethod
+                            + '&addr=' + encodeURIComponent(address)
+                            + '&ins=' + insurance;
+        
+        const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(simulationUrl);
+        const qrImg = document.getElementById('qrImage');
+        qrImg.src = qrUrl;
+        qrImg.onclick = function() { window.open(simulationUrl, '_blank'); };
+        
+        document.getElementById('qrAmount').textContent = totalStr;
+        document.getElementById('qrContent').textContent = "Thanh toán đơn hàng ID: " + ids;
+        document.getElementById('qrStatus').textContent = "Đang trỏ tới: " + baseOrigin;
+
+        // Bắt đầu tự động kiểm tra trạng thái thanh toán
+        startStatusPolling(ids);
+    }
+
+    function startStatusPolling(ids) {
+        if (statusCheckInterval) clearInterval(statusCheckInterval);
+        console.log("Bắt đầu kiểm tra trạng thái thanh toán cho IDs: " + ids);
+        
+        statusCheckInterval = setInterval(function() {
+            const checkUrl = '${pageContext.request.contextPath}/api/cart/check-status?ids=' + ids;
+            fetch(checkUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not ok");
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Kết quả kiểm tra thanh toán:", data.isDone);
+                    if (data.isDone) {
+                        console.log("Thanh toán thành công! Đang chuyển hướng...");
+                        clearInterval(statusCheckInterval);
+                        
+                        // Đóng modal bằng cách nhấn vào nút đóng có sẵn
+                        const closeBtn = document.querySelector('#qrModal [data-bs-dismiss="modal"]');
+                        if (closeBtn) closeBtn.click();
+                        
+                        window.location.href = '${pageContext.request.contextPath}/?order_success=true';
+                    }
+                })
+                .catch(err => {
+                    console.error("Lỗi khi kiểm tra trạng thái:", err);
+                });
+        }, 2000); // Kiểm tra mỗi 2 giây cho nhạy
+    }
+
+    // Đảm bảo dừng polling khi đóng modal thủ công
+    document.getElementById('qrModal').addEventListener('hidden.bs.modal', function () {
+        if (statusCheckInterval) clearInterval(statusCheckInterval);
+    });
+
+    function confirmQrPayment() {
+        const modalEl = document.getElementById('qrModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+        
+        submitOrder();
+    }
+
+    function submitOrder() {
         const urlParams = new URLSearchParams(window.location.search);
         const ids = urlParams.get('ids');
         const shipMethod = document.querySelector('input[name="shippingMethod"]:checked').value;
@@ -565,12 +702,89 @@
                 btn.disabled = false;
                 btn.textContent = 'Đặt Hàng';
             }
+        })
+        .catch(err => {
+            console.error("Lỗi đặt hàng:", err);
+            btn.disabled = false;
+            btn.textContent = 'Đặt Hàng';
+            alert('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!');
         });
     }
 
     // Khởi tạo lần đầu
     updateSummary();
 </script>
+
+<!-- QR Payment Modal (Moved to end for better layering) -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="true">
+    <div class="modal-dialog modal-dialog-centered" style="z-index: 10000;">
+        <div class="modal-content">
+            <div class="modal-body p-4">
+                <div class="text-center mb-4">
+                    <h5 class="fw-bold">Thanh toán qua QR Code</h5>
+                    <div class="input-group input-group-sm mx-auto mb-2" style="max-width: 250px;">
+                        <span class="input-group-text bg-light border-0" style="font-size: 0.7rem;">IP Máy tính:</span>
+                        <input type="text" id="localIpInput" class="form-control border-0 bg-light" value="${serverIp}" placeholder="Ví dụ: 192.168.1.5" style="font-size: 0.7rem;" onchange="updateSimulationQR()">
+                    </div>
+                    <p class="text-muted" style="font-size: 0.65rem;">(Nhập IP máy tính để quét được bằng điện thoại)</p>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <div class="p-2 bg-white d-inline-block rounded-4 shadow-sm mb-3">
+                        <img id="qrImage" src="" alt="QR Code" class="img-fluid" style="max-width: 250px; border-radius: 10px; cursor: pointer;" title="Click để giả lập quét mã">
+                    </div>
+                    <div class="mt-2 p-3 bg-light rounded-4" style="border: 2px dashed #EE4D2D;">
+                        <div class="text-muted small mb-1">Số tiền cần thanh toán:</div>
+                        <div class="fw-bold text-danger" id="qrAmount" style="font-size: 2.2rem; letter-spacing: -1px;">0đ</div>
+                        <div id="qrStatus" class="mt-2 text-primary fw-bold" style="font-size: 0.7rem;"></div>
+                    </div>
+                    
+                    <!-- Nút bấm giả lập quét mã nhanh -->
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-outline-primary w-100 py-2 fw-bold" style="border-radius: 12px; border-style: dashed;" onclick="document.getElementById('qrImage').click()">
+                            <i class="fas fa-magic me-2"></i> Giả lập quét mã trên máy tính
+                        </button>
+                        <p class="text-muted" style="font-size: 0.7rem; margin-top: 8px;">
+                            (Dành cho môi trường Local: Nhấn nút này để thay thế việc quét mã bằng điện thoại)
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="text-start bg-light p-3 rounded-3 mb-3" style="font-size: 0.85rem;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Ngân hàng:</span>
+                        <span class="fw-bold">Techcombank (Ngân hàng Kỹ thương)</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Chủ tài khoản:</span>
+                        <span class="fw-bold">NGUYEN THANH DAT</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Số tài khoản:</span>
+                        <span class="fw-bold">300420059999</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Nội dung:</span>
+                        <span class="fw-bold text-primary" id="qrContent">SMALL_${userProfile.id}</span>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning py-2 border-0" style="font-size: 0.75rem;">
+                    <i class="fas fa-info-circle me-1"></i> Lưu ý: Vui lòng không thay đổi nội dung chuyển khoản để hệ thống tự động xác nhận đơn hàng.
+                </div>
+
+                <div class="alert alert-warning small text-center mb-4" style="border-radius: 12px; border: none;">
+                    <i class="fas fa-spinner fa-spin me-2"></i> Đang chờ bạn quét mã và xác nhận qua Email...
+                </div>
+
+                <button class="btn btn-danger w-100 py-2 fw-bold mb-2" style="border-radius: 12px;" data-bs-dismiss="modal">
+                    Hủy và quay lại
+                </button>
+                <p class="text-muted small text-center mb-0">Bạn có thể đóng cửa sổ này bất cứ lúc nào nếu không muốn tiếp tục.</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

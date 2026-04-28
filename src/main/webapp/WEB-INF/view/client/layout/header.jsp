@@ -46,8 +46,12 @@
                             <c:choose>
                                 <c:when test="${not empty pageContext.request.userPrincipal}">
                                     <div class="top-header-item">
-                                        <a href="javascript:void(0)" id="notificationTrigger">
+                                        <a href="javascript:void(0)" id="notificationTrigger" class="position-relative">
                                             <i class="fas fa-bell me-1"></i> Thông báo
+                                            <span id="notiBadge" class="position-absolute translate-middle badge rounded-pill bg-danger d-none" 
+                                                  style="top: 0; left: 100%; font-size: 0.6rem; padding: 3px 6px;">
+                                                0
+                                            </span>
                                         </a>
                                         <div class="notification-dropdown" id="notificationDropdown">
                                             <div class="noti-content">
@@ -125,6 +129,7 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+                const url = '${url}';
                 const header = document.getElementById('mainHeader');
                 window.addEventListener('scroll', () => {
                     if (window.scrollY > 50) {
@@ -163,7 +168,6 @@
                     return count > 9 ? '9+' : count;
                 };
 
-                // Global Cart Count Update
                 window.updateCartCount = function () {
                     fetch(`${url}/api/cart/count`)
                         .then(res => res.json())
@@ -178,12 +182,60 @@
                         .catch(err => console.error('Error fetching cart count:', err));
                 };
 
-                const chatBadge = document.getElementById('chatBadge');
-                if (chatBadge) {
-                    chatBadge.innerText = formatCount(parseInt(chatBadge.innerText) || 0);
+                window.updateNotifications = function() {
+                    fetch(`${url}/api/notifications/latest`)
+                        .then(res => res.json())
+                        .then(data => {
+                            const badge = document.getElementById('notiBadge');
+                            const count = data.unreadCount || 0;
+                            if (badge) {
+                                badge.innerText = count > 9 ? '9+' : count;
+                                badge.classList.toggle('d-none', count === 0);
+                            }
+
+                            const notiContent = document.querySelector('#notificationDropdown .noti-content');
+                            if (notiContent && data.notifications) {
+                                if (data.notifications.length === 0) {
+                                    notiContent.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">Chưa có thông báo nào</div>';
+                                } else {
+                                    notiContent.innerHTML = data.notifications.map(function(n) {
+                                        var isRead = (n.isRead !== undefined) ? n.isRead : n.read;
+                                        var readClass = isRead ? '' : 'bg-light';
+                                        var dateStr = n.createdAt; 
+                                        var link = n.linkUrl ? (url + n.linkUrl) : 'javascript:void(0)';
+                                        return '<a href="' + link + '" class="dropdown-item p-3 border-bottom ' + readClass + '">' +
+                                            '<div class="d-flex align-items-start">' +
+                                                '<div class="bg-success text-white rounded-circle p-2 me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">' +
+                                                    '<i class="fas fa-shopping-bag" style="font-size: 0.8rem;"></i>' +
+                                                '</div>' +
+                                                '<div style="flex: 1;">' +
+                                                    '<div class="small text-muted" style="font-size: 0.7rem;">' + dateStr + '</div>' +
+                                                    '<div style="font-size: 0.85rem; white-space: normal; color: #333; line-height: 1.3;">' + n.content + '</div>' +
+                                                '</div>' +
+                                            '</div>' +
+                                        '</a>';
+                                    }).join('');
+                                }
+                            }
+                        });
+                };
+
+                // Mark as read when clicking the notification trigger
+                const notiTrigger = document.getElementById('notificationTrigger');
+                if (notiTrigger) {
+                    notiTrigger.addEventListener('click', function() {
+                        fetch(`${url}/api/notifications/mark-as-read`, { method: 'POST' })
+                            .then(() => {
+                                const badge = document.getElementById('notiBadge');
+                                if (badge) badge.classList.add('d-none');
+                                // Refresh list to show them as read (remove bg-light)
+                                updateNotifications();
+                            });
+                    });
                 }
 
                 updateCartCount();
+                updateNotifications();
 
                 // [ORDER SUCCESS TOAST]
                 const urlParams = new URLSearchParams(window.location.search);

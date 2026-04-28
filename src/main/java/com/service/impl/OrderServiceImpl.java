@@ -3,10 +3,12 @@ package com.service.impl;
 import com.dto.CartDTO;
 import com.dto.CartItemDTO;
 import com.entity.Order;
+import com.entity.Notification;
 import com.entity.OrderDetail;
 import com.entity.ProductVariant;
 import com.entity.User;
 import com.repository.OrderDetailRepository;
+import com.repository.NotificationRepository;
 import com.repository.OrderRepository;
 import com.repository.ProductVariantRepository;
 import com.service.CartService;
@@ -38,10 +40,13 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private com.service.MailService mailService;
 
+    @Autowired
+    private NotificationRepository notificationRepository;
+
     @Override
     @Transactional
     public Order createOrder(User user, Order orderData, List<Long> variantIds) {
-        String cartKey = user.getEmail();
+        String cartKey = "cart:user:" + user.getEmail();
         CartDTO cart = cartService.getCart(cartKey);
         
         // Lấy danh sách các item được chọn
@@ -50,7 +55,10 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
 
         if (selectedItems.isEmpty()) {
-            throw new RuntimeException("Không có sản phẩm nào được chọn để thanh toán.");
+            String cartItemsInfo = cart.getItems().stream()
+                    .map(item -> item.getVariantId().toString())
+                    .collect(Collectors.joining(", "));
+            throw new RuntimeException("Không tìm thấy sản phẩm hợp lệ để thanh toán. Giỏ hàng hiện có IDs: [" + cartItemsInfo + "], Đang yêu cầu IDs: [" + variantIds.stream().map(Object::toString).collect(Collectors.joining(", ")) + "]. Key: " + cartKey);
         }
 
         // Tạo Order cơ bản
@@ -63,7 +71,11 @@ public class OrderServiceImpl implements OrderService {
         order.setShippingInsurance(orderData.isShippingInsurance());
         order.setPaymentMethod(orderData.getPaymentMethod());
         order.setNote(orderData.getNote());
-        order.setStatus("PENDING");
+        if ("QR".equalsIgnoreCase(orderData.getPaymentMethod())) {
+            order.setStatus("CONFIRMED");
+        } else {
+            order.setStatus("PENDING");
+        }
         
         double subtotal = selectedItems.stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum();
         order.setTotalPrice(subtotal + order.getShippingFee() + (order.isShippingInsurance() ? 10000 : 0));
@@ -92,6 +104,14 @@ public class OrderServiceImpl implements OrderService {
         
         orderDetailRepository.saveAll(details);
         order.setOrderDetails(details);
+
+        // Tạo thông báo cho người dùng
+        Notification notification = new Notification();
+        notification.setRecipient(user);
+        notification.setType("ORDER_STATUS");
+        notification.setContent("Chúc mừng! Đơn hàng " + order.getOrderCode() + " đã được đặt thành công. Hệ thống đang xử lý.");
+        notification.setLinkUrl("/order-details/" + order.getOrderCode());
+        notificationRepository.save(notification);
 
         // Gửi mail xác nhận (với QR code)
         mailService.sendOrderConfirmation(order);
