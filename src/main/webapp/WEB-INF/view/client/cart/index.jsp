@@ -121,6 +121,8 @@
 
 <div class="footer-spacer" style="height: 120px;"></div>
 
+<jsp:include page="../layout/_update_profile_modal.jsp" />
+
 <jsp:include page="../layout/footer.jsp" />
 
 <!-- STICKY BOTTOM CHECKOUT BAR -->
@@ -230,9 +232,20 @@
         });
     }
 
+    const isProfileIncomplete = ${isProfileIncomplete != null ? isProfileIncomplete : true};
+
     function proceedToCheckout() {
+        if (isProfileIncomplete) {
+            const modalEl = document.getElementById('updateProfileModal');
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+            return;
+        }
+        
         const selectedIds = Array.from(document.querySelectorAll('.item-selector.checked')).map(cb => cb.getAttribute('data-id'));
-        window.location.href = `\${baseUrl}/checkout?ids=` + selectedIds.join(',');
+        window.location.href = `\${baseUrl}/payment?ids=` + selectedIds.join(',');
     }
 
     function loadRecommendations() {

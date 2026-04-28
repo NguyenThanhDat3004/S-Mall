@@ -1,0 +1,57 @@
+.profile-modal-input {
+    border-radius: 10px;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    background-color: #f8fafc;
+    font-size: 0.95rem;
+}
+.profile-modal-input:focus {
+    background-color: #ffffff;
+    border-color: #EE4D2D;
+    box-shadow: 0 0 0 4px rgba(238, 77, 45, 0.1);
+    outline: none;
+}
+.gender-selector {
+    display: flex;
+    gap: 15px;
+    margin-top: 5px;
+}
+.gender-pill {
+    flex: 1;
+    position: relative;
+}
+.gender-pill input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+.gender-pill label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 15px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    color: #64748b;
+    margin: 0;
+}
+.gender-pill input:checked + label {
+    background-color: rgba(238, 77, 45, 0.08);
+    border-color: #EE4D2D;
+    color: #EE4D2D;
+}
+.gender-pill label:hover {
+    background-color: #f1f5f9;
+}
+.gender-pill input:checked + label:hover {
+    background-color: rgba(238, 77, 45, 0.12);
+}
