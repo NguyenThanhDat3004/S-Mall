@@ -42,20 +42,32 @@ sequenceDiagram
 
 ---
 
-## 2. Luồng Xử lý Giỏ hàng (Cart Persistence Flow)
+## 2. Hệ thống Lưu trữ Lai (Hybrid Persistence: SQL + Redis)
 
-Sử dụng Redis làm bộ lưu trữ chính để đảm bảo tốc độ và khả năng mở rộng.
+Hệ thống kết hợp sức mạnh của Redis (Tốc độ) và SQL (Bền bỉ) để đảm bảo dữ liệu không bao giờ bị mất ngay cả khi server bảo trì hoặc RAM bị xóa.
 
-### Quy trình nghiệp vụ:
-1.  **Định danh (Identification)**: Sử dụng `username` (nếu đã login) hoặc `sessionId` (nếu vãng lai).
-2.  **Lưu trữ**: Dữ liệu lưu tại Redis với key `cart_v2:{identifier}`.
-3.  **Xử lý Serialization**: 
-    - Lưu dưới dạng JSON thuần túy (Plain JSON).
-    - Khi đọc lên, nếu là `LinkedHashMap`, hệ thống sử dụng `ObjectMapper.convertValue` để ánh xạ về `CartDTO` một cách an toàn.
+### Quy trình "Double-Write" (Ghi song song):
+1.  **Thêm vào giỏ**: Hệ thống đồng thời lưu vào Redis (để lấy nhanh) và bảng `cart_items` trong SQL (để lưu trữ lâu dài).
+2.  **Lưu địa chỉ**: Khi người dùng tích chọn "Lưu địa chỉ", thông tin sẽ được nạp vào Redis và bảng `addresses` (như một bản ghi lịch sử).
+
+### Quản lý Vòng đời Dữ liệu (Lifecycle Management):
+-   **Khi Đăng nhập (Sync on Login)**: `CustomAuthenticationSuccessHandler` kích hoạt lệnh nạp dữ liệu từ SQL lên Redis. Đảm bảo người dùng luôn thấy giỏ hàng của mình dù đổi thiết bị.
+-   **Khi Đăng xuất (Purge on Logout)**: `CustomLogoutHandler` xóa sạch dữ liệu người dùng trên Redis để giải phóng RAM, nhưng vẫn giữ nguyên bản gốc trong SQL.
 
 ---
 
-## 3. Luồng Bảo mật & Chống Brute Force
+## 3. Luồng Quản lý Địa chỉ & Lịch sử Giao hàng
+
+Hệ thống hỗ trợ lưu nhiều địa chỉ và cho phép người dùng chọn lại các địa chỉ đã từng sử dụng.
+
+### Quy trình kỹ thuật:
+1.  **Lưu trữ**: Địa chỉ được lưu vào bảng `addresses` (liên kết ManyToOne với User). Cột `address` trong `user_profiles` được giữ làm địa chỉ mặc định/gần nhất.
+2.  **Truy xuất**: Tại trang thanh toán, hệ thống truy vấn tất cả địa chỉ cũ từ SQL và hiển thị thành danh sách gợi ý.
+3.  **Tương tác**: Người dùng click vào địa chỉ gợi ý -> JavaScript tự động điền vào ô nhập liệu (Textarea).
+
+---
+
+## 4. Luồng Bảo mật & Chống Brute Force
 
 Đảm bảo an toàn cho tài khoản người dùng thông qua Redis.
 
@@ -69,9 +81,9 @@ Sử dụng Redis làm bộ lưu trữ chính để đảm bảo tốc độ và
 
 ---
 
-## 4. Mô phỏng Thanh toán QR & Xác nhận Đơn hàng (Simulated QR Payment)
+## 5. Mô phỏng Thanh toán QR & Xác nhận Đơn hàng (Simulated QR Payment)
 
-Hệ thống cung cấp quy trình thanh toán QR giả lập chuyên nghiệp, không kết nối ngân hàng thật nhưng đảm bảo trải nghiệm người dùng chân thực.
+Hệ thống cung cấp quy trình thanh toán QR giả lập chuyên nghiệp, tích hợp đồng bộ dữ liệu địa chỉ.
 
 ### Sơ đồ Luồng (Sequence Diagram)
 ```mermaid
@@ -81,33 +93,23 @@ sequenceDiagram
     participant SimulationCtrl as PaymentSimulationController
     participant MailSvc as MailService (JavaMail)
     participant ConfirmCtrl as CartController (Confirm API)
+    participant AddressSvc as UserAddressRedisService (SQL+Redis)
     participant OrderSvc as OrderServiceImpl (Business Logic)
 
     Note over User, Browser: Bước 1: Khởi tạo QR
-    User->>Browser: Nhấn "Đặt Hàng" (Thanh toán QR)
-    Browser->>Browser: Tự động nhận diện IP máy tính (Auto IP)
-    Browser->>Browser: Hiển thị Modal QR chứa Link Simulation
+    User->>Browser: Nhấn "Đặt Hàng" & Tích "Lưu địa chỉ"
+    Browser->>Browser: Gắn tham số saveAddr=true vào Simulation Link
+    Browser->>Browser: Hiển thị Modal QR
     
     Note over User, SimulationCtrl: Bước 2: Quét mã & Gửi Mail
-    User->>SimulationCtrl: Quét QR bằng điện thoại (hoặc click giả lập)
-    SimulationCtrl->>MailSvc: Gửi Email chứa nút "Xác nhận đơn hàng"
-    SimulationCtrl-->>User: Hiển thị trang "Quét thành công!"
+    User->>SimulationCtrl: Quét QR -> Nhận diện saveAddr
+    SimulationCtrl->>MailSvc: Gửi Email chứa Link Xác nhận (kèm saveAddr)
     
-    Note over Browser, OrderSvc: Bước 3: Đồng bộ thời gian thực
-    Loop Mỗi 2 giây (Polling)
-        Browser->>ConfirmCtrl: api/cart/check-status (IDs)
-        ConfirmCtrl-->>Browser: Trả về trạng thái isDone
-    End
-
-    Note over User, OrderSvc: Bước 4: Xác nhận & Hoàn tất
+    Note over User, OrderSvc: Bước 3: Xác nhận & Persistence
     User->>ConfirmCtrl: Click nút trong Email (Confirm Link)
-    ConfirmCtrl->>OrderSvc: createOrder(...) & Xóa giỏ hàng
-    OrderSvc-->>ConfirmCtrl: Thành công
-    ConfirmCtrl-->>User: Hiển thị trang "Đóng Tab"
-    
-    Note over Browser, User: Bước 5: Tự động hoàn tất
-    Browser->>Browser: Nhận isDone=true -> Tự đóng Modal
-    Browser->>User: Redirect về Trang chủ (Order Success)
+    ConfirmCtrl->>AddressSvc: Nếu saveAddr=true -> Lưu vào SQL Addresses
+    ConfirmCtrl->>OrderSvc: createOrder(...) & Clear Redis Cart
+    OrderSvc-->>User: Hoàn tất đơn hàng
 ```
 
 ### Các công nghệ & Giải pháp áp dụng:
