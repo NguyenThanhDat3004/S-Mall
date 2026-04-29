@@ -9,4 +9,5 @@ public interface CartService {
     void updateQuantity(String cartKey, Long variantId, int quantity);
     void clearCart(String cartKey);
     int getCartCount(String cartKey);
+    void syncCartFromDbToRedis(String email);
 }

@@ -228,7 +228,25 @@
 
                     <div id="addressEditSection" class="d-none mt-2">
                         <textarea class="form-control" id="editAddressInput" rows="2" placeholder="Nhập địa chỉ nhận hàng chi tiết...">${not empty redisAddress ? redisAddress : userProfile.address}</textarea>
-                        <div class="mt-2 text-end">
+                        
+                        <c:if test="${not empty savedAddresses}">
+                            <div class="mt-3">
+                                <div class="text-muted small fw-bold mb-2"><i class="fas fa-history me-1"></i> Địa chỉ đã dùng gần đây:</div>
+                                <div class="list-group list-group-flush border rounded-3 overflow-hidden">
+                                    <c:forEach var="savedAddr" items="${savedAddresses}">
+                                        <button type="button" class="list-group-item list-group-item-action py-2 px-3 small text-muted" 
+                                                onclick="selectSavedAddress('${savedAddr.fullAddress}')"
+                                                style="font-size: 0.75rem; border-left: 3px solid transparent;"
+                                                onmouseover="this.style.borderLeftColor='#EE4D2D'"
+                                                onmouseout="this.style.borderLeftColor='transparent'">
+                                            ${savedAddr.fullAddress}
+                                        </button>
+                                    </c:forEach>
+                                </div>
+                            </div>
+                        </c:if>
+
+                        <div class="mt-3 text-end">
                             <button class="btn btn-sm btn-light" onclick="toggleEditAddress()">Hủy</button>
                             <button class="btn btn-sm btn-primary" onclick="saveEditAddress()">Xác nhận</button>
                         </div>
@@ -455,6 +473,10 @@
         document.getElementById('addressDisplaySection').classList.toggle('d-none');
         document.getElementById('addressEditSection').classList.toggle('d-none');
     }
+    
+    function selectSavedAddress(addr) {
+        document.getElementById('editAddressInput').value = addr;
+    }
 
     function useDefaultAddress() {
         document.getElementById('displayAddress').textContent = profileAddress;
@@ -560,6 +582,7 @@
             const shipMethod = document.querySelector('input[name="shippingMethod"]:checked').value;
             const insurance = document.getElementById('insuranceCheck').checked;
             const address = document.getElementById('displayAddress').textContent.trim();
+            const saveAddr = document.getElementById('saveAddressCheck').checked;
             
             // Simulation URL: This will trigger the email when visited
             const simulationUrl = window.location.origin + '${pageContext.request.contextPath}/payment/simulation' 
@@ -568,7 +591,8 @@
                                 + '&ids=' + ids
                                 + '&ship=' + shipMethod
                                 + '&addr=' + encodeURIComponent(address)
-                                + '&ins=' + insurance;
+                                + '&ins=' + insurance
+                                + '&saveAddr=' + saveAddr;
             
             // Generate QR pointing to our simulation endpoint
             updateSimulationQR();
@@ -604,13 +628,16 @@
             baseOrigin = (window.location.protocol + "//" + customIp + (window.location.port ? ":" + window.location.port : ""));
         }
 
+        const saveAddr = document.getElementById('saveAddressCheck').checked;
+
         const simulationUrl = baseOrigin + '${pageContext.request.contextPath}/payment/simulation' 
                             + '?userId=${userProfile.id}'
                             + '&amount=' + encodeURIComponent(totalStr)
                             + '&ids=' + ids
                             + '&ship=' + shipMethod
                             + '&addr=' + encodeURIComponent(address)
-                            + '&ins=' + insurance;
+                            + '&ins=' + insurance
+                            + '&saveAddr=' + saveAddr;
         
         const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(simulationUrl);
         const qrImg = document.getElementById('qrImage');

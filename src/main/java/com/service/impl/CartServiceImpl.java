@@ -25,6 +25,12 @@ public class CartServiceImpl implements CartService {
     private final ProductVariantRepository variantRepository;
     
     @Autowired
+    private com.repository.CartItemRepository cartItemRepository;
+
+    @Autowired
+    private com.repository.UserRepository userRepository;
+
+    @Autowired
     private com.service.ai.UserBehaviorService userBehaviorService;
     
     private static final String PREFIX = "cart_v2:";
@@ -94,6 +100,35 @@ public class CartServiceImpl implements CartService {
         }
 
         redisTemplate.opsForValue().set(key, cart);
+
+        // SQL Persistence for logged-in users
+        if (buyerEmail != null) {
+            System.out.println(">>> [DEBUG] SQL PERSISTENCE: Attempting for " + buyerEmail);
+            userRepository.findByEmail(buyerEmail).ifPresentOrElse(user -> {
+                System.out.println(">>> [DEBUG] User found: " + user.getEmail() + " (ID: " + user.getId() + ")");
+                
+                com.entity.CartItem sqlItem = cartItemRepository.findByUserAndProductVariant(user, variant)
+                        .orElse(new com.entity.CartItem());
+                
+                if (sqlItem.getId() == null) {
+                    sqlItem.setUser(user);
+                    sqlItem.setProductVariant(variant);
+                }
+                
+                System.out.println(">>> [DEBUG] Checking cart items for variant " + variantId);
+                cart.getItems().stream()
+                    .filter(item -> item.getVariantId().equals(variantId))
+                    .findFirst()
+                    .ifPresentOrElse(itemDto -> {
+                        sqlItem.setQuantity(itemDto.getQuantity());
+                        cartItemRepository.save(sqlItem);
+                        System.out.println(">>> [DEBUG] SQL SUCCESS: Saved item to DB. Qty: " + itemDto.getQuantity());
+                    }, () -> System.out.println(">>> [DEBUG] SQL FAIL: Item not found in cart DTO list"));
+            }, () -> System.out.println(">>> [DEBUG] SQL FAIL: User not found in DB with email: " + buyerEmail));
+        }
+ else {
+            System.out.println(">>> SQL PERSISTENCE SKIPPED: Buyer is Guest");
+        }
     }
 
     @Override
@@ -122,6 +157,19 @@ public class CartServiceImpl implements CartService {
                 .findFirst()
                 .ifPresent(item -> item.setQuantity(quantity));
         redisTemplate.opsForValue().set(key, cart);
+
+        // SQL Update
+        if (cartKey.contains("cart:user:")) {
+            String email = cartKey.substring(cartKey.lastIndexOf(":") + 1);
+            userRepository.findByEmail(email).ifPresent(user -> {
+                variantRepository.findById(variantId).ifPresent(variant -> {
+                    cartItemRepository.findByUserAndProductVariant(user, variant).ifPresent(sqlItem -> {
+                        sqlItem.setQuantity(quantity);
+                        cartItemRepository.save(sqlItem);
+                    });
+                });
+            });
+        }
     }
 
     @Override
@@ -130,6 +178,18 @@ public class CartServiceImpl implements CartService {
         CartDTO cart = getCart(key);
         cart.getItems().removeIf(item -> item.getVariantId().equals(variantId));
         redisTemplate.opsForValue().set(key, cart);
+
+        // SQL Delete
+        if (cartKey.contains("cart:user:")) {
+            String email = cartKey.substring(cartKey.lastIndexOf(":") + 1);
+            userRepository.findByEmail(email).ifPresent(user -> {
+                variantRepository.findById(variantId).ifPresent(variant -> {
+                    cartItemRepository.findByUserAndProductVariant(user, variant).ifPresent(sqlItem -> {
+                        cartItemRepository.delete(sqlItem);
+                    });
+                });
+            });
+        }
     }
 
     @Override
@@ -141,5 +201,44 @@ public class CartServiceImpl implements CartService {
     @Override
     public int getCartCount(String cartKey) {
         return getCart(cartKey).getTotalItems();
+    }
+
+    @Override
+    @Transactional
+    public void syncCartFromDbToRedis(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            java.util.List<com.entity.CartItem> dbItems = cartItemRepository.findByUser(user);
+            if (!dbItems.isEmpty()) {
+                String cartKey = "cart:user:" + email;
+                String key = getNewKey(cartKey);
+                CartDTO cart = new CartDTO();
+                for (com.entity.CartItem dbItem : dbItems) {
+                    CartItemDTO itemDto = convertToDto(dbItem.getProductVariant(), dbItem.getQuantity());
+                    cart.getItems().add(itemDto);
+                }
+                redisTemplate.opsForValue().set(key, cart);
+            }
+        });
+    }
+
+    private CartItemDTO convertToDto(com.entity.ProductVariant variant, int quantity) {
+        CartItemDTO newItem = new CartItemDTO();
+        newItem.setVariantId(variant.getId());
+        newItem.setProductName(variant.getProduct().getName());
+        newItem.setSku(variant.getSku());
+        newItem.setPrice(variant.getDiscountPrice() != null ? variant.getDiscountPrice() : variant.getPrice());
+        newItem.setAttributesJson(variant.getAttributesJson());
+        
+        String finalImageUrl = variant.getImageUrl();
+        if (finalImageUrl == null || finalImageUrl.isEmpty()) {
+            finalImageUrl = variant.getProduct().getImages().stream()
+                    .filter(img -> img.isMain())
+                    .map(img -> img.getUrl())
+                    .findFirst()
+                    .orElse(variant.getProduct().getImages().isEmpty() ? null : variant.getProduct().getImages().get(0).getUrl());
+        }
+        newItem.setImageUrl(finalImageUrl);
+        newItem.setQuantity(quantity);
+        return newItem;
     }
 }

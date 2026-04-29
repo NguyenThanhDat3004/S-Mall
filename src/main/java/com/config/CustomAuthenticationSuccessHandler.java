@@ -36,6 +36,12 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
     @Autowired
     private org.springframework.data.redis.core.RedisTemplate<String, Object> redisTemplate;
 
+    @Autowired
+    private com.service.CartService cartService;
+
+    @Autowired
+    private com.service.UserAddressRedisService addressService;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
             Authentication authentication) throws IOException, ServletException {
@@ -43,6 +49,10 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         HttpSession session = request.getSession();
         String email = authentication.getName();
         loginAttemptService.loginSucceeded(email);
+
+        // Đổ dữ liệu từ SQL lên Redis khi login thành công
+        cartService.syncCartFromDbToRedis(email);
+        addressService.syncAddressFromDbToRedis(email);
 
         userRepository.findByEmail(email).ifPresent(user -> {
             session.setAttribute("userId", user.getId());

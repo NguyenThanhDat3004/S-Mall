@@ -63,6 +63,9 @@ public class CartController {
     @Autowired
     private com.service.UserAddressRedisService addressRedisService;
 
+    @Autowired
+    private com.repository.AddressRepository addressRepository;
+
     @GetMapping("/api/cart/check-status")
     @org.springframework.web.bind.annotation.ResponseBody
     public java.util.Map<String, Object> checkCartStatus(
@@ -92,6 +95,7 @@ public class CartController {
             @RequestParam String ship,
             @RequestParam String addr,
             @RequestParam boolean ins,
+            @RequestParam(defaultValue = "false") boolean saveAddr,
             Principal principal) {
         
         if (principal == null) return "redirect:/login";
@@ -99,6 +103,11 @@ public class CartController {
         Optional<User> userOpt = userService.getUserByEmail(principal.getName());
         if (userOpt.isPresent()) {
             User user = userOpt.get();
+
+            // Lưu địa chỉ nếu người dùng chọn
+            if (saveAddr) {
+                addressRedisService.saveAddress(user.getEmail(), addr);
+            }
             
             java.util.List<Long> variantIds = java.util.Arrays.stream(ids.split(","))
                     .map(Long::parseLong)
@@ -166,7 +175,10 @@ public class CartController {
             }
             
             String redisAddress = addressRedisService.getAddress(user.getEmail());
+            java.util.List<com.entity.Address> savedAddresses = addressRepository.findByUser(user);
+            
             model.addAttribute("redisAddress", redisAddress);
+            model.addAttribute("savedAddresses", savedAddresses);
             model.addAttribute("userProfile", profile);
             
             String cartKey = getCartKey(principal, session);

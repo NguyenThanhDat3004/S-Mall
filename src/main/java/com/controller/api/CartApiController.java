@@ -22,9 +22,15 @@ public class CartApiController {
 
     private String getCartKey(Principal principal, HttpSession session) {
         if (principal != null) {
-            return principal.getName();
+            return "cart:user:" + principal.getName();
+        } else {
+            String guestId = (String) session.getAttribute("guestId");
+            if (guestId == null) {
+                guestId = java.util.UUID.randomUUID().toString();
+                session.setAttribute("guestId", guestId);
+            }
+            return "cart:guest:" + guestId;
         }
-        return session.getId();
     }
 
     @PostMapping("/add")

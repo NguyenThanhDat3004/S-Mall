@@ -31,6 +31,9 @@ public class SecurityConfig {
         @Autowired
         private CustomAuthenticationFailureHandler failureHandler;
 
+        @Autowired
+        private CustomLogoutHandler logoutHandler;
+
         @Bean
         public WebSecurityCustomizer webSecurityCustomizer() {
                 return (web) -> web.ignoring()
@@ -64,6 +67,7 @@ public class SecurityConfig {
                                                 .permitAll())
                                 .logout(logout -> logout
                                                 .logoutUrl("/logout")
+                                                .addLogoutHandler(logoutHandler)
                                                 .logoutSuccessUrl("/")
                                                 .clearAuthentication(true)
                                                 .invalidateHttpSession(true)

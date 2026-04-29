@@ -31,6 +31,7 @@ public class PaymentSimulationController {
             @RequestParam String ship,
             @RequestParam String addr,
             @RequestParam boolean ins,
+            @RequestParam(defaultValue = "false") boolean saveAddr,
             HttpServletRequest request,
             Model model) {
         
@@ -51,7 +52,7 @@ public class PaymentSimulationController {
 
             String confirmLink = baseUrl + "/cart/payment/confirm?ids=" + ids 
                                + "&ship=" + ship + "&addr=" + java.net.URLEncoder.encode(addr, java.nio.charset.StandardCharsets.UTF_8)
-                               + "&ins=" + ins;
+                               + "&ins=" + ins + "&saveAddr=" + saveAddr;
             
             mailService.sendPaymentSimulationEmail(user, amount, confirmLink);
             
