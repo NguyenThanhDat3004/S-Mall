@@ -117,3 +117,48 @@ sequenceDiagram
 2.  **Idempotency (Tính nhất quán)**: Xử lý trường hợp người dùng nhấn link xác nhận nhiều lần mà không gây lỗi "Trống giỏ hàng".
 3.  **Real-time Polling**: Trình duyệt tự động thăm dò trạng thái đơn hàng để đóng Modal QR ngay khi người dùng xác nhận trên thiết bị khác.
 4.  **Seamless Experience**: Tab xác nhận từ Email tự động hiển thị hướng dẫn đóng tab để tập trung trải nghiệm vào Tab chính.
+
+---
+
+## 6. Hệ thống Hộ chiếu Đơn hàng (Smart Order Passport) & Hóa đơn Tự động
+
+Hệ thống quản lý vòng đời đơn hàng khép kín từ lúc vận hành cho đến khi ghi nhận doanh thu thực tế.
+
+### Sơ đồ Luồng Vận hành Passport:
+```mermaid
+sequenceDiagram
+    participant Role as User (Seller/Shipper/Buyer)
+    participant QR as QR Code (Passport Link)
+    participant PassportCtrl as OrderPassportController
+    participant OrderSvc as OrderService (updateStatus)
+    participant InvoiceSvc as OrderService (createInvoice)
+    participant DB as SQL Database (Orders/Invoices)
+
+    Note over Role, DB: Bước 1: Quét mã & Phân quyền
+    Role->>QR: Quét mã QR trên đơn hàng
+    QR->>PassportCtrl: Truy cập /order/passport/{code}
+    PassportCtrl->>PassportCtrl: Nhận diện Role từ Principal
+    PassportCtrl-->>Role: Hiển thị giao diện & Nút hành động tương ứng
+
+    Note over Role, DB: Bước 2: Thao tác & Ghi nhận Doanh thu
+    Role->>OrderSvc: Nhấn "Xác nhận" / "Giao hàng"
+    OrderSvc->>DB: Cập nhật trạng thái đơn hàng
+    
+    rect rgb(240, 255, 240)
+        Note right of OrderSvc: Cơ chế Invoice thông minh
+        alt Phương thức là QR (Trả trước)
+            OrderSvc->>InvoiceSvc: Xuất Hóa đơn ngay khi đặt hàng thành công
+        else Phương thức là COD (Trả sau)
+            OrderSvc->>InvoiceSvc: Chỉ xuất Hóa đơn khi trạng thái = DELIVERED
+        end
+    end
+    
+    InvoiceSvc->>DB: Lưu bản ghi vào bảng Invoices (Doanh thu chính thức)
+```
+
+### Các quy tắc nghiệp vụ (Business Rules):
+1.  **Tính bảo mật Role-based**: Shipper chỉ thấy nút giao hàng, Seller thấy nút xác nhận chuẩn bị hàng, Buyer thấy nút nhận hàng. Người lạ quét mã chỉ thấy thông tin theo dõi cơ bản.
+2.  **Điểm ghi nhận doanh thu (Revenue Recognition)**: 
+    - Đối với thanh toán Online (QR): Doanh thu được ghi nhận sớm ngay khi tiền về tài khoản hệ thống.
+    - Đối với thanh toán Offline (COD): Doanh thu chỉ được ghi nhận khi hàng đã đến tay khách và tiền đã được thu hộ.
+3.  **Mã định danh duy nhất**: Mỗi hóa đơn có một `InvoiceCode` duy nhất gắn liền với `OrderCode` để phục vụ đối soát tài chính và in ấn sau này.
