@@ -12,44 +12,51 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #EE4D2D;
-            --secondary-color: #26aa99;
-            --bg-body: #F8FAFC;
+            --primary-color: #065F46;
+            --secondary-color: #10B981;
+            --bg-body: #F0FDF4;
         }
 
         body {
             background-color: var(--bg-body);
             font-family: 'Plus Jakarta Sans', sans-serif;
-            color: #1E293B;
+            color: #064E3B;
         }
 
         .details-container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 40px auto;
-            padding: 0 15px;
+            padding: 0 20px;
         }
 
         .back-link {
-            color: #64748B;
+            color: #6B7280;
             text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-weight: 700;
+            font-size: 0.85rem;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 20px;
-            transition: all 0.2s;
+            gap: 10px;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s;
         }
-        .back-link:hover { color: var(--primary-color); }
+        .back-link:hover { 
+            color: var(--primary-color);
+            transform: translateX(-5px);
+            background: #ECFDF5;
+        }
 
         /* STATUS TIMELINE */
         .status-card {
             background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-            border: 1px solid #F1F5F9;
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.02);
+            border: 1px solid rgba(6, 95, 70, 0.05);
         }
 
         .timeline {
@@ -62,10 +69,10 @@
             content: '';
             position: absolute;
             top: 50%;
-            left: 5%;
-            right: 5%;
-            height: 2px;
-            background: #E2E8F0;
+            left: 10%;
+            right: 10%;
+            height: 3px;
+            background: #F1F5F9;
             z-index: 1;
             transform: translateY(-50%);
         }
@@ -73,90 +80,119 @@
             position: relative;
             z-index: 2;
             background: white;
-            padding: 0 10px;
+            padding: 0 15px;
             text-align: center;
             flex: 1;
         }
         .step-icon {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             background: white;
-            border: 2px solid #E2E8F0;
-            border-radius: 50%;
+            border: 3px solid #F1F5F9;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 10px;
+            margin: 0 auto 15px;
             color: #94A3B8;
-            font-size: 1.2rem;
-            transition: all 0.3s;
+            font-size: 1.4rem;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .step-label { font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase; }
+        .step-label { font-size: 0.7rem; font-weight: 800; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; }
 
         .timeline-step.active .step-icon {
-            border-color: var(--secondary-color);
-            color: var(--secondary-color);
-            box-shadow: 0 0 0 4px rgba(38, 170, 153, 0.1);
+            border-color: var(--primary-color);
+            color: white;
+            background: var(--primary-color);
+            box-shadow: 0 10px 20px -5px rgba(6, 95, 70, 0.3);
+            transform: scale(1.1);
         }
-        .timeline-step.active .step-label { color: var(--secondary-color); }
+        .timeline-step.active .step-label { color: var(--primary-color); }
 
         /* ADDRESS & PAYMENT INFO */
         .info-card {
             background: white;
-            border-radius: 12px;
-            padding: 24px;
+            border-radius: 24px;
+            padding: 30px;
             height: 100%;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-            border: 1px solid #F1F5F9;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.02);
+            border: 1px solid rgba(6, 95, 70, 0.05);
         }
-        .info-title { font-weight: 700; font-size: 1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .info-title i { color: var(--primary-color); }
-        .info-content { font-size: 0.9rem; color: #475569; line-height: 1.6; }
+        .info-title { font-weight: 800; font-size: 0.9rem; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; color: var(--primary-color); text-transform: uppercase; letter-spacing: 0.02em; }
+        .info-title i { font-size: 1.1rem; opacity: 0.8; }
+        .info-content { font-size: 0.95rem; color: #374151; line-height: 1.7; }
 
         /* PRODUCT LIST */
         .product-card {
             background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-top: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-            border: 1px solid #F1F5F9;
+            border-radius: 24px;
+            padding: 35px;
+            margin-top: 30px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.02);
+            border: 1px solid rgba(6, 95, 70, 0.05);
         }
         .product-item {
             display: flex;
-            gap: 20px;
-            padding: 20px 0;
-            border-bottom: 1px solid #F1F5F9;
+            gap: 25px;
+            padding: 25px 0;
+            border-bottom: 1px solid #F3F4F6;
         }
         .product-item:last-child { border-bottom: none; }
-        .product-img { width: 100px; height: 100px; border-radius: 12px; object-fit: cover; background: #F8FAFC; border: 1px solid #F1F5F9; }
+        .product-img { width: 110px; height: 110px; border-radius: 18px; object-fit: cover; background: #F9FAFB; border: 1px solid #F3F4F6; }
         .product-info { flex: 1; }
-        .product-name { font-weight: 700; font-size: 1rem; margin-bottom: 5px; color: #1E293B; }
-        .product-variant { font-size: 0.85rem; color: #64748B; background: #F1F5F9; display: inline-block; padding: 4px 12px; border-radius: 6px; }
+        .product-name { font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; color: #064E3B; }
+        .product-variant { font-size: 0.8rem; color: #059669; background: #ECFDF5; display: inline-block; padding: 5px 14px; border-radius: 10px; font-weight: 600; }
 
         /* PRICE SUMMARY */
         .summary-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
-            font-size: 0.95rem;
-            color: #475569;
+            padding: 12px 0;
+            font-size: 1rem;
+            color: #4B5563;
         }
         .summary-total {
-            border-top: 1px solid #F1F5F9;
-            margin-top: 15px;
-            padding-top: 15px;
-            font-size: 1.4rem;
+            border-top: 2px solid #F3F4F6;
+            margin-top: 20px;
+            padding-top: 20px;
+            font-size: 1.8rem;
             font-weight: 800;
             color: var(--primary-color);
         }
 
         .badge-status {
-            padding: 6px 16px;
-            border-radius: 20px;
+            padding: 8px 18px;
+            border-radius: 12px;
             font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
+            font-weight: 800;
+            background: #ECFDF5;
+            color: var(--primary-color);
+            border: 1px solid rgba(6, 95, 70, 0.1);
+        }
+
+        .order-meta-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 30px;
+        }
+        .order-id-badge {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #064E3B;
+        }
+        .order-date-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #6B7280;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #F1F5F9;
         }
     </style>
 </head>
@@ -165,14 +201,28 @@
 <jsp:include page="../layout/header.jsp" />
 
 <div class="details-container">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <a href="${pageContext.request.contextPath}/my-orders" class="back-link">
-            <i class="fas fa-arrow-left"></i> TRỞ LẠI
-        </a>
-        <div class="small text-muted">
-            MÃ ĐƠN HÀNG: <span class="fw-bold text-dark">${order.orderCode}</span>
-            <span class="mx-2">|</span>
-            TRẠNG THÁI: <span class="text-primary fw-bold">${order.status.displayName}</span>
+    <div class="order-meta-header">
+        <div>
+            <a href="${pageContext.request.contextPath}/my-orders" class="back-link mb-4">
+                <i class="fas fa-chevron-left"></i> QUAY LẠI DANH SÁCH
+            </a>
+            <div class="mt-4">
+                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-1">Mã đơn hàng</span>
+                <span class="order-id-badge">#${order.orderCode}</span>
+            </div>
+        </div>
+        <div class="d-flex flex-column align-items-end gap-3">
+            <div class="order-date-badge">
+                <i class="far fa-calendar-alt text-emerald-600"></i>
+                <span class="text-gray-400">Đặt lúc:</span>
+                <span class="fw-bold text-dark">
+                    <fmt:parseDate value="${order.createdAt.toString()}" pattern="yyyy-MM-dd'T'HH:mm" var="parsedDate" type="both" />
+                    <fmt:formatDate value="${parsedDate}" pattern="HH:mm - dd/MM/yyyy" />
+                </span>
+            </div>
+            <div class="badge-status">
+                TRẠNG THÁI: ${order.status.displayName}
+            </div>
         </div>
     </div>
 
@@ -203,65 +253,109 @@
         <div class="col-md-7">
             <div class="info-card">
                 <div class="info-title">
-                    <i class="fas fa-map-marker-alt"></i> Địa chỉ nhận hàng
+                    <i class="fas fa-map-marker-alt"></i> Thông tin nhận hàng
                 </div>
                 <div class="info-content">
-                    <div class="fw-bold text-dark mb-1">${order.account.profile.fullName}</div>
-                    <div class="mb-1">${order.account.profile.phoneNumber}</div>
-                    <div class="text-muted">${order.shippingAddress}</div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold text-lg">
+                            ${order.account.profile.fullName.substring(0,1)}
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark mb-0">${order.account.profile.fullName}</div>
+                            <div class="text-emerald-600 font-semibold text-sm">${order.account.profile.phoneNumber}</div>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex gap-3">
+                        <i class="fas fa-location-dot text-gray-300 mt-1"></i>
+                        <div class="text-gray-600">${order.shippingAddress}</div>
+                    </div>
                 </div>
                 
                 <hr class="my-4" style="border-top: 1px dashed #E2E8F0;">
                 
                 <div class="info-title">
-                    <i class="fas fa-credit-card"></i> Phương thức thanh toán
+                    <i class="fas fa-credit-card"></i> Hình thức thanh toán
                 </div>
-                <div class="info-content d-flex align-items-center gap-3">
-                    <div class="bg-light p-3 rounded-3 flex-grow-1">
-                        <span class="fw-bold text-dark">
+                <div class="info-content">
+                    <div class="bg-gradient-to-r from-emerald-50 to-white p-4 rounded-2xl border border-emerald-100 flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-600">
                             <c:choose>
-                                <c:when test="${order.paymentMethod == 'QR'}">Chuyển khoản QR Code</c:when>
-                                <c:otherwise>Thanh toán khi nhận hàng (COD)</c:otherwise>
+                                <c:when test="${order.paymentMethod == 'QR'}"><i class="fas fa-qrcode text-xl"></i></c:when>
+                                <c:otherwise><i class="fas fa-money-bill-wave text-xl"></i></c:otherwise>
                             </c:choose>
-                        </span>
-                        <div class="small text-muted mt-1">
-                            <c:choose>
-                                <c:when test="${order.paymentMethod == 'QR'}">Đã xác nhận thanh toán qua ngân hàng</c:when>
-                                <c:otherwise>Vui lòng chuẩn bị tiền mặt khi nhận hàng</c:otherwise>
-                            </c:choose>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-emerald-900">
+                                <c:choose>
+                                    <c:when test="${order.paymentMethod == 'QR'}">Chuyển khoản Ngân hàng (QR)</c:when>
+                                    <c:otherwise>Thanh toán khi nhận hàng (COD)</c:otherwise>
+                                </c:choose>
+                            </div>
+                            <div class="small text-emerald-600/70 mt-0.5">
+                                <c:choose>
+                                    <c:when test="${order.paymentMethod == 'QR'}">Giao dịch đã được hệ thống xác thực an toàn</c:when>
+                                    <c:otherwise>Vui lòng chuẩn bị tiền mặt khi bưu tá giao hàng</c:otherwise>
+                                </c:choose>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- LOGS/NOTE -->
-        <div class="col-md-5">
+        <!-- LOGS/NOTE & QR -->
+        <div class="col-md-5 space-y-4">
+            <!-- QR Passport Card -->
+            <div class="info-card border-2 border-emerald-600/20 bg-gradient-to-br from-white to-emerald-50/30">
+                <div class="info-title">
+                    <i class="fas fa-qrcode"></i> Digital Shipping Passport
+                </div>
+                <div class="flex flex-col items-center py-4">
+                    <div class="p-3 bg-white rounded-[2rem] shadow-xl border border-emerald-100 mb-4">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${pageContext.request.scheme}://${pageContext.request.serverName}:${pageContext.request.serverPort}${pageContext.request.contextPath}/order/passport/${order.orderCode}" 
+                             class="w-40 h-40 rounded-2xl">
+                    </div>
+                    <div class="text-center">
+                        <div class="text-[10px] text-emerald-800 font-black uppercase tracking-[0.2em] mb-1">Order Passport</div>
+                        <p class="text-[11px] text-gray-400 px-6 leading-relaxed">Mã QR định danh đơn hàng (Order Passport) được cấp để Shipper và Seller dễ dàng quản lý, quét để cập nhật trạng thái đơn hàng ngay lập tức.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping & Note Card -->
             <div class="info-card">
                 <div class="info-title">
-                    <i class="fas fa-info-circle"></i> Ghi chú & Lịch sử
+                    <i class="fas fa-paper-plane"></i> Vận chuyển & Ghi chú
                 </div>
                 <div class="info-content">
-                    <c:if test="${not empty order.note}">
-                        <div class="p-3 bg-light rounded-3 mb-3 fst-italic">
-                            "${order.note}"
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Đơn vị vận chuyển</span>
+                            <span class="text-sm font-bold text-emerald-700 text-capitalize">${order.shippingMethod}</span>
                         </div>
-                    </c:if>
-                    
-                    <div class="small">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Thời gian đặt hàng:</span>
-                            <span class="text-dark">${order.createdAt.toString().replace('T', ' ').substring(0, 16)}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Phương thức vận chuyển:</span>
-                            <span class="text-dark fw-bold text-capitalize">${order.shippingMethod}</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Bảo hiểm hàng hóa:</span>
-                            <span class="${order.shippingInsurance ? 'text-success' : 'text-muted'}">
-                                ${order.shippingInsurance ? 'Đã đăng ký' : 'Không đăng ký'}
+                        
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Bảo hiểm hàng hóa</span>
+                            <span class="text-sm font-bold ${order.shippingInsurance ? 'text-emerald-600' : 'text-gray-400'}">
+                                ${order.shippingInsurance ? '<i class="fas fa-shield-alt mr-1"></i> Đã đăng ký' : 'Không có'}
                             </span>
+                        </div>
+
+                        <c:if test="${not empty order.note}">
+                            <div class="mt-4">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest block mb-2 px-1">Lời nhắn từ người mua</span>
+                                <div class="p-4 bg-amber-50/50 rounded-2xl border border-amber-100 text-amber-900 text-sm italic">
+                                    "${order.note}"
+                                </div>
+                            </div>
+                        </c:if>
+
+                        <div class="mt-6 p-4 bg-emerald-900 rounded-2xl text-white">
+                            <div class="flex items-center gap-3 mb-2">
+                                <i class="fas fa-truck-fast text-emerald-300"></i>
+                                <span class="text-xs font-bold uppercase tracking-widest text-emerald-200">Trạng thái vận hành</span>
+                            </div>
+                            <div class="text-sm font-medium">Đơn hàng đang được xử lý theo đúng tiến độ.</div>
                         </div>
                     </div>
                 </div>

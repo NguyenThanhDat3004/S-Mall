@@ -110,6 +110,11 @@ public class OrderServiceImpl implements OrderService {
         orderDetailRepository.saveAll(details);
         order.setOrderDetails(details);
 
+        // Tự động tạo Invoice ngay nếu thanh toán bằng QR (Prepaid)
+        if ("QR".equalsIgnoreCase(order.getPaymentMethod())) {
+            createInvoiceForOrder(order);
+        }
+
         // Tạo thông báo cho người dùng
         Notification notification = new Notification();
         notification.setRecipient(user);
@@ -140,6 +145,9 @@ public class OrderServiceImpl implements OrderService {
         return orderRepository.findAllByShopId(shopId);
     }
 
+    @Autowired
+    private com.repository.InvoiceRepository invoiceRepository;
+
     @Override
     @Transactional
     public void updateStatus(Long orderId, OrderStatus newStatus, String note) {
@@ -149,11 +157,32 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(newStatus);
         orderRepository.save(order);
 
+        // Đối với thanh toán COD, chỉ tạo Invoice khi đã giao hàng thành công (DELIVERED)
+        if (newStatus == OrderStatus.DELIVERED && !"QR".equalsIgnoreCase(order.getPaymentMethod())) {
+            createInvoiceForOrder(order);
+        }
+
         // Lưu lịch sử
         com.entity.OrderStatusLog log = new com.entity.OrderStatusLog();
         log.setOrder(order);
         log.setStatus(newStatus);
         log.setNote(note);
         orderStatusLogRepository.save(log);
+    }
+
+    private void createInvoiceForOrder(Order order) {
+        // Kiểm tra xem đã có hóa đơn chưa để tránh tạo trùng
+        if (invoiceRepository.findByOrderOrderCode(order.getOrderCode()).isPresent()) {
+            return;
+        }
+
+        com.entity.Invoice invoice = new com.entity.Invoice();
+        invoice.setOrder(order);
+        invoice.setInvoiceCode("INV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        invoice.setTotalAmount(order.getTotalPrice());
+        invoice.setPaymentMethod(order.getPaymentMethod());
+        invoice.setCreatedAt(java.time.LocalDateTime.now());
+        
+        invoiceRepository.save(invoice);
     }
 }

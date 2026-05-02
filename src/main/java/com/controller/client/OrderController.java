@@ -31,9 +31,15 @@ public class OrderController {
         if (principal == null) return "redirect:/login";
         
         Order order = orderService.getOrderDetails(orderCode);
-        // Verify ownership
-        if (!order.getAccount().getEmail().equals(principal.getName())) {
-            return "redirect:/my-orders";
+        
+        // Verify ownership (Buyer or Seller of the shop)
+        boolean isBuyer = order.getAccount().getEmail().equals(principal.getName());
+        boolean isSeller = order.getOrderDetails().stream()
+                .anyMatch(detail -> detail.getProduct().getShop().getUser() != null && 
+                          detail.getProduct().getShop().getUser().getEmail().equals(principal.getName()));
+        
+        if (!isBuyer && !isSeller) {
+            return "redirect:/";
         }
         
         model.addAttribute("order", order);

@@ -61,6 +61,7 @@ public class DataInitializer implements CommandLineRunner {
         saveRole("USER", "Ng\u01B0\u1EDDi d\u00F9ng");
         saveRole("SELLER", "Ng\u01B0\u1EDDi b\u00E1n");
         saveRole("ADMIN", "Qu\u1EA3n tr\u1ECB");
+        saveRole("SHIPPER", "\u0110\u01A1n v\u1ECB v\u1EADn chuy\u1EC3n");
 
         // 2. Categories
         saveCategory("Th\u1EDDi Trang Nam", "thoi-trang-nam", "FASH_MAN", "https://img.icons8.com/color/96/t-shirt.png");
