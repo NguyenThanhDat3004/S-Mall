@@ -17,7 +17,8 @@ public class Order {
     @Column(name = "total_price")
     private double totalPrice;
 
-    private String status = "PENDING"; // PENDING, CONFIRMED, SHIPPING, DELIVERED, CANCELLED
+    @Enumerated(EnumType.STRING)
+    private com.constant.OrderStatus status = com.constant.OrderStatus.PENDING; // PENDING, CONFIRMED, SHIPPING, DELIVERED, CANCELLED
 
     @Column(name = "shipping_address", columnDefinition = "NVARCHAR(MAX)")
     private String shippingAddress;
@@ -64,8 +65,8 @@ public class Order {
     public void setOrderCode(String orderCode) { this.orderCode = orderCode; }
     public double getTotalPrice() { return totalPrice; }
     public void setTotalPrice(double totalPrice) { this.totalPrice = totalPrice; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public com.constant.OrderStatus getStatus() { return status; }
+    public void setStatus(com.constant.OrderStatus status) { this.status = status; }
     public String getShippingAddress() { return shippingAddress; }
     public void setShippingAddress(String shippingAddress) { this.shippingAddress = shippingAddress; }
     public String getShippingMethod() { return shippingMethod; }

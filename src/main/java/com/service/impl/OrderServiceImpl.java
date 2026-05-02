@@ -1,5 +1,6 @@
 package com.service.impl;
 
+import com.constant.OrderStatus;
 import com.dto.CartDTO;
 import com.dto.CartItemDTO;
 import com.entity.Order;
@@ -10,6 +11,7 @@ import com.entity.User;
 import com.repository.OrderDetailRepository;
 import com.repository.NotificationRepository;
 import com.repository.OrderRepository;
+import com.repository.OrderStatusLogRepository;
 import com.repository.ProductVariantRepository;
 import com.service.CartService;
 import com.service.OrderService;
@@ -30,6 +32,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private OrderDetailRepository orderDetailRepository;
+
+    @Autowired
+    private OrderStatusLogRepository orderStatusLogRepository;
 
     @Autowired
     private CartService cartService;
@@ -72,9 +77,9 @@ public class OrderServiceImpl implements OrderService {
         order.setPaymentMethod(orderData.getPaymentMethod());
         order.setNote(orderData.getNote());
         if ("QR".equalsIgnoreCase(orderData.getPaymentMethod())) {
-            order.setStatus("CONFIRMED");
+            order.setStatus(OrderStatus.CONFIRMED);
         } else {
-            order.setStatus("PENDING");
+            order.setStatus(OrderStatus.PENDING);
         }
         
         double subtotal = selectedItems.stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum();
@@ -128,5 +133,27 @@ public class OrderServiceImpl implements OrderService {
     public Order getOrderDetails(String orderCode) {
         return orderRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng: " + orderCode));
+    }
+
+    @Override
+    public List<Order> getOrdersByShop(Long shopId) {
+        return orderRepository.findAllByShopId(shopId);
+    }
+
+    @Override
+    @Transactional
+    public void updateStatus(Long orderId, OrderStatus newStatus, String note) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng ID: " + orderId));
+        
+        order.setStatus(newStatus);
+        orderRepository.save(order);
+
+        // Lưu lịch sử
+        com.entity.OrderStatusLog log = new com.entity.OrderStatusLog();
+        log.setOrder(order);
+        log.setStatus(newStatus);
+        log.setNote(note);
+        orderStatusLogRepository.save(log);
     }
 }

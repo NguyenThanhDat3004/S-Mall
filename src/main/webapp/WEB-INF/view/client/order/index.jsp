@@ -138,7 +138,7 @@
                         <i class="fas fa-store"></i> Tech Store Official
                         <button class="btn btn-sm btn-outline-secondary ms-2" style="font-size: 0.7rem;">Xem Shop</button>
                     </div>
-                    <div class="order-status">${order.status}</div>
+                    <div class="order-status">${order.status.displayName}</div>
                 </div>
                 
                 <c:forEach var="detail" items="${order.orderDetails}">

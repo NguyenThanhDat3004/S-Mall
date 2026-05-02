@@ -33,6 +33,28 @@ public class SellerController {
         return "seller/dashboard";
     }
 
+    @GetMapping("/product/show")
+    public String getShowProductsPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            jakarta.servlet.http.HttpSession session,
+            Model model) {
+        
+        Long shopId = (Long) session.getAttribute("shopId");
+        if (shopId == null) {
+            return "redirect:/login";
+        }
+
+        org.springframework.data.domain.Page<com.entity.Product> productPage = 
+            productService.getProductsByShopId(shopId, org.springframework.data.domain.PageRequest.of(page, size));
+        
+        model.addAttribute("products", productPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", productPage.getTotalPages());
+        
+        return "seller/product/show";
+    }
+
     @GetMapping("/product/create")
     public String getCreateProductPage(Model model, jakarta.servlet.http.HttpServletRequest request) {
         jakarta.servlet.http.HttpSession session = request.getSession(false);

@@ -136,6 +136,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public Page<Product> getProductsByShopId(Long shopId, Pageable pageable) {
+        return this.productRepository.findByShopId(shopId, pageable);
+    }
+
+    @Override
     public Product getBySlug(String slug) {
         Product product = this.productRepository.findBySlug(slug);
         if (product != null) {

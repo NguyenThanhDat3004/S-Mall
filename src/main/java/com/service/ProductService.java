@@ -19,6 +19,8 @@ public interface ProductService {
     // Tìm sản phẩm theo Shop
     Page<Product> getProductsByShop(Shop shop, Pageable pageable);
 
+    Page<Product> getProductsByShopId(Long shopId, Pageable pageable);
+
     // Tìm sản phẩm theo Slug
     Product getBySlug(String slug);
 

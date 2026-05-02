@@ -18,6 +18,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     
     // Tìm sản phẩm của Shop có phân trang
     Page<Product> findByShopAndIsActiveTrue(Shop shop, Pageable pageable);
+
+    @org.springframework.data.jpa.repository.Query("SELECT p FROM Product p WHERE p.shop.id = :shopId " +
+           "ORDER BY CASE WHEN p.status = 'PUBLISHED' THEN 0 ELSE 1 END, p.createdAt DESC")
+    Page<Product> findByShopId(Long shopId, Pageable pageable);
     
     // Tìm sản phẩm theo tên (Like) có phân trang
     Page<Product> findByNameContainingAndIsActiveTrue(String name, Pageable pageable);

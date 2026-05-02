@@ -6,7 +6,8 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "products", indexes = {
-    @Index(name = "idx_product_active_rating", columnList = "is_active, average_rating")
+    @Index(name = "idx_product_active_rating", columnList = "is_active, average_rating"),
+    @Index(name = "idx_product_seller_sorting", columnList = "shop_id, status, created_at")
 })
 public class Product {
 

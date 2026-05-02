@@ -172,7 +172,7 @@
         <div class="small text-muted">
             MÃ ĐƠN HÀNG: <span class="fw-bold text-dark">${order.orderCode}</span>
             <span class="mx-2">|</span>
-            TRẠNG THÁI: <span class="text-primary fw-bold">${order.status}</span>
+            TRẠNG THÁI: <span class="text-primary fw-bold">${order.status.displayName}</span>
         </div>
     </div>
 

@@ -8,4 +8,6 @@ public interface OrderService {
     Order createOrder(User user, Order orderData, List<Long> variantIds);
     List<Order> getOrdersByUser(String email);
     Order getOrderDetails(String orderCode);
+    List<Order> getOrdersByShop(Long shopId);
+    void updateStatus(Long orderId, com.constant.OrderStatus newStatus, String note);
 }
