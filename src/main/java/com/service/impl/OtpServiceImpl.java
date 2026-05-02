@@ -72,9 +72,14 @@ public class OtpServiceImpl implements OtpService {
         redisTemplate.opsForValue().set(REG_PREFIX + email, registerDTO, OTP_EXPIRY, TimeUnit.MINUTES);
     }
 
+    @Autowired
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
     @Override
     public RegisterDTO getRegisterDTO(String email) {
-        return (RegisterDTO) redisTemplate.opsForValue().get(REG_PREFIX + email);
+        Object data = redisTemplate.opsForValue().get(REG_PREFIX + email);
+        if (data == null) return null;
+        return objectMapper.convertValue(data, RegisterDTO.class);
     }
 
     @Override

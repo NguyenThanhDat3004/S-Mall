@@ -13,7 +13,7 @@
                 <div class="container d-flex justify-content-between align-items-center">
                     <div class="top-header-left">
                         <c:choose>
-                            <c:when test="${not empty pageContext.request.userPrincipal}">
+                            <c:when test="${sessionScope.userRole == 'SELLER' || sessionScope.userRole == 'ADMIN'}">
                                 <a href="${url}/seller/dashboard">Kênh người bán</a>
                             </c:when>
                             <c:otherwise>
