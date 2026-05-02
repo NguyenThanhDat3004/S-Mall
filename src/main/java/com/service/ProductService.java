@@ -35,4 +35,7 @@ public interface ProductService {
 
     // Xóa mềm (Soft Delete) bằng cách set isActive = false
     void softDelete(Long id);
+
+    // Tăng lượt xem sản phẩm
+    void incrementViewCount(Long productId);
 }

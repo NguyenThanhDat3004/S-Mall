@@ -3,173 +3,200 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <c:set var="url" value="${pageContext.request.contextPath}" />
 
-<jsp:include page="../../client/layout/header.jsp" />
-
-        <link rel="stylesheet" href="${url}/resources/css/client/footer.css">
-<style>
-    .seller-show-container {
-        max-width: 1200px;
-        margin: 40px auto;
-        padding: 0 15px;
-    }
-    .product-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 20px;
-    }
-    .product-card {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid #f1f5f9;
-        position: relative;
-        text-decoration: none;
-        color: inherit;
-        display: flex;
-        flex-direction: column;
-    }
-    .product-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0,0,0,0.08);
-        border-color: #ee4d2d;
-    }
-    .product-img-wrapper {
-        position: relative;
-        padding-top: 100%; /* 1:1 Aspect Ratio */
-        overflow: hidden;
-        background: #f8fafc;
-    }
-    .product-img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.5s ease;
-    }
-    .product-card:hover .product-img {
-        transform: scale(1.1);
-    }
-    .product-info {
-        padding: 15px;
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-    }
-    .product-name {
-        font-size: 0.9rem;
-        font-weight: 500;
-        margin-bottom: 10px;
-        color: #1e293b;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        height: 2.5rem;
-        line-height: 1.25rem;
-    }
-    .product-price {
-        color: #ee4d2d;
-        font-size: 1.1rem;
-        font-weight: 700;
-        margin-top: auto;
-    }
-    .product-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 10px;
-        font-size: 0.75rem;
-        color: #64748b;
-    }
-    .badge-status {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        color: white;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        backdrop-filter: blur(4px);
-        z-index: 2;
-        font-weight: 700;
-    }
-    .badge-published { background: rgba(40, 167, 69, 0.9); }
-    .badge-other { background: rgba(220, 53, 69, 0.9); }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management | S-Mall Seller</title>
     
-    .pagination-wrapper {
-        margin-top: 40px;
-        display: flex;
-        justify-content: center;
-    }
-</style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'small-emerald': '#065F46',
+                        'small-navy': '#0F172A',
+                        'small-platinum': '#E2E8F0',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        .stats-card {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 20px;
+            padding: 24px;
+        }
 
-<div class="seller-show-container">
-    <div class="d-flex justify-content-between align-items-center mb-5">
-        <div>
-            <h2 class="fw-bold mb-1">Sản phẩm của tôi</h2>
-            <p class="text-muted small">Quản lý và xem tất cả sản phẩm đang kinh doanh</p>
+        .sticky-search {
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            background: rgba(239, 247, 242, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(6, 95, 70, 0.05);
+            margin-left: -2.5rem;
+            margin-right: -2.5rem;
+            padding-left: 2.5rem;
+            padding-right: 2.5rem;
+            transition: all 0.3s ease;
+        }
+
+        /* Hiệu ứng loading cho nút Load More */
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
+        }
+    </style>
+</head>
+<body class="bg-[#EFF7F2]">
+
+    <!-- Sidebar Inclusion -->
+    <jsp:include page="/WEB-INF/view/seller/layout/sidebar.jsp" />
+
+    <!-- Main Content Wrapper -->
+    <div class="md:pl-64 flex flex-col min-h-screen">
+        
+        <!-- Inner Container -->
+        <div class="w-full max-w-7xl mx-auto px-10">
+            
+            <!-- Header Top Section -->
+            <div class="pt-10 pb-6">
+                <div class="flex items-start justify-between mb-8">
+                    <div>
+                        <h1 class="text-3xl font-semibold text-small-navy mb-2">Product Management</h1>
+                        <p class="text-sm text-gray-500">Manage and analyze all your products with AI-powered insights</p>
+                    </div>
+                    <a href="${url}/seller/product/create" class="flex items-center gap-3 px-6 py-3.5 bg-small-emerald text-white rounded-2xl hover:bg-emerald-900 transition-all shadow-xl shadow-emerald-900/20 font-bold">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Product</span>
+                    </a>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="stats-card">
+                        <div class="text-[11px] text-gray-400 uppercase font-bold tracking-widest mb-2">Total Products</div>
+                        <div class="text-3xl font-semibold text-small-navy">${totalElements}</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="text-[11px] text-gray-400 uppercase font-bold tracking-widest mb-2">Avg Global Reach</div>
+                        <div class="text-3xl font-semibold text-emerald-600">82.6%</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="text-[11px] text-gray-400 uppercase font-bold tracking-widest mb-2">Total Views</div>
+                        <div class="text-3xl font-semibold text-small-navy">
+                            <c:set var="totalViews" value="0" />
+                            <c:forEach var="p" items="${products}"><c:set var="totalViews" value="${totalViews + p.viewCount}" /></c:forEach>
+                            <fmt:formatNumber value="${totalViews}" type="number" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sticky Search Bar -->
+            <div class="sticky-search py-6 -mx-10 px-10">
+                <div class="flex items-center gap-4">
+                    <div class="flex-1 relative group">
+                        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-small-emerald transition-colors"></i>
+                        <input type="text" placeholder="Search products by name, category, or SKU..." 
+                               class="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200/50 rounded-2xl focus:ring-4 focus:ring-small-emerald/5 focus:border-small-emerald outline-none transition-all text-sm shadow-sm">
+                    </div>
+                    <button class="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-2xl hover:bg-gray-50 transition-all text-sm font-medium text-gray-600">
+                        <i class="fas fa-filter"></i> Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Product Cards List Container -->
+            <main id="productContainer" class="py-8">
+                <jsp:include page="product_items.jsp" />
+            </main>
+
+            <!-- Load More Section -->
+            <div id="loadMoreSection" class="pb-20 flex flex-col items-center gap-4">
+                <c:if test="${currentPage < totalPages - 1}">
+                    <button id="loadMoreBtn" 
+                            onclick="loadMoreProducts()"
+                            class="px-10 py-4 bg-white border border-gray-200 text-small-navy font-bold rounded-2xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm flex items-center gap-3">
+                        <span>Hiển thị thêm</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                    </button>
+                    <p class="text-xs text-gray-400 font-medium">Hiển thị thêm 10 sản phẩm tiếp theo</p>
+                </c:if>
+                <c:if test="${currentPage >= totalPages - 1}">
+                    <p class="text-sm text-gray-400 font-medium italic">Bạn đã xem hết danh sách sản phẩm</p>
+                </c:if>
+            </div>
         </div>
-        <a href="${url}/seller/product/create" class="btn btn-primary px-4 py-2" style="background: #ee4d2d; border: none; border-radius: 10px; font-weight: 600;">
-            <i class="fas fa-plus me-2"></i>Thêm sản phẩm mới
-        </a>
     </div>
 
-    <div class="product-grid">
-        <c:forEach var="product" items="${products}">
-            <a href="${url}/product/${product.slug}" class="product-card">
-                <span class="badge-status ${product.status == 'PUBLISHED' ? 'badge-published' : 'badge-other'}">
-                    ${product.status}
-                </span>
-                <div class="product-img-wrapper">
-                    <c:choose>
-                        <c:when test="${not empty product.images}">
-                            <img src="${url}${product.images[0].url}" class="product-img" alt="${product.name}">
-                        </c:when>
-                        <c:otherwise>
-                            <img src="https://via.placeholder.com/300" class="product-img" alt="Placeholder">
-                        </c:otherwise>
-                    </c:choose>
-                </div>
-                <div class="product-info">
-                    <div class="product-name">${product.name}</div>
-                    <div class="product-price">
-                        <fmt:formatNumber value="${product.variants[0].price}" type="currency" currencySymbol="₫" />
-                    </div>
-                    <div class="product-meta">
-                        <span>Kho: ${product.variants[0].stock}</span>
-                        <span><i class="fas fa-star text-warning me-1"></i>${product.averageRating}</span>
-                    </div>
-                </div>
-            </a>
-        </c:forEach>
-    </div>
+    <script>
+        let currentPage = ${currentPage};
+        const totalPages = ${totalPages};
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        const loadMoreSection = document.getElementById('loadMoreSection');
+        const productContainer = document.getElementById('productContainer');
 
-    <c:if test="${empty products}">
-        <div class="text-center py-5">
-            <i class="fas fa-box-open fa-4x text-muted mb-4 opacity-25"></i>
-            <h4 class="text-muted">Bạn chưa có sản phẩm nào</h4>
-            <p class="text-muted">Hãy đăng sản phẩm đầu tiên để bắt đầu bán hàng!</p>
-            <a href="${url}/seller/product/create" class="btn btn-outline-primary mt-3">Đăng ngay</a>
-        </div>
-    </c:if>
+        async function loadMoreProducts() {
+            if (currentPage >= totalPages - 1) return;
 
-    <!-- Phân trang -->
-    <c:if test="${totalPages > 1}">
-        <div class="pagination-wrapper">
-            <nav>
-                <ul class="pagination">
-                    <c:forEach var="i" begin="0" end="${totalPages - 1}">
-                        <li class="page-item ${currentPage == i ? 'active' : ''}">
-                            <a class="page-link" href="?page=${i}">${i + 1}</a>
-                        </li>
-                    </c:forEach>
-                </ul>
-            </nav>
-        </div>
-    </c:if>
-</div>
+            // Hiệu ứng Loading
+            const originalContent = loadMoreBtn.innerHTML;
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<span class="loading-dots">Đang tải</span>';
+            loadMoreBtn.classList.add('opacity-75', 'cursor-not-allowed');
 
-<jsp:include page="../../client/layout/footer.jsp" />
+            try {
+                currentPage++;
+                const response = await fetch(`${url}/seller/product/load-more?page=${currentPage}`);
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const html = await response.text();
+                
+                // Thêm sản phẩm mới vào container
+                productContainer.insertAdjacentHTML('beforeend', html);
+
+                // Kiểm tra xem còn trang nào không
+                if (currentPage >= totalPages - 1) {
+                    loadMoreSection.innerHTML = '<p class="text-sm text-gray-400 font-medium italic">Bạn đã xem hết danh sách sản phẩm</p>';
+                } else {
+                    // Trả lại trạng thái nút
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.innerHTML = originalContent;
+                    loadMoreBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
+            } catch (error) {
+                console.error('Error loading more products:', error);
+                alert('Có lỗi xảy ra khi tải thêm sản phẩm. Vui lòng thử lại.');
+                currentPage--;
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.innerHTML = originalContent;
+            }
+        }
+    </script>
+
+</body>
+</html>

@@ -1,119 +1,111 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-    <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-        <c:set var="url" value="${pageContext.request.contextPath}" />
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<c:set var="url" value="${pageContext.request.contextPath}" />
 
-        <aside class="admin-sidebar">
-            <div class="sidebar-brand">
-                <i class="fas fa-store"></i>
-                <span>S-Mall Seller</span>
+<aside class="fixed inset-y-0 left-0 w-64 bg-[#0F172A] text-slate-400 hidden md:flex flex-col z-20 border-r border-white/5 scrollbar-hide">
+    <!-- Brand Logo (Homepage Style) -->
+    <div class="px-8 py-10">
+        <a href="${url}/" class="flex items-center no-underline">
+            <span class="text-3xl font-extrabold text-[#1A7A42] tracking-tighter">S</span>
+            <span class="bg-[#1A7A42] text-white px-3 py-1 rounded-[10px] text-[22px] font-bold ml-2 shadow-lg shadow-emerald-900/20">Mall</span>
+        </a>
+        <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">Seller Center</div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="flex-1 px-4 space-y-1.5 overflow-y-auto mt-4 scrollbar-hide">
+        <a href="${url}/" class="group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white" id="nav-home">
+            <i class="fas fa-home w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Trang chủ</span>
+        </a>
+
+        <a href="${url}/seller/dashboard" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white" id="nav-dashboard">
+            <i class="fas fa-th-large w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Dashboard</span>
+        </a>
+
+        <a href="${url}/seller/product/show" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white" id="nav-products">
+            <i class="fas fa-box w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Products</span>
+        </a>
+
+        <a href="${url}/seller/order/list" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white" id="nav-orders">
+            <i class="fas fa-shopping-cart w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Orders</span>
+        </a>
+
+        <a href="#" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white">
+            <i class="fas fa-users w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Customers</span>
+        </a>
+
+        <a href="#" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white">
+            <i class="fas fa-chart-line w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Analytics</span>
+        </a>
+
+        <a href="#" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white">
+            <i class="fas fa-globe w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Global Reach</span>
+        </a>
+
+        <a href="#" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white">
+            <i class="fas fa-bolt w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Growth AI</span>
+        </a>
+
+        <a href="#" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white">
+            <i class="fas fa-cog w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Settings</span>
+        </a>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="p-4 mt-auto">
+        <!-- Monthly Revenue Card -->
+        <div class="bg-[#1E293B]/40 rounded-[20px] p-5 border border-white/5 mb-4">
+            <div class="text-[11px] text-slate-500 font-bold mb-3 tracking-wide">Monthly Revenue</div>
+            <div class="text-2xl font-bold text-white mb-1">$127,450</div>
+            <div class="text-[11px] text-emerald-400 font-medium">
+                <i class="fas fa-arrow-up mr-1"></i> +18.3% from last month
             </div>
+        </div>
 
-            <ul class="sidebar-menu">
-                <li class="menu-item dashboard-item">
-                    <a href="${url}/seller/dashboard" class="menu-link">
-                        <i class="fas fa-th-large"></i>
-                        <span>Tổng quan</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="${url}/" class="menu-link">
-                        <i class="fas fa-home"></i>
-                        <span>Trang chủ</span>
-                    </a>
-                </li>
-                <li class="menu-item has-submenu">
-                    <a href="javascript:void(0)" class="menu-link submenu-toggle">
-                        <i class="fas fa-box"></i>
-                        <span>Sản phẩm</span>
-                        <i class="fas fa-chevron-right ms-auto arrow-icon"></i>
-                    </a>
-                    <ul class="submenu">
-                        <li><a href="${url}/seller/product/create">Tạo sản phẩm</a></li>
-                        <li><a href="${url}/seller/product/update">Cập nhật sản phẩm</a></li>
-                        <li><a href="${url}/seller/product/show">Danh sách sản phẩm</a></li>
-                    </ul>
-                </li>
-                <li class="menu-item">
-                    <a href="${url}/admin/order/show" class="menu-link">
-                        <i class="fas fa-file-invoice-dollar"></i>
-                        <span>Đơn hàng</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="${url}/admin/user/show" class="menu-link">
-                        <i class="fas fa-users"></i>
-                        <span>Khách hàng</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#" class="menu-link">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Doanh thu</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="#" class="menu-link">
-                        <i class="fas fa-cog"></i>
-                        <span>Cài đặt</span>
-                    </a>
-                </li>
-            </ul>
+    </div>
+</aside>
 
-            <div class="sidebar-footer">
-                <a href="${url}/logout" class="menu-link">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Đăng xuất</span>
-                </a>
-            </div>
-        </aside>
+<style>
+    .nav-item.active {
+        background-color: #064E3B !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .nav-item.active i {
+        color: white !important;
+        opacity: 1 !important;
+    }
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const menuLinks = document.querySelectorAll('.menu-link');
-                const menuItems = document.querySelectorAll('.menu-item');
+    /* Kỹ thuật ẩn thanh cuộn triệt để */
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none !important;
+    }
+    .scrollbar-hide {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+        overflow: -moz-scrollbars-none !important;
+    }
+</style>
 
-                // Logic xử lý khi nhấp
-                menuLinks.forEach(link => {
-                    link.addEventListener('click', function (e) {
-                        const menuItem = this.closest('.menu-item');
-
-                        if (menuItem.classList.contains('has-submenu')) {
-                            // Nếu là dropdown, chỉ toggle mở/đóng và tô xanh
-                            e.preventDefault();
-                            menuItem.classList.toggle('open');
-                        }
-
-                        // Loại bỏ active ở tất cả các mục khác
-                        menuItems.forEach(item => item.classList.remove('active'));
-                        // Thêm active vào mục hiện tại
-                        menuItem.classList.add('active');
-                    });
-                });
-
-                // Tự động tô xanh dựa trên URL hiện tại (để giữ trạng thái khi load lại trang)
-                const currentPath = window.location.pathname;
-                const contextPath = '${url}';
-
-                menuLinks.forEach(link => {
-                    const href = link.getAttribute('href');
-                    if (href !== 'javascript:void(0)' && href !== '#' && href !== '') {
-                        // Không tự động tô xanh "Trang chủ" trong menu Seller trừ khi ở đúng trang chủ
-                        if (href === contextPath + '/' || href === '/') {
-                            if (currentPath === href) {
-                                link.closest('.menu-item').classList.add('active');
-                            }
-                        } else if (currentPath.includes(href)) {
-                            link.closest('.menu-item').classList.add('active');
-                            if (link.closest('.submenu')) {
-                                link.closest('.has-submenu').classList.add('open', 'active');
-                            }
-                        }
-                    }
-                });
-
-                // Mặc định tô xanh Tổng quan nếu ở đúng trang
-                if (currentPath.endsWith('/seller/dashboard')) {
-                    document.querySelector('.dashboard-item').classList.add('active');
-                }
-            });
-        </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        navItems.forEach(item => {
+            const href = item.getAttribute('href');
+            if (href && currentPath.includes(href) && href !== '${url}/') {
+                item.classList.add('active');
+            }
+        });
+    });
+</script>

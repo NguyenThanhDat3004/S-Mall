@@ -51,8 +51,26 @@ public class SellerController {
         model.addAttribute("products", productPage.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", productPage.getTotalPages());
+        model.addAttribute("totalElements", productPage.getTotalElements());
         
         return "seller/product/show";
+    }
+
+    @GetMapping("/product/load-more")
+    public String getLoadMoreProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            jakarta.servlet.http.HttpSession session,
+            Model model) {
+        
+        Long shopId = (Long) session.getAttribute("shopId");
+        if (shopId == null) return null;
+
+        org.springframework.data.domain.Page<com.entity.Product> productPage = 
+            productService.getProductsByShopId(shopId, org.springframework.data.domain.PageRequest.of(page, size));
+        
+        model.addAttribute("products", productPage.getContent());
+        return "seller/product/product_items";
     }
 
     @GetMapping("/product/create")

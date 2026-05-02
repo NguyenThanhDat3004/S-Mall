@@ -37,6 +37,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     // [CASE 2] Lấy sản phẩm gợi ý dựa trên danh sách ID danh mục khách quan tâm sắp xếp theo Rating
     List<Product> findTop30ByCategoryIdInAndIsActiveTrueOrderByAverageRatingDesc(java.util.List<Long> categoryIds);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("UPDATE Product p SET p.viewCount = p.viewCount + 1 WHERE p.id = :productId")
+    void incrementViewCount(Long productId);
 }
 
 

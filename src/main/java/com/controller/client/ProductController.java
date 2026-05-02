@@ -26,6 +26,9 @@ public class ProductController {
         Product product = productService.getBySlug(slug);
         
         if (product != null) {
+            // Tăng lượt xem cho sản phẩm
+            productService.incrementViewCount(product.getId());
+
             // [AI TRACKING] Ghi nhận hành vi click của khách hàng
             // Nếu đã login dùng username, nếu chưa login dùng Session ID
             String identifier = (principal != null) ? principal.getName() : session.getId();

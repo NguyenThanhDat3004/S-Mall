@@ -174,4 +174,10 @@ public class ProductServiceImpl implements ProductService {
             this.productRepository.save(product);
         }
     }
+
+    @Override
+    @Transactional
+    public void incrementViewCount(Long productId) {
+        this.productRepository.incrementViewCount(productId);
+    }
 }
