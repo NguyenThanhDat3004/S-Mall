@@ -48,12 +48,15 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
     @Override
     @Transactional
     public Order createOrder(User user, Order orderData, List<Long> variantIds) {
         String cartKey = "cart:user:" + user.getEmail();
         CartDTO cart = cartService.getCart(cartKey);
-        
+
         // Lấy danh sách các item được chọn
         List<CartItemDTO> selectedItems = cart.getItems().stream()
                 .filter(item -> variantIds.contains(item.getVariantId()))
@@ -63,7 +66,10 @@ public class OrderServiceImpl implements OrderService {
             String cartItemsInfo = cart.getItems().stream()
                     .map(item -> item.getVariantId().toString())
                     .collect(Collectors.joining(", "));
-            throw new RuntimeException("Không tìm thấy sản phẩm hợp lệ để thanh toán. Giỏ hàng hiện có IDs: [" + cartItemsInfo + "], Đang yêu cầu IDs: [" + variantIds.stream().map(Object::toString).collect(Collectors.joining(", ")) + "]. Key: " + cartKey);
+            throw new RuntimeException("Không tìm thấy sản phẩm hợp lệ để thanh toán. Giỏ hàng hiện có IDs: ["
+                    + cartItemsInfo + "], Đang yêu cầu IDs: ["
+                    + variantIds.stream().map(Object::toString).collect(Collectors.joining(", ")) + "]. Key: "
+                    + cartKey);
         }
 
         // Tạo Order cơ bản
@@ -81,7 +87,7 @@ public class OrderServiceImpl implements OrderService {
         } else {
             order.setStatus(OrderStatus.PENDING);
         }
-        
+
         double subtotal = selectedItems.stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum();
         order.setTotalPrice(subtotal + order.getShippingFee() + (order.isShippingInsurance() ? 10000 : 0));
 
@@ -95,18 +101,18 @@ public class OrderServiceImpl implements OrderService {
             detail.setOrder(order);
             detail.setQuantity(item.getQuantity());
             detail.setPriceAtPurchase(item.getPrice());
-            
+
             ProductVariant variant = productVariantRepository.findById(item.getVariantId())
                     .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại: " + item.getVariantId()));
             detail.setProductVariant(variant);
             detail.setProduct(variant.getProduct());
-            
+
             details.add(detail);
-            
+
             // Xóa khỏi giỏ hàng
             cartService.removeFromCart(cartKey, item.getVariantId());
         }
-        
+
         orderDetailRepository.saveAll(details);
         order.setOrderDetails(details);
 
@@ -119,7 +125,8 @@ public class OrderServiceImpl implements OrderService {
         Notification notification = new Notification();
         notification.setRecipient(user);
         notification.setType("ORDER_STATUS");
-        notification.setContent("Chúc mừng! Đơn hàng " + order.getOrderCode() + " đã được đặt thành công. Hệ thống đang xử lý.");
+        notification.setContent(
+                "Chúc mừng! Đơn hàng " + order.getOrderCode() + " đã được đặt thành công. Hệ thống đang xử lý.");
         notification.setLinkUrl("/order-details/" + order.getOrderCode());
         notificationRepository.save(notification);
 
@@ -153,12 +160,12 @@ public class OrderServiceImpl implements OrderService {
     public void updateStatus(Long orderId, OrderStatus newStatus, String note) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng ID: " + orderId));
-        
+
         order.setStatus(newStatus);
         orderRepository.save(order);
 
-        // Đối với thanh toán COD, chỉ tạo Invoice khi đã giao hàng thành công (DELIVERED)
-        if (newStatus == OrderStatus.DELIVERED && !"QR".equalsIgnoreCase(order.getPaymentMethod())) {
+        // Tự động tạo Invoice khi đơn hàng bắt đầu được xử lý (PREPARING)
+        if (newStatus == OrderStatus.PREPARING) {
             createInvoiceForOrder(order);
         }
 
@@ -168,6 +175,38 @@ public class OrderServiceImpl implements OrderService {
         log.setStatus(newStatus);
         log.setNote(note);
         orderStatusLogRepository.save(log);
+
+        // Tự động tạo thông báo cho người mua khi có thay đổi trạng thái
+        Notification notification = new Notification();
+        notification.setRecipient(order.getAccount());
+        notification.setType("ORDER_STATUS");
+        
+        String statusDesc = switch (newStatus) {
+            case CONFIRMED -> "đã được xác nhận thành công.";
+            case PREPARING -> "đang được Shop chuẩn bị và đóng gói.";
+            case READY_FOR_PICKUP -> "đã đóng gói xong và đang chờ Shipper tới lấy.";
+            case SHIPPING -> "đang trên đường giao tới bạn.";
+            case DELIVERED -> "đã được giao thành công. Hãy kiểm tra sản phẩm nhé!";
+            case REVIEWED -> "đã hoàn tất (Khách hàng đã đánh giá).";
+            case CANCELLED -> "đã bị hủy.";
+            case RETURNED -> "đã được yêu cầu trả hàng/hoàn tiền.";
+            default -> "vừa được cập nhật sang trạng thái: " + newStatus.getDisplayName();
+        };
+        
+        notification.setContent("Đơn hàng " + order.getOrderCode() + " " + statusDesc);
+        notification.setLinkUrl("/order/passport/" + order.getOrderCode());
+        notificationRepository.save(notification);
+
+        // BẮN THÔNG BÁO REAL-TIME QUA WEBSOCKET
+        try {
+            messagingTemplate.convertAndSendToUser(
+                order.getAccount().getEmail(), 
+                "/topic/notifications", 
+                notification
+            );
+        } catch (Exception e) {
+            System.err.println("WebSocket Error: " + e.getMessage());
+        }
     }
 
     private void createInvoiceForOrder(Order order) {
@@ -182,7 +221,7 @@ public class OrderServiceImpl implements OrderService {
         invoice.setTotalAmount(order.getTotalPrice());
         invoice.setPaymentMethod(order.getPaymentMethod());
         invoice.setCreatedAt(java.time.LocalDateTime.now());
-        
+
         invoiceRepository.save(invoice);
     }
 }

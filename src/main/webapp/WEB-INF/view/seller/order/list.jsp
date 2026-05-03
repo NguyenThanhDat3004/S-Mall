@@ -112,7 +112,25 @@
                                     <c:when test="${st == 'ALL'}">${orders.size()}</c:when>
                                     <c:otherwise>
                                         <c:set var="count" value="0" />
-                                        <c:forEach var="o" items="${orders}"><c:if test="${o.status == st}"><c:set var="count" value="${count + 1}" /></c:if></c:forEach>
+                                        <c:forEach var="o" items="${orders}">
+                                            <c:choose>
+                                                <c:when test="${st == 'SHIPPING'}">
+                                                    <c:if test="${o.status == 'SHIPPING' || o.status == 'READY_FOR_PICKUP'}">
+                                                        <c:set var="count" value="${count + 1}" />
+                                                    </c:if>
+                                                </c:when>
+                                                <c:when test="${st == 'CONFIRMED'}">
+                                                    <c:if test="${o.status == 'CONFIRMED' || o.status == 'PREPARING'}">
+                                                        <c:set var="count" value="${count + 1}" />
+                                                    </c:if>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <c:if test="${o.status == st}">
+                                                        <c:set var="count" value="${count + 1}" />
+                                                    </c:if>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </c:forEach>
                                         ${count}
                                     </c:otherwise>
                                 </c:choose>
@@ -372,10 +390,29 @@
         function filterOrders(status) {
             const cards = document.querySelectorAll('.order-card');
             cards.forEach(card => {
-                if (status === 'ALL' || card.getAttribute('data-status') === status) {
+                const cardStatus = card.getAttribute('data-status');
+                if (status === 'ALL') {
                     card.style.display = 'block';
+                } else if (status === 'SHIPPING') {
+                    // Nhóm Đang giao bao gồm cả SHIPPING và READY_FOR_PICKUP
+                    if (cardStatus === 'SHIPPING' || cardStatus === 'READY_FOR_PICKUP') {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                } else if (status === 'CONFIRMED') {
+                    // Nhóm Đã xác nhận bao gồm cả CONFIRMED và PREPARING
+                    if (cardStatus === 'CONFIRMED' || cardStatus === 'PREPARING') {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
                 } else {
-                    card.style.display = 'none';
+                    if (cardStatus === status) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
                 }
             });
         }

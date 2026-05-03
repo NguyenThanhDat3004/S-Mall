@@ -127,10 +127,42 @@
             </div>
         </header>
 
+        <!-- SockJS and STOMP for Real-time Notifications -->
+        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 const url = '${url}';
                 const header = document.getElementById('mainHeader');
+
+                // WebSocket Real-time Connection
+                function connectWebSocket() {
+                    const socket = new SockJS(`${url}/ws`);
+                    const stompClient = Stomp.over(socket);
+                    stompClient.debug = null; 
+
+                    stompClient.connect({}, function (frame) {
+                        stompClient.subscribe('/user/topic/notifications', function (message) {
+                            console.log("Real-time Notification Received!");
+                            updateNotifications();
+                            
+                            const bell = document.querySelector('#notificationTrigger i');
+                            if (bell) {
+                                bell.classList.add('fa-shake');
+                                setTimeout(() => bell.classList.remove('fa-shake'), 2000);
+                            }
+                        });
+                    }, function (error) {
+                        console.log('WebSocket Error: ' + error);
+                        setTimeout(connectWebSocket, 5000);
+                    });
+                }
+
+                <c:if test="${not empty pageContext.request.userPrincipal}">
+                    connectWebSocket();
+                </c:if>
+
                 window.addEventListener('scroll', () => {
                     if (window.scrollY > 50) {
                         header.classList.add('sticky');
@@ -236,6 +268,12 @@
 
                 updateCartCount();
                 updateNotifications();
+
+                updateCartCount();
+                updateNotifications();
+
+                // Cập nhật giỏ hàng mỗi 30 giây
+                setInterval(updateCartCount, 30000);
 
                 // [ORDER SUCCESS TOAST]
                 const urlParams = new URLSearchParams(window.location.search);

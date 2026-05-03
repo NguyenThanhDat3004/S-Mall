@@ -79,8 +79,10 @@ public class OrderPassportController {
     }
 
     @PostMapping("/api/orders/passport/update-status")
-    public String updateOrderStatus(@RequestParam String orderCode,
+    public Object updateOrderStatus(@RequestParam String orderCode,
             @RequestParam String action,
+            @RequestParam(required = false) String location,
+            jakarta.servlet.http.HttpServletRequest request,
             Principal principal) {
         Order order = orderService.getOrderDetails(orderCode);
         if (order == null)
@@ -102,10 +104,10 @@ public class OrderPassportController {
                         "Người bán đã xác nhận đơn hàng (Passport Scan)");
             }
         } else if ("PREPARED".equals(action)) {
-            // Người bán báo đã chuẩn bị xong hàng
+            // Người bán báo đã bàn giao hàng trực tiếp cho Shipper
             if (isSeller && order.getStatus() == com.constant.OrderStatus.PREPARING) {
-                orderService.updateStatus(order.getId(), com.constant.OrderStatus.READY_FOR_PICKUP,
-                        "Người bán đã chuẩn bị xong hàng, sẵn sàng bàn giao.");
+                orderService.updateStatus(order.getId(), com.constant.OrderStatus.SHIPPING,
+                        "Người bán đã bàn giao hàng cho đơn vị vận chuyển.");
             }
         } else if ("PICKUP".equals(action)) {
             // Chỉ Shipper được xác nhận lấy hàng khi hàng đã sẵn sàng
@@ -128,6 +130,12 @@ public class OrderPassportController {
                 orderService.updateStatus(order.getId(), com.constant.OrderStatus.REVIEWED,
                         "Khách hàng xác nhận đã nhận hàng (Passport Scan)");
             }
+        }
+
+        // Kiểm tra xem có phải yêu cầu AJAX không
+        String requestedWith = request.getHeader("X-Requested-With");
+        if ("XMLHttpRequest".equals(requestedWith)) {
+            return org.springframework.http.ResponseEntity.ok().body(java.util.Map.of("success", true));
         }
 
         return "redirect:/order/passport/" + orderCode;

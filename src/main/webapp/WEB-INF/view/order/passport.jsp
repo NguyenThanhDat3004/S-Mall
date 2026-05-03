@@ -131,36 +131,96 @@
             <div class="card qr-card">
                 <h3 class="card-title">Định danh vật lý</h3>
                 <div class="qr-wrapper"><img src="data:image/png;base64,${qrCode}" alt="QR"></div>
-                <div class="status-badge"><div class="status-dot"></div>${order.status.displayName}</div>
-                <div class="action-buttons">
-                    <form action="/api/orders/passport/update-status" method="POST">
+                <div id="statusBadgeContainer">
+                    <div class="status-badge"><div class="status-dot"></div>${order.status.displayName}</div>
+                </div>
+                <div id="actionButtonsContainer" class="action-buttons">
+                    <form id="statusForm" action="${url}/api/orders/passport/update-status" method="POST">
                         <input type="hidden" name="orderCode" value="${order.orderCode}">
                         <c:choose>
                             <c:when test="${role == 'SELLER' && order.status == 'PENDING'}">
-                                <button type="submit" name="action" value="CONFIRM" class="btn btn-confirm">Xác nhận đơn hàng</button>
+                                <button type="button" onclick="submitStatus('CONFIRM')" class="btn btn-confirm">Xác nhận đơn hàng</button>
                             </c:when>
                             <c:when test="${role == 'SELLER' && order.status == 'PREPARING'}">
-                                <button type="submit" name="action" value="PREPARED" class="btn btn-confirm">Chuẩn bị xong hàng</button>
+                                <button type="button" onclick="submitStatus('PREPARED')" class="btn btn-confirm">Giao cho đơn vị vận chuyển</button>
                             </c:when>
                             <c:when test="${role == 'SHIPPER' && order.status == 'READY_FOR_PICKUP'}">
                                 <div style="margin-bottom: 12px; text-align: left;">
                                     <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Vị trí lấy hàng</label>
-                                    <input type="text" name="location" value="${order.orderDetails[0].product.shop.user.profile.address}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                    <input type="text" id="shipLoc" name="location" value="${order.orderDetails[0].product.shop.user.profile.address}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
                                 </div>
-                                <button type="submit" name="action" value="PICKUP" class="btn btn-confirm">Xác nhận lấy hàng</button>
+                                <button type="button" onclick="submitStatus('PICKUP')" class="btn btn-confirm">Xác nhận lấy hàng</button>
                             </c:when>
                             <c:when test="${role == 'SHIPPER' && order.status == 'SHIPPING'}">
                                 <div style="margin-bottom: 12px; text-align: left;">
                                     <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Cập nhật vị trí trạm dừng</label>
-                                    <input type="text" name="location" placeholder="Nhập địa chỉ hiện tại..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                    <input type="text" id="shipLoc" name="location" placeholder="Nhập địa chỉ hiện tại..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
                                 </div>
-                                <button type="submit" name="action" value="DELIVERED" class="btn btn-confirm">Xác nhận đã giao</button>
+                                <button type="button" onclick="submitStatus('DELIVERED')" class="btn btn-confirm">Xác nhận đã giao</button>
                             </c:when>
                             <c:when test="${role == 'BUYER' && order.status == 'DELIVERED'}">
-                                <button type="submit" name="action" value="RECEIVED" class="btn btn-confirm">Đã nhận hàng</button>
+                                <button type="button" onclick="submitStatus('RECEIVED')" class="btn btn-confirm">Đã nhận hàng</button>
                             </c:when>
                         </c:choose>
                     </form>
+
+                    <script>
+                        function submitStatus(action) {
+                            const form = document.getElementById('statusForm');
+                            const loc = document.getElementById('shipLoc')?.value || '';
+                            const formData = new URLSearchParams();
+                            formData.append('orderCode', '${order.orderCode}');
+                            formData.append('action', action);
+                            formData.append('location', loc);
+
+                            // Hiệu ứng loading
+                            const btn = event.target;
+                            const originalText = btn.innerText;
+                            btn.innerText = 'Đang xử lý...';
+                            btn.disabled = true;
+
+                            fetch(form.action, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: formData
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Thay vì reload, ta fetch lại trang hiện tại để lấy HTML mới
+                                    fetch(window.location.href)
+                                        .then(response => response.text())
+                                        .then(html => {
+                                            const parser = new DOMParser();
+                                            const doc = parser.parseFromString(html, 'text/html');
+                                            
+                                            // Thay thế các vùng dữ liệu mà không load lại trang
+                                            const containers = ['statusBadgeContainer', 'actionButtonsContainer', 'ledgerContainer', 'timelineContainer'];
+                                            containers.forEach(id => {
+                                                const oldEl = document.getElementById(id);
+                                                const newEl = doc.getElementById(id);
+                                                if (oldEl && newEl) {
+                                                    oldEl.innerHTML = newEl.innerHTML;
+                                                }
+                                            });
+                                            console.log('UI Updated Seamlessly');
+                                        });
+                                } else {
+                                    alert('Có lỗi xảy ra, vui lòng thử lại.');
+                                    btn.innerText = originalText;
+                                    btn.disabled = false;
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                btn.innerText = originalText;
+                                btn.disabled = false;
+                            });
+                        }
+                    </script>
                     
                     <c:choose>
                         <c:when test="${role == 'SELLER'}">
@@ -297,13 +357,9 @@
                             </c:choose>
                         </div>
                     </div>
-                    <div class="ledger-item ${order.status != 'PENDING' && order.status != 'CONFIRMED' && order.status != 'PREPARING' ? 'completed' : (order.status == 'PREPARING' ? 'active' : '')}">
-                        <div class="ledger-icon">🤝</div>
-                        <div class="ledger-info"><h4>Đã chuẩn bị xong hàng</h4><p>${(order.status == 'PENDING' || order.status == 'CONFIRMED' || order.status == 'PREPARING') ? 'Đang chuẩn bị...' : formattedUpdatedAt}</p></div>
-                    </div>
                     <div class="ledger-item ${order.status == 'SHIPPING' || order.status == 'DELIVERED' || order.status == 'REVIEWED' ? 'completed' : (order.status == 'READY_FOR_PICKUP' ? 'active' : '')}">
                         <div class="ledger-icon">📦</div>
-                        <div class="ledger-info"><h4>Shipper đã nhận hàng</h4><p>${(order.status == 'READY_FOR_PICKUP') ? 'Đang chờ Shipper...' : (order.status == 'PREPARING' ? 'Chờ chuẩn bị xong...' : formattedUpdatedAt)}</p></div>
+                        <div class="ledger-info"><h4>Shipper đã nhận hàng</h4><p>${(order.status == 'SHIPPING' || order.status == 'DELIVERED' || order.status == 'REVIEWED') ? formattedUpdatedAt : (order.status == 'PREPARING' ? 'Chờ Shop giao cho Shipper...' : 'Đang chờ...')}</p></div>
                     </div>
                     <div class="ledger-item ${order.status == 'DELIVERED' || order.status == 'REVIEWED' ? 'completed' : (order.status == 'SHIPPING' ? 'active' : '')}">
                         <div class="ledger-icon">🚚</div>
