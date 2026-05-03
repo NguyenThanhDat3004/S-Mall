@@ -95,6 +95,15 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
         String redirectUrl = "/";
 
+        // Kiểm tra xem có yêu cầu nào bị chặn trước đó không (SavedRequest)
+        org.springframework.security.web.savedrequest.RequestCache requestCache = new org.springframework.security.web.savedrequest.HttpSessionRequestCache();
+        org.springframework.security.web.savedrequest.SavedRequest savedRequest = requestCache.getRequest(request, response);
+
+        if (savedRequest != null) {
+            response.sendRedirect(savedRequest.getRedirectUrl());
+            return;
+        }
+
         for (GrantedAuthority authority : authorities) {
             String role = authority.getAuthority();
             String roleName = role.replace("ROLE_", "");

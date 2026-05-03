@@ -55,6 +55,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
                                                 .requestMatchers("/", "/search", "/product/**").permitAll()
                                                 .requestMatchers("/login", "/register", "/verify-otp", "/error", "/api/**").permitAll()
+                                                .requestMatchers("/order/passport/**").authenticated()
                                                 .requestMatchers("/WEB-INF/view/**").permitAll()
 
                                                 .anyRequest().authenticated())

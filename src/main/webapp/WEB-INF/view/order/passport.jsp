@@ -5,212 +5,385 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>S-Mall Order Passport | #${order.orderCode}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S-Mall Logistics | Hộ chiếu đơn hàng</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.3); }
-        [x-cloak] { display: none !important; }
-        .passport-pattern {
-            background-image: radial-gradient(#065F46 0.5px, transparent 0.5px);
-            background-size: 10px 10px;
-            opacity: 0.05;
+        :root {
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --primary: #10b981;
+            --primary-glow: rgba(16, 185, 129, 0.2);
+            --accent: #10b981;
+            --border: rgba(0, 0, 0, 0.08);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --card-radius: 20px;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Outfit', sans-serif; background-color: var(--bg-body); color: var(--text-main); min-height: 100vh; }
+
+        .top-nav {
+            display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 4rem;
+            background: #ffffff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100;
+        }
+        .logo-area { display: flex; flex-direction: column; gap: 4px; text-decoration: none; }
+        .logo-brand { display: flex; align-items: center; gap: 8px; }
+        .logo-s { font-size: 2.2rem; font-weight: 800; color: var(--accent); line-height: 1; }
+        .logo-mall { 
+            background: var(--accent); color: #fff; padding: 4px 12px; border-radius: 12px; 
+            font-size: 1.6rem; font-weight: 700; line-height: 1; display: inline-block;
+        }
+        .logo-subtitle { font-size: 0.85rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; }
+        
+        .order-id-nav { text-align: right; }
+        .order-id-nav label { font-size: 0.75rem; color: var(--text-muted); display: block; }
+        .order-id-nav span { font-weight: 700; font-family: monospace; font-size: 1.1rem; }
+
+        .dashboard-container {
+            display: grid; grid-template-columns: 320px 1fr 320px; gap: 24px;
+            padding: 24px 4rem; max-width: 1600px; margin: 0 auto;
+        }
+
+        .card { background: var(--bg-card); border-radius: var(--card-radius); border: 1px solid var(--border); padding: 24px; height: fit-content; }
+        .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .qr-card { text-align: center; border-top: 4px solid var(--primary); }
+        .qr-wrapper { background: #fff; padding: 12px; border-radius: 16px; display: inline-block; margin-bottom: 20px; border: 1px solid var(--border); }
+        .qr-wrapper img { width: 220px; height: 220px; }
+        
+        .status-badge {
+            background: rgba(16, 185, 129, 0.1); color: var(--primary); padding: 8px 16px;
+            border-radius: 99px; font-size: 0.875rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 24px;
+        }
+        .status-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+        
+        .action-buttons { display: flex; flex-direction: column; gap: 12px; }
+        .btn { padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; border: none; text-align: center; text-decoration: none; display: block; width: 100%; }
+        .btn-confirm { background: var(--primary); color: #fff; box-shadow: 0 4px 14px var(--primary-glow); }
+        .btn-secondary { background: #fff; color: var(--text-main); border: 1px solid var(--border); }
+
+        .manifest-header { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .actor-card { background: #fff; padding: 16px; border-radius: 16px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); overflow: hidden; }
+        .avatar { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; border: 1px solid var(--border); background: var(--bg-body); flex-shrink: 0; }
+        .actor-info { min-width: 0; flex: 1; }
+        .actor-info label { font-size: 0.7rem; color: var(--text-muted); display: block; text-transform: uppercase; margin-bottom: 2px; }
+        .actor-info h4 { font-size: 1rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .product-list { display: flex; flex-direction: column; gap: 12px; }
+        .product-item { background: #f8fafc; padding: 12px 16px; border-radius: 12px; display: flex; align-items: center; gap: 16px; border: 1px solid var(--border); }
+        .p-icon { width: 44px; height: 44px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid var(--border); flex-shrink: 0; }
+        .p-details { flex: 1; min-width: 0; }
+        .p-details h4 { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .p-qty { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+        .p-price { font-weight: 700; color: var(--accent); }
+
+        .summary-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.04); 
+        }
+        .summary-row:last-child { border-bottom: none; }
+        .summary-row label { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; }
+        .summary-row span { font-weight: 700; font-size: 0.9rem; text-align: right; }
+        .status-tag { 
+            background: var(--primary-glow); color: var(--primary); 
+            padding: 4px 12px; border-radius: 8px; font-size: 0.8rem;
+        }
+
+        .total-card { margin-top: 20px; padding-top: 20px; border-top: 2px dashed var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .total-card label { font-weight: 600; color: var(--text-muted); }
+        .total-card span { font-size: 1.4rem; font-weight: 800; }
+
+        .ledger-list { display: flex; flex-direction: column; }
+        .ledger-item { position: relative; padding-left: 32px; padding-bottom: 24px; border-left: 2px solid #e2e8f0; }
+        .ledger-item:last-child { border-left-color: transparent; padding-bottom: 0; }
+        .ledger-item.completed { border-left-color: var(--primary); }
+        .ledger-icon { 
+            position: absolute; left: -11px; top: 0; width: 20px; height: 20px; 
+            background: #fff; border: 2px solid #e2e8f0; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800;
+        }
+        .completed .ledger-icon { background: var(--primary); border-color: var(--primary); color: #fff; }
+        .active .ledger-icon { border-color: var(--primary); color: var(--primary); animation: glow 1.5s infinite; }
+        @keyframes glow { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        
+        .ledger-info h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 2px; }
+        .ledger-info p { font-size: 0.75rem; color: var(--text-muted); }
+        .active .ledger-info h4 { color: var(--primary); }
     </style>
 </head>
-<body class="bg-[#F0FDF4] min-h-screen pb-20">
-    <div class="fixed inset-0 passport-pattern -z-10"></div>
+<body>
 
-    <div class="max-w-md mx-auto px-6 py-8">
-        <!-- Header Passport -->
-        <div class="text-center mb-10">
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-900 text-white rounded-full text-[10px] font-extrabold uppercase tracking-[0.2em] mb-4 shadow-lg shadow-emerald-900/20">
-                <i class="fas fa-shield-halved"></i> Official Order Passport
-            </div>
-            <h1 class="text-2xl font-extrabold text-[#064E3B]">S-Mall System</h1>
-            <p class="text-emerald-600/60 text-xs font-semibold mt-1">Verified Digital Shipment Identity</p>
-        </div>
+    <nav class="top-nav">
+        <a href="${pageContext.request.contextPath}/" class="logo-area">
+            <div class="logo-brand"><span class="logo-s">S</span><span class="logo-mall">Mall</span></div>
+            <p class="logo-subtitle">Hộ chiếu đơn hàng số</p>
+        </a>
+        <div class="order-id-nav"><label>Mã vận đơn</label><span>${order.orderCode}</span></div>
+    </nav>
 
-        <!-- Main Ticket Card -->
-        <div class="glass rounded-[40px] shadow-2xl overflow-hidden relative border-t-4 border-emerald-600">
-            <!-- Order ID Section -->
-            <div class="p-8 text-center border-b border-dashed border-emerald-100">
-                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Passport ID</div>
-                <div class="text-3xl font-black text-[#064E3B] tracking-tight">#${order.orderCode}</div>
-                
-                <div class="mt-4 flex items-center justify-center gap-2">
-                    <c:set var="statusColor" value="" />
+    <main class="dashboard-container">
+        <div class="side-col">
+            <div class="card qr-card">
+                <h3 class="card-title">Định danh vật lý</h3>
+                <div class="qr-wrapper"><img src="data:image/png;base64,${qrCode}" alt="QR"></div>
+                <div class="status-badge"><div class="status-dot"></div>${order.status.displayName}</div>
+                <div class="action-buttons">
+                    <form action="/api/orders/passport/update-status" method="POST">
+                        <input type="hidden" name="orderCode" value="${order.orderCode}">
+                        <c:choose>
+                            <c:when test="${role == 'SELLER' && order.status == 'PENDING'}">
+                                <button type="submit" name="action" value="CONFIRM" class="btn btn-confirm">Xác nhận đơn hàng</button>
+                            </c:when>
+                            <c:when test="${role == 'SELLER' && order.status == 'PREPARING'}">
+                                <button type="submit" name="action" value="PREPARED" class="btn btn-confirm">Chuẩn bị xong hàng</button>
+                            </c:when>
+                            <c:when test="${role == 'SHIPPER' && order.status == 'READY_FOR_PICKUP'}">
+                                <div style="margin-bottom: 12px; text-align: left;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Vị trí lấy hàng</label>
+                                    <input type="text" name="location" value="${order.orderDetails[0].product.shop.user.profile.address}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                </div>
+                                <button type="submit" name="action" value="PICKUP" class="btn btn-confirm">Xác nhận lấy hàng</button>
+                            </c:when>
+                            <c:when test="${role == 'SHIPPER' && order.status == 'SHIPPING'}">
+                                <div style="margin-bottom: 12px; text-align: left;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Cập nhật vị trí trạm dừng</label>
+                                    <input type="text" name="location" placeholder="Nhập địa chỉ hiện tại..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                </div>
+                                <button type="submit" name="action" value="DELIVERED" class="btn btn-confirm">Xác nhận đã giao</button>
+                            </c:when>
+                            <c:when test="${role == 'BUYER' && order.status == 'DELIVERED'}">
+                                <button type="submit" name="action" value="RECEIVED" class="btn btn-confirm">Đã nhận hàng</button>
+                            </c:when>
+                        </c:choose>
+                    </form>
+                    
                     <c:choose>
-                        <c:when test="${order.status == 'PENDING'}"><c:set var="statusColor" value="bg-amber-100 text-amber-700" /></c:when>
-                        <c:when test="${order.status == 'CONFIRMED'}"><c:set var="statusColor" value="bg-blue-100 text-blue-700" /></c:when>
-                        <c:when test="${order.status == 'SHIPPING'}"><c:set var="statusColor" value="bg-indigo-100 text-indigo-700" /></c:when>
-                        <c:when test="${order.status == 'DELIVERED'}"><c:set var="statusColor" value="bg-emerald-100 text-emerald-700" /></c:when>
-                        <c:otherwise><c:set var="statusColor" value="bg-red-100 text-red-700" /></c:otherwise>
+                        <c:when test="${role == 'SELLER'}">
+                            <button class="btn btn-secondary">Liên hệ đơn vị vận chuyển</button>
+                        </c:when>
+                        <c:when test="${role == 'SHIPPER'}">
+                            <button class="btn btn-secondary">Liên hệ tổng đài điều phối</button>
+                        </c:when>
+                        <c:otherwise>
+                            <button class="btn btn-secondary">Liên hệ hỗ trợ</button>
+                        </c:otherwise>
                     </c:choose>
-                    <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${statusColor}">
-                        ${order.status.displayName}
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 24px;">
+                <h3 class="card-title">Hành trình chi tiết</h3>
+                <div class="summary-row">
+                    <label>Trạng thái</label>
+                    <span class="status-tag">${order.status.displayName}</span>
+                </div>
+                <div class="summary-row">
+                    <label>Vị trí hiện tại</label>
+                    <span id="current-loc-text" style="max-width: 160px;">
+                        <c:choose>
+                            <c:when test="${order.status == 'READY_FOR_PICKUP'}">Sẵn sàng tại kho</c:when>
+                            <c:when test="${order.status == 'PREPARING'}">Đang đóng gói</c:when>
+                            <c:otherwise>Đang cập nhật...</c:otherwise>
+                        </c:choose>
                     </span>
                 </div>
-            </div>
-
-            <!-- Content Details -->
-            <div class="p-8 space-y-6">
-                <!-- Role Recognition Message -->
-                <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
-                    <div class="text-[10px] text-emerald-800 font-bold uppercase tracking-wider mb-1">Identity Recognized</div>
-                    <div class="text-sm font-bold text-emerald-900">
-                        <c:choose>
-                            <c:when test="${role == 'SELLER'}"><i class="fas fa-store mr-2"></i> Hello, Seller!</c:when>
-                            <c:when test="${role == 'SHIPPER'}"><i class="fas fa-truck-fast mr-2"></i> Hello, Shipper!</c:when>
-                            <c:when test="${role == 'BUYER'}"><i class="fas fa-user-check mr-2"></i> Hello, Customer!</c:when>
-                            <c:otherwise><i class="fas fa-globe mr-2"></i> Public Tracking View</c:otherwise>
-                        </c:choose>
-                    </div>
+                <div class="summary-row">
+                    <label>Cập nhật lần cuối</label>
+                    <span>${formattedUpdatedAt}</span>
                 </div>
-
-                <!-- Info Grid -->
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Placed On</div>
-                        <div class="text-sm font-bold text-[#064E3B]">
-                             <fmt:parseDate value="${order.createdAt.toString()}" pattern="yyyy-MM-dd'T'HH:mm" var="parsedDate" type="both" />
-                             <fmt:formatDate value="${parsedDate}" pattern="HH:mm - dd/MM" />
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Total Amount</div>
-                        <div class="text-sm font-bold text-emerald-600">
-                             <fmt:formatNumber value="${order.totalPrice}" type="currency" currencySymbol="₫"/>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Shipping To -->
-                <div class="pt-6 border-t border-emerald-50">
-                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-3">Shipping Passport Address</div>
-                    <div class="flex gap-4">
-                        <div class="w-12 h-12 rounded-2xl bg-white shadow-sm border border-emerald-50 flex items-center justify-center text-emerald-600">
-                            <i class="fas fa-map-location-dot text-lg"></i>
-                        </div>
-                        <div class="flex-1">
-                            <div class="font-bold text-sm text-[#064E3B]">${order.account.profile.fullName}</div>
-                            <div class="text-xs text-emerald-600/70 font-medium">${order.account.profile.phoneNumber}</div>
-                            <div class="text-[11px] text-gray-500 mt-1 leading-relaxed">${order.shippingAddress}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product Snapshot -->
-                <div class="pt-6 border-t border-emerald-50">
-                    <div class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">Package Content</div>
-                    <div class="space-y-3">
-                        <c:forEach var="item" items="${order.orderDetails}" varStatus="loop">
-                            <c:if test="${loop.index < 3}">
-                                <div class="flex items-center gap-4">
-                                    <img src="${pageContext.request.contextPath}${not empty item.productVariant.imageUrl ? item.productVariant.imageUrl : item.product.images[0].url}" 
-                                         class="w-10 h-10 rounded-xl object-cover bg-white border border-emerald-50 shadow-sm">
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-xs font-bold text-[#064E3B] truncate">${item.product.name}</div>
-                                        <div class="text-[9px] text-gray-400">Qty: ${item.quantity} | SKU: ${item.productVariant.sku}</div>
-                                    </div>
-                                </div>
-                            </c:if>
-                        </c:forEach>
-                        <c:if test="${order.orderDetails.size() > 3}">
-                            <div class="text-[9px] text-center text-emerald-600 font-bold uppercase tracking-widest pt-2">
-                                + ${order.orderDetails.size() - 3} other items in package
-                            </div>
-                        </c:if>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Footer Action Area -->
-            <div class="p-8 bg-emerald-50/50 border-t border-emerald-100">
-                <c:choose>
-                    <c:when test="${role == 'SELLER' && order.status == 'PENDING'}">
-                        <button onclick="updateStatus('CONFIRMED')" class="w-full py-4 bg-emerald-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/30 active:scale-95 transition-all">
-                            Confirm Package Ready
-                        </button>
-                    </c:when>
-                    <c:when test="${role == 'SHIPPER' && order.status == 'CONFIRMED'}">
-                        <button onclick="updateStatus('SHIPPING')" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-900/30 active:scale-95 transition-all">
-                            Pickup Package Now
-                        </button>
-                    </c:when>
-                    <c:when test="${role == 'SHIPPER' && order.status == 'SHIPPING'}">
-                        <button onclick="updateStatus('DELIVERED')" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/30 active:scale-95 transition-all">
-                            Delivered to Buyer
-                        </button>
-                    </c:when>
-                    <c:when test="${role == 'BUYER' && order.status == 'SHIPPING'}">
-                        <button onclick="updateStatus('DELIVERED')" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-emerald-900/30 active:scale-95 transition-all">
-                            I Received the Package
-                        </button>
-                    </c:when>
-                    <c:otherwise>
-                        <div class="text-center">
-                            <p class="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4">No Actions Required</p>
-                            <a href="${pageContext.request.contextPath}/" class="text-[10px] text-emerald-800 underline font-bold">Return to Homepage</a>
-                        </div>
-                    </c:otherwise>
-                </c:choose>
             </div>
         </div>
-        
-        <!-- Safety Note -->
-        <p class="mt-8 text-center text-[10px] text-emerald-600/40 font-bold uppercase tracking-widest px-8">
-            This digital passport is protected by S-Mall Security. Any unauthorized action will be logged.
-        </p>
-    </div>
+
+        <div class="main-col">
+            <c:set var="firstShop" value="${order.orderDetails[0].product.shop}" />
+            <div class="manifest-header">
+                <div class="actor-card">
+                    <img class="avatar" src="${not empty order.account.profile.avatarUrl ? order.account.profile.avatarUrl : 'https://ui-avatars.com/api/?name=' + order.account.profile.fullName + '&background=10b981&color=fff'}" alt="Buyer">
+                    <div class="actor-info">
+                        <label>Người mua</label>
+                        <h4>${order.account.profile.fullName}</h4>
+                        <div style="font-size: 0.7rem; margin-top: 4px; padding: 2px 6px; background: #f1f5f9; border-radius: 4px; display: inline-block;">
+                            PTTT: <span style="font-weight: 700; color: var(--accent);">${order.paymentMethod == 'QR' ? 'THANH TOÁN QR' : 'TIỀN MẶT (COD)'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="actor-card" style="border-left: 4px solid var(--accent);">
+                    <img class="avatar" src="${not empty firstShop.logoUrl ? firstShop.logoUrl : 'https://ui-avatars.com/api/?name=' + firstShop.name + '&background=10b981&color=fff'}" alt="Seller">
+                    <div class="actor-info">
+                        <label>Người bán</label>
+                        <h4>${firstShop.name}</h4>
+                        <p style="font-size: 0.8rem; color: #64748b;">${firstShop.user.email}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">Danh mục sản phẩm</h3>
+                <div class="product-list">
+                    <c:forEach var="detail" items="${order.orderDetails}">
+                        <div class="product-item">
+                            <div class="p-icon">📦</div>
+                            <div class="p-details">
+                                <h4>${detail.product.name}</h4>
+                                <p style="font-size: 0.75rem; color: var(--text-muted);">Mã SP: ${detail.product.id}-${detail.id}</p>
+                            </div>
+                            <div class="p-qty">x${detail.quantity}</div>
+                            <div class="p-price"><fmt:formatNumber value="${detail.priceAtPurchase * detail.quantity}" type="currency" currencySymbol="₫" /></div>
+                        </div>
+                    </c:forEach>
+                </div>
+                <div class="total-card" style="border-top: 2px dashed var(--border); padding-top: 20px; margin-top: 20px;">
+                    <div style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <label style="color: var(--text-muted); font-size: 0.85rem;">Tổng giá trị hàng</label>
+                            <span style="font-weight: 600;"><fmt:formatNumber value="${order.totalPrice}" type="currency" currencySymbol="₫" /></span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label style="color: var(--text-main); font-weight: 700;">SỐ TIỀN CẦN THU</label>
+                            <c:choose>
+                                <c:when test="${order.paymentMethod == 'QR'}">
+                                    <div style="text-align: right;">
+                                        <span style="font-size: 1.5rem; font-weight: 800; color: var(--accent);">0₫</span>
+                                        <p style="font-size: 0.65rem; color: var(--accent); font-weight: 700;">ĐÃ THANH TOÁN QR</p>
+                                    </div>
+                                </c:when>
+                                <c:otherwise>
+                                    <span style="font-size: 1.5rem; font-weight: 800; color: #ef4444;">
+                                        <fmt:formatNumber value="${order.totalPrice}" type="currency" currencySymbol="₫" />
+                                    </span>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 24px; padding: 0; overflow: hidden; position: relative;">
+                <h3 class="card-title" style="padding: 24px;">Bản đồ hành trình</h3>
+                <div id="map" style="height: 350px; width: 100%;"></div>
+                <div id="distance-info" style="position: absolute; top: 70px; right: 20px; z-index: 1000; background: var(--accent); color: #fff; padding: 4px 12px; border-radius: 8px; font-weight: 700; display: none;">KM: <span id="dist-val">0</span></div>
+                <div style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+                    <p style="font-size: 0.85rem;">📍 Đích đến: ${order.shippingAddress}</p>
+                    <div id="shipper-status" style="display: none; color: var(--primary); font-weight: 700; font-size: 0.75rem;">🚚 SHIPPER ĐANG DI CHUYỂN</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-col">
+            <div class="card" style="min-height: 100%;">
+                <h3 class="card-title">Nhật ký Logistics</h3>
+                <div class="ledger-list">
+                    <div class="ledger-item completed">
+                        <div class="ledger-icon">✓</div>
+                        <div class="ledger-info"><h4>Đơn hàng đã xác nhận</h4><p>${formattedCreatedAt}</p></div>
+                    </div>
+                    <div class="ledger-item completed">
+                        <div class="ledger-icon">💳</div>
+                        <div class="ledger-info">
+                            <c:choose>
+                                <c:when test="${order.paymentMethod == 'QR'}">
+                                    <h4>Đã thanh toán (S-Mall QR)</h4>
+                                    <p>${formattedCreatedAt}</p>
+                                </c:when>
+                                <c:otherwise>
+                                    <h4>Thanh toán khi nhận hàng (COD)</h4>
+                                    <p>Số tiền: <fmt:formatNumber value="${order.totalPrice}" type="currency" currencySymbol="₫" /></p>
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
+                    </div>
+                    <div class="ledger-item ${order.status != 'PENDING' && order.status != 'CONFIRMED' && order.status != 'PREPARING' ? 'completed' : (order.status == 'PREPARING' ? 'active' : '')}">
+                        <div class="ledger-icon">🤝</div>
+                        <div class="ledger-info"><h4>Đã chuẩn bị xong hàng</h4><p>${(order.status == 'PENDING' || order.status == 'CONFIRMED' || order.status == 'PREPARING') ? 'Đang chuẩn bị...' : formattedUpdatedAt}</p></div>
+                    </div>
+                    <div class="ledger-item ${order.status == 'SHIPPING' || order.status == 'DELIVERED' || order.status == 'REVIEWED' ? 'completed' : (order.status == 'READY_FOR_PICKUP' ? 'active' : '')}">
+                        <div class="ledger-icon">📦</div>
+                        <div class="ledger-info"><h4>Shipper đã nhận hàng</h4><p>${(order.status == 'READY_FOR_PICKUP') ? 'Đang chờ Shipper...' : (order.status == 'PREPARING' ? 'Chờ chuẩn bị xong...' : formattedUpdatedAt)}</p></div>
+                    </div>
+                    <div class="ledger-item ${order.status == 'DELIVERED' || order.status == 'REVIEWED' ? 'completed' : (order.status == 'SHIPPING' ? 'active' : '')}">
+                        <div class="ledger-icon">🚚</div>
+                        <div class="ledger-info"><h4>Đang trên đường giao</h4><p>${order.status == 'SHIPPING' ? 'Hàng đang trên đường tới bạn' : ''}</p></div>
+                    </div>
+                    <div class="ledger-item ${order.status == 'REVIEWED' ? 'completed' : (order.status == 'DELIVERED' ? 'active' : '')}">
+                        <div class="ledger-icon">🏁</div>
+                        <div class="ledger-info"><h4>Giao hàng thành công</h4><p>${order.status == 'DELIVERED' ? 'Đã giao tới tay khách hàng' : 'Đang chờ...'}</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script>
-        function updateStatus(status) {
-            Swal.fire({
-                title: 'Confirm Action?',
-                text: "Update order status to: " + status,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#065F46',
-                cancelButtonColor: '#94A3B8',
-                confirmButtonText: 'Yes, Proceed!',
-                border: 'none',
-                customClass: {
-                    popup: 'rounded-[32px] border-none shadow-2xl',
-                    confirmButton: 'rounded-xl px-6 py-3 font-bold',
-                    cancelButton: 'rounded-xl px-6 py-3 font-bold'
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const params = new URLSearchParams();
-                    params.append('orderId', '${order.id}');
-                    params.append('status', status);
+        document.addEventListener('DOMContentLoaded', function() {
+            const map = L.map('map').setView([10.762622, 106.660172], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
 
-                    fetch('${pageContext.request.contextPath}/seller/order/update-status', {
-                        method: 'POST',
-                        body: params
-                    })
-                    .then(response => {
-                        if(response.ok) {
-                            Swal.fire({
-                                title: 'Success!',
-                                text: 'Order status updated.',
-                                icon: 'success',
-                                confirmButtonColor: '#065F46',
-                                customClass: { popup: 'rounded-[32px]' }
-                            }).then(() => window.location.reload());
-                        } else {
-                            Swal.fire('Error', 'Update failed!', 'error');
+            const shopAddr = "${order.orderDetails[0].product.shop.user.profile.address}";
+            const buyerAddr = "${order.shippingAddress}";
+            const status = "${order.status}";
+
+            async function getCoords(addr) {
+                if (!addr || addr.trim() === "") return null;
+                const search = async (q) => {
+                    try {
+                        const res = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q) + '&limit=1&polygon_geojson=1');
+                        const data = await res.json();
+                        return data && data.length > 0 ? data[0] : null;
+                    } catch (e) { return null; }
+                };
+                const parts = addr.split(',').map(p => p.trim());
+                for (let i = 0; i < parts.length; i++) {
+                    const query = parts.slice(i).join(', ');
+                    if (query.length < 3) continue;
+                    let data = await search(query);
+                    if (data) return data;
+                }
+                return null;
+            }
+
+            Promise.all([getCoords(shopAddr), getCoords(buyerAddr)]).then(results => {
+                const shopData = results[0];
+                const buyerData = results[1];
+
+                if (buyerData) {
+                    const buyerC = [parseFloat(buyerData.lat), parseFloat(buyerData.lon)];
+                    document.getElementById('current-loc-text').innerText = (status === 'PENDING' || status === 'PREPARING') ? shopAddr : "Đang vận chuyển...";
+
+                    if (shopData) {
+                        const shopC = [parseFloat(shopData.lat), parseFloat(shopData.lon)];
+                        if (status === 'SHIPPING') {
+                            // Mock Shipper position halfway
+                            const shipperC = [(shopC[0] + buyerC[0])/2, (shopC[1] + buyerC[1])/2];
+                            L.marker(shipperC, { icon: L.divIcon({ html: '🚚', className: 'truck-icon', iconSize: [30, 30] }) }).addTo(map).bindPopup("Shipper đang ở đây");
+                            document.getElementById('shipper-status').style.display = 'block';
+                            document.getElementById('current-loc-text').innerText = "Đang trên đường tới điểm giao";
                         }
-                    });
+                        L.marker(shopC).addTo(map).bindPopup("Shop");
+                        L.marker(buyerC).addTo(map).bindPopup("Khách");
+                        L.polyline([shopC, buyerC], {color: '#10b981', dashArray: '10, 10'}).addTo(map);
+                        map.fitBounds(new L.featureGroup([L.marker(shopC), L.marker(buyerC)]).getBounds().pad(0.3));
+                    } else {
+                        drawZone(buyerData);
+                    }
+                }
+
+                function drawZone(data) {
+                    const coords = [parseFloat(data.lat), parseFloat(data.lon)];
+                    if (data.geojson && (data.geojson.type === 'Polygon' || data.geojson.type === 'MultiPolygon')) {
+                        L.geoJSON(data.geojson, { style: { color: '#064e3b', fillColor: '#064e3b', fillOpacity: 0.25 } }).addTo(map);
+                        map.fitBounds(L.geoJSON(data.geojson).getBounds());
+                    } else {
+                        L.circle(coords, { radius: 1000, color: '#064e3b' }).addTo(map);
+                        map.setView(coords, 14);
+                    }
                 }
             });
-        }
+        });
     </script>
 </body>
 </html>

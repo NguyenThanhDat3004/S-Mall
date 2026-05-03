@@ -4,6 +4,7 @@ public enum OrderStatus {
     PENDING("Chờ xác nhận"),
     CONFIRMED("Đã xác nhận"),
     PREPARING("Đang chuẩn bị hàng"),
+    READY_FOR_PICKUP("Đang chờ Shipper"),
     SHIPPING("Đang giao hàng"),
     DELIVERED("Đã giao hàng"),
     CANCELLED("Đã hủy"),
