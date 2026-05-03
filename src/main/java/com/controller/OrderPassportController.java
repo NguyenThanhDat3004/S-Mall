@@ -28,7 +28,8 @@ public class OrderPassportController {
 
         String role = "GUEST";
         if (principal != null) {
-            User currentUser = userService.getUserByEmail(principal.getName());
+            User currentUser = userService.getUserByEmail(principal.getName()).orElse(null);
+            if (currentUser == null) return "redirect:/";
             
             // Determine Role for this specific order
             if (order.getAccount().getEmail().equals(principal.getName())) {
