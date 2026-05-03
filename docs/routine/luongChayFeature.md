@@ -122,27 +122,34 @@ sequenceDiagram
 
 ## 6. Hệ thống Hộ chiếu Đơn hàng (Smart Order Passport) & Hóa đơn Tự động
 
-Hệ thống quản lý vòng đời đơn hàng khép kín từ lúc vận hành cho đến khi ghi nhận doanh thu thực tế.
+Hệ thống quản lý vòng đời đơn hàng khép kín, tích hợp bản đồ vận chuyển thời gian thực và tự chủ công nghệ định danh QR.
 
 ### Sơ đồ Luồng Vận hành Passport:
 ```mermaid
 sequenceDiagram
     participant Role as User (Seller/Shipper/Buyer)
-    participant QR as QR Code (Passport Link)
+    participant LocalAPI as /api/qrcode (Internal QR)
+    participant Map as Leaflet.js (Dynamic Map)
     participant PassportCtrl as OrderPassportController
     participant OrderSvc as OrderService (updateStatus)
     participant InvoiceSvc as OrderService (createInvoice)
     participant DB as SQL Database (Orders/Invoices)
 
-    Note over Role, DB: Bước 1: Quét mã & Phân quyền
-    Role->>QR: Quét mã QR trên đơn hàng
-    QR->>PassportCtrl: Truy cập /order/passport/{code}
-    PassportCtrl->>PassportCtrl: Nhận diện Role từ Principal
-    PassportCtrl-->>Role: Hiển thị giao diện & Nút hành động tương ứng
+    Note over Role, LocalAPI: Bước 1: Tạo mã & Quét định danh
+    LocalAPI->>LocalAPI: QRCodeService tạo QR nội bộ (PNG)
+    Role->>PassportCtrl: Truy cập /order/passport/{code} thông qua quét QR
+    PassportCtrl->>PassportCtrl: Nhận diện Role & Trạng thái đơn hàng
+    
+    Note over Role, Map: Bước 2: Theo dõi hành trình thời gian thực
+    Map->>Map: Vẽ Route qua các trạm dừng (Hà Nội -> Hà Tĩnh -> ...)
+    alt Trạng thái = SHIPPING (Giao tận tay)
+        Map->>Map: Di chuyển 🚚 áp sát địa chỉ khách hàng (95% quãng đường)
+    end
+    PassportCtrl-->>Role: Hiển thị Bản đồ động & Nhật ký trạm dừng (Ledger)
 
-    Note over Role, DB: Bước 2: Thao tác & Ghi nhận Doanh thu
+    Note over Role, DB: Bước 3: Thao tác & Ghi nhận Doanh thu
     Role->>OrderSvc: Nhấn "Xác nhận" / "Giao hàng"
-    OrderSvc->>DB: Cập nhật trạng thái đơn hàng
+    OrderSvc->>DB: Cập nhật trạng thái & Lưu vết trạm dừng
     
     rect rgb(240, 255, 240)
         Note right of OrderSvc: Cơ chế Invoice thông minh
@@ -153,8 +160,18 @@ sequenceDiagram
         end
     end
     
-    InvoiceSvc->>DB: Lưu bản ghi vào bảng Invoices (Doanh thu chính thức)
+    InvoiceSvc->>DB: Lưu bản ghi Invoices (Doanh thu chính thức)
 ```
+
+### Các công nghệ & Giải pháp áp dụng:
+1.  **Tự chủ công nghệ QR (Internal QR Engine)**: Triển khai API `/api/qrcode` sử dụng thư viện ZXing để tạo ảnh QR trực tiếp từ Server. Loại bỏ hoàn toàn sự phụ thuộc vào bên thứ ba, đảm bảo tính riêng tư và tốc độ tải cực nhanh.
+2.  **Dynamic Route Visualization**: Sử dụng **Leaflet.js** để vẽ hành trình giao hàng. Hệ thống tự động tính toán tọa độ các trạm dừng trung chuyển và hiển thị vị trí mô phỏng của phương tiện vận chuyển dựa trên trạng thái đơn hàng.
+3.  **Logistics Ledger (Nhật ký hành trình)**: Tự động ghi lại thời gian và địa điểm của từng bước xử lý (Xác nhận đơn, Xuất kho, Qua trạm trung chuyển, Giao hàng thành công) một cách minh bạch.
+4.  **Revenue Recognition (Ghi nhận doanh thu)**: 
+    - **Thanh toán QR**: Xuất hóa đơn ngay lập tức (Prepaid) để khớp nối dòng tiền.
+    - **Thanh toán COD**: Chỉ xuất hóa đơn khi đơn hàng đạt trạng thái `DELIVERED` (Đã giao thành công), đảm bảo tính pháp lý và tài chính chính xác.
+5.  **Bảo mật Stacking (Z-Index Fix)**: Xử lý lỗi giao diện menu hành động bị che khuất bằng cơ chế nâng cấp `z-index` động khi tương tác, mang lại trải nghiệm người dùng chuyên nghiệp.
+
 
 ### Các quy tắc nghiệp vụ (Business Rules):
 1.  **Tính bảo mật Role-based**: Shipper chỉ thấy nút giao hàng, Seller thấy nút xác nhận chuẩn bị hàng, Buyer thấy nút nhận hàng. Người lạ quét mã chỉ thấy thông tin theo dõi cơ bản.
