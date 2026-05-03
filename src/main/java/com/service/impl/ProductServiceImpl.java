@@ -52,40 +52,66 @@ public class ProductServiceImpl implements ProductService {
         Category category = categoryRepository.findById(dto.getCategoryId())
                 .orElseThrow(() -> new Exception("Danh mục không tồn tại!"));
 
-        // 3. Khởi tạo Product
-        Product product = new Product();
+        // 3. Khởi tạo hoặc Lấy Product hiện tại
+        Product product;
+        if (dto.getId() != null) {
+            product = productRepository.findById(dto.getId())
+                    .orElseThrow(() -> new Exception("Sản phẩm không tồn tại!"));
+            // Đảm bảo sản phẩm thuộc về shop của user này
+            if (!product.getShop().getId().equals(shop.getId())) {
+                throw new Exception("Bạn không có quyền chỉnh sửa sản phẩm này!");
+            }
+            product.setUpdatedAt(LocalDateTime.now());
+        } else {
+            product = new Product();
+            product.setCreatedAt(LocalDateTime.now());
+            product.setUpdatedAt(LocalDateTime.now());
+            product.setActive(true);
+            product.setStatus("PUBLISHED");
+            product.setShop(shop);
+        }
+
         product.setName(dto.getName());
         product.setSlug(dto.getSlug());
         product.setDescription(dto.getDescription());
         product.setCategory(category);
-        product.setShop(shop);
-        product.setCreatedAt(LocalDateTime.now());
-        product.setUpdatedAt(LocalDateTime.now());
-        product.setActive(true);
-        product.setStatus("PUBLISHED");
 
         // 4. Xử lý Variants (Biến thể)
-        List<ProductVariant> variants = new ArrayList<>();
+        List<ProductVariant> variants = product.getVariants();
+        if (variants == null) variants = new ArrayList<>();
+        
+        // Nếu là update, mình sẽ đánh dấu các biến thể cũ để có thể xóa hoặc cập nhật
         for (ProductVariantDTO varDto : dto.getVariants()) {
-            ProductVariant variant = new ProductVariant();
+            ProductVariant variant;
+            if (varDto.getId() != null) {
+                // Tìm biến thể cũ để cập nhật
+                variant = variants.stream()
+                        .filter(v -> v.getId().equals(varDto.getId()))
+                        .findFirst()
+                        .orElse(new ProductVariant()); // Fallback tạo mới nếu không thấy
+            } else {
+                variant = new ProductVariant();
+                variant.setProduct(product);
+                variants.add(variant);
+            }
+
             variant.setSku(varDto.getSku());
             variant.setPrice(varDto.getPrice());
             variant.setStock(varDto.getStock());
-            variant.setProduct(product);
+            variant.setAttributesJson("{\"name\": \"" + varDto.getName() + "\"}");
 
             // Xử lý ảnh riêng cho biến thể
             if (varDto.getVariantImage() != null && !varDto.getVariantImage().isEmpty()) {
                 String varImgUrl = uploadService.saveImage(varDto.getVariantImage());
                 variant.setImageUrl(varImgUrl);
             }
-
-            variant.setAttributesJson("{\"name\": \"" + varDto.getName() + "\"}");
-            variants.add(variant);
         }
         product.setVariants(variants);
 
         // 5. Xử lý Images (Hình ảnh)
-        List<ProductImage> productImages = new ArrayList<>();
+        List<ProductImage> productImages = product.getImages();
+        if (productImages == null) productImages = new ArrayList<>();
+        
         if (images != null) {
             for (MultipartFile imgFile : images) {
                 if (!imgFile.isEmpty()) {

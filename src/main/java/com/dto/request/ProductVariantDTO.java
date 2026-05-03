@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 
 public class ProductVariantDTO {
     
+    private Long id;
+
     @NotBlank(message = "Tên biến thể không được để trống")
     private String name;
 
@@ -22,6 +24,8 @@ public class ProductVariantDTO {
     public ProductVariantDTO() {}
 
     // Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public double getPrice() { return price; }

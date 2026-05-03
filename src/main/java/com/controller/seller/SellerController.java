@@ -1,6 +1,9 @@
 package com.controller.seller;
 
 import com.dto.request.ProductCreateDTO;
+import com.dto.request.ProductVariantDTO;
+import com.entity.Product;
+import com.entity.ProductVariant;
 import com.entity.User;
 import com.service.CategoryService;
 import com.service.ProductService;
@@ -14,6 +17,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Controller
 @RequestMapping("/seller")
@@ -130,4 +138,92 @@ public class SellerController {
             return "redirect:/seller/product/create";
         }
     }
+    @GetMapping("/product/edit/{id}")
+    public String getEditProductPage(@PathVariable Long id, Model model, Authentication authentication) {
+        com.entity.Product product = productService.findById(id);
+        if (product == null) return "redirect:/seller/product/show";
+
+        // Chuyển đổi Product sang ProductCreateDTO
+        ProductCreateDTO dto = new ProductCreateDTO();
+        dto.setId(product.getId());
+        dto.setName(product.getName());
+        dto.setSlug(product.getSlug());
+        dto.setDescription(product.getDescription());
+        dto.setCategoryId(product.getCategory().getId());
+
+        java.util.List<ProductVariantDTO> variantDTOs = new ArrayList<>();
+        for (com.entity.ProductVariant v : product.getVariants()) {
+            ProductVariantDTO vDto = new ProductVariantDTO();
+            vDto.setId(v.getId());
+            vDto.setPrice(v.getPrice());
+            vDto.setStock(v.getStock());
+            vDto.setSku(v.getSku());
+            
+            // Lấy name từ attributesJson (giả định định dạng {"name": "..."})
+            try {
+                String json = v.getAttributesJson();
+                if (json != null && json.contains("\"name\":")) {
+                    String name = json.split("\"name\":")[1].split("\"")[1];
+                    vDto.setName(name);
+                }
+            } catch (Exception e) {
+                vDto.setName("Biến thể");
+            }
+            variantDTOs.add(vDto);
+        }
+        dto.setVariants(variantDTOs);
+
+        model.addAttribute("productDTO", dto);
+        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("isEdit", true);
+        return "seller/product/create"; // Dùng chung giao diện với create
+    }
+
+    @PostMapping("/product/edit/{id}")
+    public String handleUpdateProduct(
+            @PathVariable Long id,
+            @ModelAttribute("productDTO") @Valid ProductCreateDTO productDTO,
+            BindingResult bindingResult,
+            @RequestParam(value = "images", required = false) MultipartFile[] images,
+            Authentication authentication,
+            jakarta.servlet.http.HttpSession session,
+            Model model) {
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("categories", categoryService.getAllCategories());
+            model.addAttribute("isEdit", true);
+            return "seller/product/create";
+        }
+
+        try {
+            productDTO.setId(id);
+            User currentUser = userService.getUserByEmail(authentication.getName()).get();
+            productService.saveProduct(productDTO, images, currentUser);
+
+            session.setAttribute("message", "Cập nhật sản phẩm thành công!");
+            session.setAttribute("messageType", "success");
+            return "redirect:/seller/product/show";
+        } catch (Exception e) {
+            e.printStackTrace();
+            session.setAttribute("message", "Lỗi cập nhật: " + e.getMessage());
+            session.setAttribute("messageType", "error");
+            return "redirect:/seller/product/edit/" + id;
+        }
+    }
+    @PostMapping("/product/delete/{id}")
+    @ResponseBody
+    public java.util.Map<String, Object> handleSoftDelete(@PathVariable Long id) {
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        try {
+            productService.softDelete(id);
+            response.put("success", true);
+            response.put("message", "Đã xóa sản phẩm thành công!");
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Lỗi: " + e.getMessage());
+        }
+        return response;
+    }
 }
+
+

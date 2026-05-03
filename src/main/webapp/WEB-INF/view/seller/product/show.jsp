@@ -196,6 +196,34 @@
                 loadMoreBtn.innerHTML = originalContent;
             }
         }
+
+        async function deleteProduct(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này? Thao tác này sẽ ẩn sản phẩm khỏi cửa hàng.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${url}/seller/product/delete/${id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    const item = document.querySelector(`button[onclick="deleteProduct(${id})"]`).closest('.product-item');
+                    if (item) {
+                        item.classList.add('opacity-0', 'transition-all', 'duration-500', '-translate-x-full');
+                        setTimeout(() => item.remove(), 500);
+                    }
+                } else {
+                    alert('Lỗi: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error deleting product:', error);
+            }
+        }
     </script>
 
 </body>

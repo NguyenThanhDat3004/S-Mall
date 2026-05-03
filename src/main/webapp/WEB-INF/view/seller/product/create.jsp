@@ -11,6 +11,10 @@
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>S-Mall | Thêm Sản Phẩm Mới</title>
 
+                <!-- Tailwind & Alpine -->
+                <script src="https://cdn.tailwindcss.com"></script>
+                <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
                 <!-- Link CSS -->
                 <link rel="stylesheet" href="${url}/resources/css/admin/dashboard.css">
                 <link rel="stylesheet" href="${url}/resources/css/seller/product-form.css">
@@ -25,7 +29,7 @@
 
                 <div class="content-wrapper">
                     <div class="header-content mb-4">
-                        <h2 style="font-weight: 700; color: #1e293b;">Quản lý Sản phẩm</h2>
+                        <h2 style="font-weight: 700; color: #1e293b;">${isEdit ? 'Chỉnh sửa Sản phẩm' : 'Quản lý Sản phẩm'}</h2>
                     </div>
 
                     <!-- Hiển thị thông báo (Sạch bóng vạch đỏ) -->
@@ -39,8 +43,12 @@
                     </c:if>
 
                     <!-- Sử dụng form:form của Spring để binding dữ liệu -->
-                    <form:form action="${url}/seller/product/create" method="POST" modelAttribute="productDTO"
+                    <form:form action="${isEdit ? url.concat('/seller/product/edit/').concat(productDTO.id) : url.concat('/seller/product/create')}" 
+                        method="POST" modelAttribute="productDTO"
                         enctype="multipart/form-data">
+                        
+                        <form:hidden path="id" />
+                        
                         <div class="grid-container">
                             <div class="form-card">
                                 <h3 class="section-title">Thông tin chung</h3>
@@ -107,6 +115,7 @@
                                                         </td>
                                                         <form:hidden path="variants[${status.index}].sku"
                                                             class="var-sku" />
+                                                        <form:hidden path="variants[${status.index}].id" />
                                                         <td>
                                                             <i class="fas fa-trash-alt btn-remove-row"
                                                                 onclick="removeRow(this)"></i>
@@ -145,7 +154,7 @@
                                     </div>
 
                                     <button type="submit" class="btn-save">
-                                        <i class="fas fa-save me-2"></i> Lưu sản phẩm
+                                        <i class="fas fa-save me-2"></i> ${isEdit ? 'Cập nhật sản phẩm' : 'Lưu sản phẩm'}
                                     </button>
                                 </div>
                             </div>
