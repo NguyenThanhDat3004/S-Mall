@@ -21,6 +21,9 @@ public class DataInitializer implements CommandLineRunner {
     private final ProductRepository productRepository;
     private final ProductVariantRepository productVariantRepository;
     private final ProductImageRepository productImageRepository;
+    private final UserRepository userRepository;
+    private final UserProfileRepository userProfileRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private final org.springframework.cache.CacheManager cacheManager;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
@@ -30,6 +33,9 @@ public class DataInitializer implements CommandLineRunner {
                            ProductRepository productRepository,
                            ProductVariantRepository productVariantRepository,
                            ProductImageRepository productImageRepository,
+                           UserRepository userRepository,
+                           UserProfileRepository userProfileRepository,
+                           org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
                            org.springframework.cache.CacheManager cacheManager,
                            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.categoryRepository = categoryRepository;
@@ -38,6 +44,9 @@ public class DataInitializer implements CommandLineRunner {
         this.productRepository = productRepository;
         this.productVariantRepository = productVariantRepository;
         this.productImageRepository = productImageRepository;
+        this.userRepository = userRepository;
+        this.userProfileRepository = userProfileRepository;
+        this.passwordEncoder = passwordEncoder;
         this.cacheManager = cacheManager;
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -58,10 +67,14 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         // 1. Roles
-        saveRole("USER", "Ng\u01B0\u1EDDi d\u00F9ng");
-        saveRole("SELLER", "Ng\u01B0\u1EDDi b\u00E1n");
-        saveRole("ADMIN", "Qu\u1EA3n tr\u1ECB");
-        saveRole("SHIPPER", "\u0110\u01A1n v\u1ECB v\u1EADn chuy\u1EC3n");
+        saveRole("USER", "Người dùng");
+        saveRole("SELLER", "Người bán");
+        saveRole("ADMIN", "Quản trị");
+        saveRole("SHIPPER", "Đơn vị vận chuyển");
+
+        // 1.1 Sample Users for Testing
+        saveSampleUser("shipper@small.com", "123456", "SHIPPER", "Mạnh Shipper");
+        saveSampleUser("seller@small.com", "123456", "SELLER", "Anh Chủ Shop");
 
         // 2. Categories
         saveCategory("Th\u1EDDi Trang Nam", "thoi-trang-nam", "FASH_MAN", "https://img.icons8.com/color/96/t-shirt.png");
@@ -189,4 +202,21 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
+    private void saveSampleUser(String email, String pass, String roleName, String fullName) {
+        if (userRepository.findByEmail(email).isPresent()) return;
+
+        com.entity.User user = new com.entity.User();
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(pass));
+        user.setRole(roleRepository.findByName(roleName));
+        user.setActive(true);
+        user = userRepository.save(user);
+
+        com.entity.UserProfile profile = new com.entity.UserProfile();
+        profile.setUser(user);
+        profile.setFullName(fullName);
+        profile.setPhoneNumber("0987654321");
+        profile.setAddress("Hà Nội, Việt Nam");
+        userProfileRepository.save(profile);
+    }
 }

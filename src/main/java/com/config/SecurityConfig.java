@@ -52,7 +52,7 @@ public class SecurityConfig {
                                                 .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE).permitAll()
                                                 .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                                                 .requestMatchers("/shop/register").authenticated()
-                                                .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
+                                                .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN", "SHIPPER")
                                                 .requestMatchers("/", "/search", "/product/**").permitAll()
                                                 .requestMatchers("/login", "/register", "/verify-otp", "/error", "/api/**").permitAll()
                                                 .requestMatchers("/order/passport/**").authenticated()

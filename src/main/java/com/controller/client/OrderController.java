@@ -43,6 +43,6 @@ public class OrderController {
         }
         
         model.addAttribute("order", order);
-        return "client/order/details";
+        return "redirect:/order/passport/" + orderCode;
     }
 }

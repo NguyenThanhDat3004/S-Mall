@@ -146,18 +146,16 @@
             <!-- PHẦN 1: ƯU TIÊN ĐƠN HÀNG PENDING -->
             <c:forEach var="order" items="${orders}">
                 <c:if test="${order.status == 'PENDING'}">
-                    <jsp:include page="order_card_fragment.jsp">
-                        <jsp:param name="orderId" value="${order.id}" />
-                    </jsp:include>
+                    <c:set var="currentOrder" value="${order}" scope="request" />
+                    <jsp:include page="order_card_fragment.jsp" />
                 </c:if>
             </c:forEach>
 
             <!-- PHẦN 2: CÁC ĐƠN HÀNG CÒN LẠI -->
             <c:forEach var="order" items="${orders}">
                 <c:if test="${order.status != 'PENDING'}">
-                    <jsp:include page="order_card_fragment.jsp">
-                        <jsp:param name="orderId" value="${order.id}" />
-                    </jsp:include>
+                    <c:set var="currentOrder" value="${order}" scope="request" />
+                    <jsp:include page="order_card_fragment.jsp" />
                 </c:if>
             </c:forEach>
 
@@ -221,7 +219,7 @@
                                 <!-- QR Code Passport Section -->
                                 <div class="flex flex-col items-center p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 mb-6 w-full">
                                     <div class="p-2 bg-white rounded-2xl shadow-sm mb-3">
-                                        <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(window.location.origin + '${url}/order/passport/' + selectedOrder?.code)" 
+                                        <img :src="'${url}/api/qrcode?text=' + encodeURIComponent(window.location.origin + '${url}/order/passport/' + selectedOrder?.code)" 
                                              class="w-24 h-24 rounded-lg">
                                     </div>
                                     <div class="text-center">

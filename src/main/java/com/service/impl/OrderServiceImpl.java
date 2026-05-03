@@ -127,7 +127,7 @@ public class OrderServiceImpl implements OrderService {
         notification.setType("ORDER_STATUS");
         notification.setContent(
                 "Chúc mừng! Đơn hàng " + order.getOrderCode() + " đã được đặt thành công. Hệ thống đang xử lý.");
-        notification.setLinkUrl("/order-details/" + order.getOrderCode());
+        notification.setLinkUrl("/order/passport/" + order.getOrderCode());
         notificationRepository.save(notification);
 
         // Gửi mail xác nhận (với QR code)
@@ -164,8 +164,8 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(newStatus);
         orderRepository.save(order);
 
-        // Tự động tạo Invoice khi đơn hàng bắt đầu được xử lý (PREPARING)
-        if (newStatus == OrderStatus.PREPARING) {
+        // Tự động tạo Invoice khi đơn hàng hoàn thành (DELIVERED) hoặc đã thanh toán
+        if (newStatus == OrderStatus.DELIVERED) {
             createInvoiceForOrder(order);
         }
 

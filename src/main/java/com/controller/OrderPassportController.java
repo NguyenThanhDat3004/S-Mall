@@ -50,10 +50,10 @@ public class OrderPassportController {
                 .anyMatch(d -> d.getProduct().getShop().getUser().getEmail().equals(userEmail))) {
             role = "SELLER";
             hasAccess = true;
-        } else if (currentUser.getRole().getName().equals("ROLE_SHIPPER")) {
+        } else if (currentUser.getRole().getName().equals("SHIPPER")) {
             role = "SHIPPER";
             hasAccess = true;
-        } else if (currentUser.getRole().getName().equals("ROLE_ADMIN")) {
+        } else if (currentUser.getRole().getName().equals("ADMIN")) {
             role = "ADMIN";
             hasAccess = true;
         }
@@ -79,6 +79,7 @@ public class OrderPassportController {
     }
 
     @PostMapping("/api/orders/passport/update-status")
+    @org.springframework.web.bind.annotation.ResponseBody
     public Object updateOrderStatus(@RequestParam String orderCode,
             @RequestParam String action,
             @RequestParam(required = false) String location,
@@ -97,6 +98,16 @@ public class OrderPassportController {
                 .anyMatch(d -> d.getProduct().getShop().getUser().getEmail().equals(userEmail));
 
         // Logic "Rào bảo mật" cho hành động
+        if ("UPDATE_LOCATION".equals(action) || "OUT_FOR_DELIVERY".equals(action)) {
+            if (currentUser.getRole().getName().equals("SHIPPER") || currentUser.getRole().getName().equals("ADMIN")) {
+                String logMsg = "UPDATE_LOCATION".equals(action) 
+                    ? "Đơn hàng đã đến trạm: " + (location != null ? location : "Đang cập nhật...")
+                    : "Shipper đang trên đường giao hàng đến bạn. Vui lòng để ý điện thoại!";
+                orderService.updateStatus(order.getId(), order.getStatus(), logMsg);
+                return java.util.Map.of("success", true);
+            }
+        }
+
         if ("CONFIRM".equals(action)) {
             // Chỉ Người bán mới được xác nhận đơn hàng đang chờ
             if (isSeller && order.getStatus() == com.constant.OrderStatus.PENDING) {
@@ -110,18 +121,16 @@ public class OrderPassportController {
                         "Người bán đã bàn giao hàng cho đơn vị vận chuyển.");
             }
         } else if ("PICKUP".equals(action)) {
-            // Chỉ Shipper được xác nhận lấy hàng khi hàng đã sẵn sàng
-            if (currentUser.getRole().getName().equals("ROLE_SHIPPER") &&
-                    order.getStatus() == com.constant.OrderStatus.READY_FOR_PICKUP) {
+            if (currentUser.getRole().getName().equals("SHIPPER") || currentUser.getRole().getName().equals("ADMIN")) {
                 orderService.updateStatus(order.getId(), com.constant.OrderStatus.SHIPPING,
-                        "Shipper đã lấy hàng và đang vận chuyển.");
+                        "Shipper đã lấy hàng thành công (Passport Scan)");
+                return java.util.Map.of("success", true);
             }
         } else if ("DELIVERED".equals(action)) {
-            // Chỉ Shipper được xác nhận giao hàng xong
-            if (currentUser.getRole().getName().equals("ROLE_SHIPPER") &&
-                    order.getStatus() == com.constant.OrderStatus.SHIPPING) {
+            if (currentUser.getRole().getName().equals("SHIPPER") || currentUser.getRole().getName().equals("ADMIN")) {
                 orderService.updateStatus(order.getId(), com.constant.OrderStatus.DELIVERED,
-                        "Shipper đã giao hàng thành công (Passport Scan)");
+                        "Đơn hàng đã được giao thành công tới tay khách hàng.");
+                return java.util.Map.of("success", true);
             }
         } else if ("RECEIVED".equals(action)) {
             // Chỉ Người mua được xác nhận đã nhận hàng
@@ -139,5 +148,24 @@ public class OrderPassportController {
         }
 
         return "redirect:/order/passport/" + orderCode;
+    }
+
+    @GetMapping("/api/qrcode")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public org.springframework.http.ResponseEntity<byte[]> getQRCode(@RequestParam String text) {
+        try {
+            com.google.zxing.qrcode.QRCodeWriter qrCodeWriter = new com.google.zxing.qrcode.QRCodeWriter();
+            com.google.zxing.common.BitMatrix bitMatrix = qrCodeWriter.encode(text, com.google.zxing.BarcodeFormat.QR_CODE, 300, 300);
+            
+            java.io.ByteArrayOutputStream pngOutputStream = new java.io.ByteArrayOutputStream();
+            com.google.zxing.client.j2se.MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
+            byte[] pngData = pngOutputStream.toByteArray();
+            
+            return org.springframework.http.ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.IMAGE_PNG)
+                    .body(pngData);
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.badRequest().build();
+        }
     }
 }

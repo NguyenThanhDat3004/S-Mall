@@ -16,6 +16,9 @@
                             <c:when test="${sessionScope.userRole == 'SELLER' || sessionScope.userRole == 'ADMIN'}">
                                 <a href="${url}/seller/dashboard">Kênh người bán</a>
                             </c:when>
+                            <c:when test="${sessionScope.userRole == 'SHIPPER'}">
+                                <a href="${url}/seller/orders">Quản lý giao hàng</a>
+                            </c:when>
                             <c:otherwise>
                                 <a href="${url}/shop/register">Trở thành người bán</a>
                             </c:otherwise>

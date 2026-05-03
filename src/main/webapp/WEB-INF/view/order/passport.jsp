@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -114,6 +115,17 @@
         .ledger-info h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 2px; }
         .ledger-info p { font-size: 0.75rem; color: var(--text-muted); }
         .active .ledger-info h4 { color: var(--primary); }
+
+        .truck-container { display: flex; align-items: center; justify-content: center; }
+        .truck-emoji { 
+            font-size: 40px; 
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+            animation: truck-bounce 1s infinite alternate;
+        }
+        @keyframes truck-bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-5px); }
+        }
     </style>
 </head>
 <body>
@@ -152,20 +164,37 @@
                                 <button type="button" onclick="submitStatus('PICKUP')" class="btn btn-confirm">Xác nhận lấy hàng</button>
                             </c:when>
                             <c:when test="${role == 'SHIPPER' && order.status == 'SHIPPING'}">
-                                <div style="margin-bottom: 12px; text-align: left;">
-                                    <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Cập nhật vị trí trạm dừng</label>
-                                    <input type="text" id="shipLoc" name="location" placeholder="Nhập địa chỉ hiện tại..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                <c:set var="isFinalMile" value="false" />
+                                <c:if test="${not empty order.statusLogs}">
+                                    <c:set var="lastNote" value="${order.statusLogs[order.statusLogs.size()-1].note}" />
+                                    <c:if test="${lastNote.contains('giao hàng đến bạn')}">
+                                        <c:set var="isFinalMile" value="true" />
+                                    </c:if>
+                                </c:if>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 10px;">
+                                    <c:if test="${!isFinalMile}">
+                                        <div style="margin-bottom: 12px; text-align: left;">
+                                            <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: block;">Cập nhật vị trí trạm dừng</label>
+                                            <input type="text" id="shipLoc" name="location" placeholder="Nhập địa chỉ hiện tại..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                                        </div>
+                                        <button type="button" onclick="submitStatus('UPDATE_LOCATION')" class="btn" style="background: var(--primary); color: #fff; margin: 0; border: none; font-weight: 700;">📍 Cập nhật trạm dừng</button>
+                                        <button type="button" onclick="submitStatus('OUT_FOR_DELIVERY')" class="btn" style="background: #3b82f6; color: #fff; margin: 0; border: none; font-weight: 700;">🚚 Báo đang giao tận tay</button>
+                                    </c:if>
+                                    <button type="button" onclick="submitStatus('DELIVERED')" class="btn btn-confirm" style="margin: 0; background: #059669;">✅ Xác nhận đã giao</button>
                                 </div>
-                                <button type="button" onclick="submitStatus('DELIVERED')" class="btn btn-confirm">Xác nhận đã giao</button>
                             </c:when>
                             <c:when test="${role == 'BUYER' && order.status == 'DELIVERED'}">
-                                <button type="button" onclick="submitStatus('RECEIVED')" class="btn btn-confirm">Đã nhận hàng</button>
+                                <button type="button" onclick="submitStatus('RECEIVED')" class="btn btn-confirm">📦 Đã nhận hàng</button>
                             </c:when>
                         </c:choose>
                     </form>
 
                     <script>
                         function submitStatus(action) {
+                            if (action === 'DELIVERED' && !confirm('Bạn có chắc chắn đơn hàng đã được giao thành công?')) {
+                                return;
+                            }
                             const form = document.getElementById('statusForm');
                             const loc = document.getElementById('shipLoc')?.value || '';
                             const formData = new URLSearchParams();
@@ -337,45 +366,44 @@
         <div class="side-col">
             <div class="card" style="min-height: 100%;">
                 <h3 class="card-title">Nhật ký Logistics</h3>
-                <div class="ledger-list">
-                    <div class="ledger-item completed">
-                        <div class="ledger-icon">✓</div>
-                        <div class="ledger-info"><h4>Đơn hàng đã xác nhận</h4><p>${formattedCreatedAt}</p></div>
-                    </div>
-                    <div class="ledger-item completed">
-                        <div class="ledger-icon">💳</div>
-                        <div class="ledger-info">
-                            <c:choose>
-                                <c:when test="${order.paymentMethod == 'QR'}">
-                                    <h4>Đã thanh toán (S-Mall QR)</h4>
-                                    <p>${formattedCreatedAt}</p>
-                                </c:when>
-                                <c:otherwise>
-                                    <h4>Thanh toán khi nhận hàng (COD)</h4>
-                                    <p>Số tiền: <fmt:formatNumber value="${order.totalPrice}" type="currency" currencySymbol="₫" /></p>
-                                </c:otherwise>
-                            </c:choose>
+                <div class="ledger-list" id="ledgerContainer">
+                    <c:forEach var="log" items="${order.statusLogs}" varStatus="status">
+                        <div class="ledger-item ${status.last ? 'active' : 'completed'}">
+                            <div class="ledger-icon">
+                                <c:choose>
+                                    <c:when test="${fn:contains(log.note, 'trạm')}">&#128205;</c:when>
+                                    <c:when test="${log.status == 'DELIVERED'}">&#127937;</c:when>
+                                    <c:when test="${log.status == 'SHIPPING'}">&#128666;</c:when>
+                                    <c:when test="${log.status == 'PREPARING'}">&#128230;</c:when>
+                                    <c:when test="${log.status == 'PENDING'}">&#10003;</c:when>
+                                    <c:otherwise>&bull;</c:otherwise>
+                                </c:choose>
+                            </div>
+                            <div class="ledger-info">
+                                <h4>${log.note}</h4>
+                                <p>${fn:replace(log.createdAt, 'T', ' ')}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="ledger-item ${order.status == 'SHIPPING' || order.status == 'DELIVERED' || order.status == 'REVIEWED' ? 'completed' : (order.status == 'READY_FOR_PICKUP' ? 'active' : '')}">
-                        <div class="ledger-icon">📦</div>
-                        <div class="ledger-info"><h4>Shipper đã nhận hàng</h4><p>${(order.status == 'SHIPPING' || order.status == 'DELIVERED' || order.status == 'REVIEWED') ? formattedUpdatedAt : (order.status == 'PREPARING' ? 'Chờ Shop giao cho Shipper...' : 'Đang chờ...')}</p></div>
-                    </div>
-                    <div class="ledger-item ${order.status == 'DELIVERED' || order.status == 'REVIEWED' ? 'completed' : (order.status == 'SHIPPING' ? 'active' : '')}">
-                        <div class="ledger-icon">🚚</div>
-                        <div class="ledger-info"><h4>Đang trên đường giao</h4><p>${order.status == 'SHIPPING' ? 'Hàng đang trên đường tới bạn' : ''}</p></div>
-                    </div>
-                    <div class="ledger-item ${order.status == 'REVIEWED' ? 'completed' : (order.status == 'DELIVERED' ? 'active' : '')}">
-                        <div class="ledger-icon">🏁</div>
-                        <div class="ledger-info"><h4>Giao hàng thành công</h4><p>${order.status == 'DELIVERED' ? 'Đã giao tới tay khách hàng' : 'Đang chờ...'}</p></div>
-                    </div>
+                    </c:forEach>
                 </div>
             </div>
         </div>
     </main>
 
+    <c:set var="transitLocations" value="" />
+    <c:forEach var="log" items="${order.statusLogs}">
+        <c:if test="${log.note.startsWith('Đơn hàng đã đến trạm: ')}">
+            <c:set var="loc" value="${log.note.replace('Đơn hàng đã đến trạm: ', '')}" />
+            <c:set var="transitLocations" value="${transitLocations}${loc}|" />
+        </c:if>
+    </c:forEach>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const transitStr = "${transitLocations}";
+            const transitList = transitStr ? transitStr.split('|').filter(s => s.trim() !== "") : [];
+            const lastLoc = transitList.length > 0 ? transitList[transitList.length - 1] : "";
+            
             const map = L.map('map').setView([10.762622, 106.660172], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(map);
 
@@ -402,30 +430,67 @@
                 return null;
             }
 
-            Promise.all([getCoords(shopAddr), getCoords(buyerAddr)]).then(results => {
-                const shopData = results[0];
-                const buyerData = results[1];
-
-                if (buyerData) {
-                    const buyerC = [parseFloat(buyerData.lat), parseFloat(buyerData.lon)];
-                    document.getElementById('current-loc-text').innerText = (status === 'PENDING' || status === 'PREPARING') ? shopAddr : "Đang vận chuyển...";
-
-                    if (shopData) {
-                        const shopC = [parseFloat(shopData.lat), parseFloat(shopData.lon)];
-                        if (status === 'SHIPPING') {
-                            // Mock Shipper position halfway
-                            const shipperC = [(shopC[0] + buyerC[0])/2, (shopC[1] + buyerC[1])/2];
-                            L.marker(shipperC, { icon: L.divIcon({ html: '🚚', className: 'truck-icon', iconSize: [30, 30] }) }).addTo(map).bindPopup("Shipper đang ở đây");
-                            document.getElementById('shipper-status').style.display = 'block';
-                            document.getElementById('current-loc-text').innerText = "Đang trên đường tới điểm giao";
-                        }
-                        L.marker(shopC).addTo(map).bindPopup("Shop");
-                        L.marker(buyerC).addTo(map).bindPopup("Khách");
-                        L.polyline([shopC, buyerC], {color: '#10b981', dashArray: '10, 10'}).addTo(map);
-                        map.fitBounds(new L.featureGroup([L.marker(shopC), L.marker(buyerC)]).getBounds().pad(0.3));
-                    } else {
-                        drawZone(buyerData);
+            // Geocode all points
+            const pointsToGeocode = [shopAddr, ...transitList, buyerAddr];
+            
+            Promise.all(pointsToGeocode.map(addr => getCoords(addr))).then(results => {
+                const coords = results.filter(r => r !== null).map(r => [parseFloat(r.lat), parseFloat(r.lon)]);
+                
+                if (coords.length >= 2) {
+                    // Draw full path
+                    L.polyline(coords, {color: '#10b981', weight: 4, opacity: 0.6, dashArray: '10, 10'}).addTo(map);
+                    
+                    // Shop marker
+                    L.marker(coords[0]).addTo(map).bindPopup("Shop");
+                    // Buyer marker
+                    L.marker(coords[coords.length - 1]).addTo(map).bindPopup("Khách hàng");
+                    
+                    // Transit markers (optional, let's just do circles for stops)
+                    for (let i = 1; i < coords.length - 1; i++) {
+                        L.circleMarker(coords[i], { radius: 5, color: '#10b981', fillColor: '#fff', fillOpacity: 1 }).addTo(map)
+                         .bindPopup("Trạm dừng: " + transitList[i-1]);
                     }
+
+                    if (status === 'SHIPPING') {
+                        let isOutForDelivery = false;
+                        <c:if test="${not empty order.statusLogs}">
+                            isOutForDelivery = "${order.statusLogs[order.statusLogs.size()-1].note}".includes("giao hàng đến bạn");
+                        </c:if>
+                        
+                        const currentIdx = transitList.length > 0 ? transitList.length : 0;
+                        let shipperC = coords[currentIdx] || coords[0];
+                        
+                        if (isOutForDelivery && coords.length >= 2) {
+                            // Place truck 95% of the way between last point and buyer
+                            const lastP = coords[coords.length - 2];
+                            const buyerP = coords[coords.length - 1];
+                            shipperC = [
+                                lastP[0] + (buyerP[0] - lastP[0]) * 0.95,
+                                lastP[1] + (buyerP[1] - lastP[1]) * 0.95
+                            ];
+                        }
+
+                        L.marker(shipperC, { 
+                            icon: L.divIcon({ 
+                                html: '<div class="truck-emoji">🚚</div>', 
+                                className: 'truck-container', 
+                                iconSize: [50, 50],
+                                iconAnchor: [25, 40]
+                            }) 
+                        }).addTo(map).bindPopup(isOutForDelivery ? "Shipper sắp đến nơi!" : "Vị trí hiện tại: " + (lastLoc || "Shop"));
+                        
+                        if (isOutForDelivery) {
+                            document.getElementById('current-loc-text').innerText = "Sắp đến điểm giao";
+                        } else {
+                            document.getElementById('current-loc-text').innerText = lastLoc || "Đang rời kho";
+                        }
+                        document.getElementById('shipper-status').style.display = 'block';
+                    }
+                    
+                    map.fitBounds(L.polyline(coords).getBounds().pad(0.3));
+                } else if (results[results.length - 1]) {
+                    // Only buyer address found
+                    drawZone(results[results.length - 1]);
                 }
 
                 function drawZone(data) {
