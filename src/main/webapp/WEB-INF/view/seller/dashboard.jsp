@@ -134,6 +134,7 @@
                 </div>
             </div>
 
+            <%-- 
             <!-- Charts Row -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-2 glass-card p-8 rounded-3xl shadow-sm">
@@ -175,9 +176,11 @@
                     </div>
                 </div>
             </div>
+            --%>
         </main>
     </div>
 
+    <%-- 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const ctx = document.getElementById('salesChart').getContext('2d');
@@ -226,5 +229,6 @@
             }
         });
     </script>
+    --%>
 </body>
 </html>
