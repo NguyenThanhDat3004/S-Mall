@@ -1,15 +1,20 @@
 package com.service.impl;
 
-import com.entity.Voucher;
 import com.entity.Shop;
+import com.entity.Voucher;
 import com.repository.VoucherRepository;
 import com.repository.ShopRepository;
+import com.repository.UserVoucherRepository;
 import com.service.VoucherService;
+import com.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 @Service
 public class VoucherServiceImpl implements VoucherService {
@@ -19,6 +24,9 @@ public class VoucherServiceImpl implements VoucherService {
 
     @Autowired
     private ShopRepository shopRepository;
+
+    @Autowired
+    private UserVoucherRepository userVoucherRepository;
 
     @Override
     @Transactional
@@ -62,5 +70,33 @@ public class VoucherServiceImpl implements VoucherService {
     @Transactional
     public void deleteVoucher(Long voucherId) {
         voucherRepository.deleteById(voucherId);
+    }
+
+    @Override
+    public List<Voucher> getAvailableVouchersForCheckout(User user, List<Long> shopIds) {
+        if (shopIds == null || shopIds.isEmpty()) return new ArrayList<>();
+
+        // 1. Lấy Voucher công khai của các shop này
+        List<Voucher> publicVouchers = voucherRepository.findByShopIdInAndPublicVoucherTrue(shopIds);
+
+        // 2. Lấy Voucher cá nhân trong ví của User thuộc các shop này
+        List<Voucher> privateVouchers = userVoucherRepository.findAvailableVouchersForUserInShops(user.getId(), shopIds);
+
+        // Hợp nhất và lọc bỏ những voucher hết hạn hoặc hết số lượng
+        List<Voucher> allVouchers = new ArrayList<>();
+        allVouchers.addAll(publicVouchers);
+        allVouchers.addAll(privateVouchers);
+
+        LocalDateTime now = LocalDateTime.now();
+        List<Voucher> filtered = allVouchers.stream()
+                .distinct()
+                .filter(v -> v.getQuantity() > 0)
+                .filter(v -> v.getExpiryDate() == null || v.getExpiryDate().isAfter(now))
+                .collect(Collectors.toList());
+
+        System.out.println(">>> [DEBUG VOUCHER] Tổng cộng tìm thấy: " + allVouchers.size());
+        System.out.println(">>> [DEBUG VOUCHER] Sau khi lọc (hạn dùng & số lượng): " + filtered.size());
+        
+        return filtered;
     }
 }

@@ -29,8 +29,8 @@ public class Voucher {
 
     private int quantity;
 
-    @Column(name = "initial_quantity")
-    private Integer initialQuantity;
+    @Column(name = "initial_quantity", nullable = false, columnDefinition = "int default 0")
+    private int initialQuantity = 0;
 
     @Column(name = "is_public")
     private boolean publicVoucher = true;
@@ -59,8 +59,8 @@ public class Voucher {
     public void setExpiryDate(LocalDateTime expiryDate) { this.expiryDate = expiryDate; }
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
-    public Integer getInitialQuantity() { return initialQuantity; }
-    public void setInitialQuantity(Integer initialQuantity) { this.initialQuantity = initialQuantity; }
+    public int getInitialQuantity() { return initialQuantity; }
+    public void setInitialQuantity(int initialQuantity) { this.initialQuantity = initialQuantity; }
     public boolean isPublicVoucher() { return publicVoucher; }
     public void setPublicVoucher(boolean publicVoucher) { this.publicVoucher = publicVoucher; }
     public Shop getShop() { return shop; }

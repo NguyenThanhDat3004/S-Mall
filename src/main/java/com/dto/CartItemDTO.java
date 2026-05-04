@@ -10,6 +10,8 @@ public class CartItemDTO implements Serializable {
     private String imageUrl;
     private int quantity;
     private String attributesJson;
+    private Long shopId;
+    private String shopName;
 
     public CartItemDTO() {}
 
@@ -28,4 +30,8 @@ public class CartItemDTO implements Serializable {
     public void setQuantity(int quantity) { this.quantity = quantity; }
     public String getAttributesJson() { return attributesJson; }
     public void setAttributesJson(String attributesJson) { this.attributesJson = attributesJson; }
+    public Long getShopId() { return shopId; }
+    public void setShopId(Long shopId) { this.shopId = shopId; }
+    public String getShopName() { return shopName; }
+    public void setShopName(String shopName) { this.shopName = shopName; }
 }

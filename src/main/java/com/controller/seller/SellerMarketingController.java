@@ -64,7 +64,13 @@ public class SellerMarketingController {
             redirectAttributes.addFlashAttribute("success", "Tạo Voucher thành công!");
             redirectAttributes.addFlashAttribute("generatedCode", created.getCode());
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+            String msg = e.getMessage();
+            if (msg.contains("Ngày hết hạn phải ở trong tương lai")) {
+                msg = "Ngày hết hạn phải ở trong tương lai. Vui lòng chọn thời gian muộn hơn thời điểm hiện tại.";
+            } else if (msg.contains("ConstraintViolation")) {
+                msg = "Dữ liệu nhập vào không hợp lệ. Vui lòng kiểm tra lại các trường thông tin.";
+            }
+            redirectAttributes.addFlashAttribute("error", msg);
         }
         return "redirect:/seller/marketing/vouchers";
     }

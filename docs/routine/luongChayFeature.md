@@ -179,3 +179,45 @@ sequenceDiagram
     - Đối với thanh toán Online (QR): Doanh thu được ghi nhận sớm ngay khi tiền về tài khoản hệ thống.
     - Đối với thanh toán Offline (COD): Doanh thu chỉ được ghi nhận khi hàng đã đến tay khách và tiền đã được thu hộ.
 3.  **Mã định danh duy nhất**: Mỗi hóa đơn có một `InvoiceCode` duy nhất gắn liền với `OrderCode` để phục vụ đối soát tài chính và in ấn sau này.
+## 7. Hệ thống Voucher Kép (Hybrid Voucher System)
+
+Hệ thống cho phép áp dụng đồng thời mã giảm giá từ Shop và nhiều mã giảm giá từ Sàn (S-Mall).
+
+### Sơ đồ Luồng (Sequence Diagram)
+```mermaid
+sequenceDiagram
+    participant User as Người dùng
+    participant UI as Giao diện Thanh toán
+    participant Modal as Modal Voucher
+    participant Logic as JavaScript (updateSummary)
+    participant Server as Order API / QR Simulation
+
+    User->>UI: Mở trang Thanh toán
+    UI->>UI: Phân loại Voucher (v.shopId ? Shop : S-Mall)
+    
+    User->>Modal: Chọn Voucher Shop
+    Modal->>Logic: selectVoucher (Single-select per shop)
+    Logic->>UI: Cập nhật "Voucher Card" của Shop đó
+    
+    User->>Modal: Chọn Voucher S-Mall
+    Modal->>Logic: selectVoucher (Toggle Multi-select)
+    Logic->>UI: Cập nhật danh sách mã S-Mall (Emerald Glow section)
+
+    rect rgb(240, 248, 255)
+        Note over Logic: Giai đoạn: Tính toán & Đồng bộ
+        Logic->>Logic: Cộng dồn (Shop Discounts + All S-Mall Discounts)
+        Logic->>UI: Cập nhật "Tổng tiền cuối cùng"
+    end
+
+    User->>UI: Nhấn "Đặt hàng" / Quét QR
+    UI->>Server: Gửi shopVouchers & platformVouchers (JSON)
+    Server->>Server: Kiểm tra điều kiện & Ghi nhận đơn hàng
+```
+
+### Quy tắc Nghiệp vụ (Business Rules):
+1.  **Voucher Shop (Shop-fenced)**: Chỉ áp dụng cho sản phẩm của Shop đó. Giới hạn **1 mã/shop**. Nếu người dùng chọn mã mới của cùng 1 shop, mã cũ sẽ bị hủy.
+2.  **Voucher Sàn (Platform-wide)**: Áp dụng trên tổng giá trị đơn hàng (Subtotal). Cho phép **chọn nhiều mã** (nếu thỏa mãn điều kiện đơn tối thiểu).
+3.  **Điều kiện áp dụng (Min Order)**: Hệ thống tự động kiểm tra lại điều kiện `minOrderValue` mỗi khi có thay đổi (ví dụ: khi người dùng đổi phương thức vận chuyển hoặc bảo hiểm làm thay đổi tổng tiền).
+4.  **Tính nhất quán dữ liệu**: Toàn bộ danh sách mã đã chọn được lưu vết và gửi kèm theo đơn hàng để đảm bảo tính minh bạch giữa Client và Server.
+
+---

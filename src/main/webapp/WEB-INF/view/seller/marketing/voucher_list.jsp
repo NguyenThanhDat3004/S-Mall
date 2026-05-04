@@ -68,8 +68,14 @@
                 </div>
             </c:if>
             <c:if test="${not empty error}">
-                <div class="bg-rose-50 border border-rose-100 text-rose-600 px-6 py-4 rounded-2xl text-sm font-medium">
-                    <i class="fas fa-exclamation-circle mr-2"></i> ${error}
+                <div class="bg-rose-50 border-l-4 border-rose-500 p-4 rounded-2xl shadow-sm animate-in fade-in slide-in-from-top duration-500 flex items-center gap-4">
+                    <div class="w-10 h-10 bg-rose-500 rounded-xl flex items-center justify-center text-white shrink-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-rose-800 font-bold text-sm">Cần kiểm tra lại</h4>
+                        <p class="text-rose-600 text-xs">${error}</p>
+                    </div>
                 </div>
             </c:if>
 
@@ -85,26 +91,66 @@
                                 <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
                                     <i class="fas fa-ticket-alt text-xl"></i>
                                 </div>
-                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${v.publicVoucher ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}">
-                                    ${v.publicVoucher ? 'Công khai' : 'Cá nhân'}
-                                </span>
-                            </div>
-                            
-                            <h3 class="text-xl font-black text-small-navy mb-1">${v.code}</h3>
-                            <p class="text-xs text-slate-400 font-medium mb-6">Giảm <fmt:formatNumber value="${v.discountAmount}" type="currency" currencySymbol="₫"/> cho đơn từ <fmt:formatNumber value="${v.minOrderValue}" type="currency" currencySymbol="₫"/></p>
-                            
-                            <div class="space-y-3">
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-slate-500">Số lượng còn lại:</span>
-                                    <span class="font-bold text-small-navy">${v.quantity}</span>
-                                </div>
-                                <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                    <div class="bg-emerald-500 h-full transition-all duration-1000" 
-                                         style="width: ${v.initialQuantity > 0 ? (v.quantity * 100 / v.initialQuantity) : 100}%"></div>
-                                </div>
-                                <div class="flex items-center gap-2 text-[10px] text-slate-400 font-bold">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Hết hạn: ${v.formattedExpiryDate}</span>
+                                <div class="flex flex-col gap-2">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center gap-2">
+                                            <span class="px-2 py-1 ${v.publicVoucher ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'} rounded-lg text-[10px] font-bold uppercase tracking-wider border ${v.publicVoucher ? 'border-emerald-100' : 'border-amber-100'}">
+                                                ${v.publicVoucher ? 'Công khai' : 'Cá nhân'}
+                                            </span>
+                                            
+                                            <%-- Tính toán trạng thái --%>
+                                            <c:set var="now" value="<%= java.time.LocalDateTime.now() %>" />
+                                            <c:choose>
+                                                <c:when test="${v.quantity <= 0}">
+                                                    <span class="px-2 py-1 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-rose-100">
+                                                        Hết lượt
+                                                    </span>
+                                                </c:when>
+                                                <c:when test="${not empty v.expiryDate and v.expiryDate.isBefore(now)}">
+                                                    <span class="px-2 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-bold uppercase tracking-wider border border-slate-200">
+                                                        Hết hạn
+                                                    </span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="px-2 py-1 bg-emerald-500 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                                                        Đang chạy
+                                                    </span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-xs text-slate-400">Giảm giá</div>
+                                            <div class="text-lg font-bold text-emerald-600">
+                                                <fmt:formatNumber value="${v.discountAmount}" type="currency" currencySymbol="₫" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-3 mb-6">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="text-slate-500">Mã: <span class="font-mono font-bold text-slate-700">${v.code}</span></span>
+                                            <span class="text-slate-500">Đơn tối thiểu: <b><fmt:formatNumber value="${v.minOrderValue}" type="currency" currencySymbol="₫" /></b></span>
+                                        </div>
+                                        
+                                        <div class="space-y-1">
+                                            <div class="flex justify-between text-[10px] font-bold text-slate-500">
+                                                <span>TIẾN ĐỘ SỬ DỤNG</span>
+                                                <span>${v.initialQuantity > 0 ? (v.initialQuantity - v.quantity) : 0}/${v.initialQuantity}</span>
+                                            </div>
+                                            <div class="h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-50">
+                                                <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-1000" 
+                                                     style="width: ${v.initialQuantity > 0 ? ((v.initialQuantity - v.quantity) * 100 / v.initialQuantity) : 0}%">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex items-center gap-2 text-[10px] ${not empty v.expiryDate and v.expiryDate.isBefore(now) ? 'text-rose-500 font-bold' : 'text-slate-400'}">
+                                            <i class="far fa-clock"></i>
+                                            <span>Hết hạn: <fmt:parseDate value="${v.expiryDate}" pattern="yyyy-MM-dd'T'HH:mm" var="parsedDate" type="both" />
+                                                           <fmt:formatDate value="${parsedDate}" pattern="dd/MM/yyyy HH:mm" />
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -1,10 +1,13 @@
 package com.controller.client;
 
 import com.dto.CartDTO;
+import com.dto.CartItemDTO;
 import com.entity.User;
 import com.entity.UserProfile;
+import com.entity.Voucher;
 import com.service.CartService;
 import com.service.UserService;
+import com.service.VoucherService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,19 +17,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.Principal;
 import java.util.Optional;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class CartController {
 
     private final CartService cartService;
     private final UserService userService;
+    private final VoucherService voucherService;
 
     @org.springframework.beans.factory.annotation.Value("${app.server-ip}")
     private String serverIp;
 
-    public CartController(CartService cartService, UserService userService) {
+    public CartController(CartService cartService, UserService userService, VoucherService voucherService) {
         this.cartService = cartService;
         this.userService = userService;
+        this.voucherService = voucherService;
     }
 
     @GetMapping("/cart")
@@ -200,6 +207,15 @@ public class CartController {
             }
             
             model.addAttribute("cart", cart);
+            
+            // Lấy danh sách Voucher khả dụng cho các shop có trong giỏ hàng
+            List<Long> shopIds = cart.getItems().stream()
+                    .map(item -> item.getShopId())
+                    .distinct()
+                    .collect(Collectors.toList());
+            
+            List<Voucher> availableVouchers = voucherService.getAvailableVouchersForCheckout(user, shopIds);
+            model.addAttribute("availableVouchers", availableVouchers);
         }
 
         return "client/cart/payment";

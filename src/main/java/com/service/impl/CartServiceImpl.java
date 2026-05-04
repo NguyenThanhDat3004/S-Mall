@@ -96,6 +96,10 @@ public class CartServiceImpl implements CartService {
             }
             newItem.setImageUrl(finalImageUrl);
             newItem.setQuantity(quantity);
+            if (variant.getProduct().getShop() != null) {
+                newItem.setShopId(variant.getProduct().getShop().getId());
+                newItem.setShopName(variant.getProduct().getShop().getName());
+            }
             cart.getItems().add(newItem);
         }
 
@@ -239,6 +243,10 @@ public class CartServiceImpl implements CartService {
         }
         newItem.setImageUrl(finalImageUrl);
         newItem.setQuantity(quantity);
+        if (variant.getProduct().getShop() != null) {
+            newItem.setShopId(variant.getProduct().getShop().getId());
+            newItem.setShopName(variant.getProduct().getShop().getName());
+        }
         return newItem;
     }
 }
