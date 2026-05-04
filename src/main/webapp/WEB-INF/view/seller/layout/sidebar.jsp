@@ -63,6 +63,11 @@
             <span class="text-sm font-medium">Customers</span>
         </a>
 
+        <a href="${url}/seller/marketing/vouchers" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white" id="nav-vouchers">
+            <i class="fas fa-ticket-alt w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
+            <span class="text-sm font-medium">Vouchers</span>
+        </a>
+
         <a href="#" class="nav-item group flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-white/5 hover:text-white">
             <i class="fas fa-chart-line w-5 text-center text-sm opacity-60 group-hover:text-emerald-400 transition-colors"></i>
             <span class="text-sm font-medium">Analytics</span>

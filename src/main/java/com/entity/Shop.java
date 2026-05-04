@@ -39,6 +39,12 @@ public class Shop {
     @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL)
     private List<Product> products;
 
+    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL)
+    private List<Voucher> vouchers;
+
+    @OneToMany(mappedBy = "shop", cascade = CascadeType.ALL)
+    private List<ChatRoom> chatRooms;
+
     public Shop() {}
 
     public Long getId() { return id; }
@@ -61,4 +67,8 @@ public class Shop {
     public void setUser(User user) { this.user = user; }
     public List<Product> getProducts() { return products; }
     public void setProducts(List<Product> products) { this.products = products; }
+    public List<Voucher> getVouchers() { return vouchers; }
+    public void setVouchers(List<Voucher> vouchers) { this.vouchers = vouchers; }
+    public List<ChatRoom> getChatRooms() { return chatRooms; }
+    public void setChatRooms(List<ChatRoom> chatRooms) { this.chatRooms = chatRooms; }
 }

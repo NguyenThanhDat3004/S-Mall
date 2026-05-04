@@ -80,10 +80,6 @@
                                     bằng AI.</p>
                             </div>
                             <div class="flex items-center gap-4">
-                                <button
-                                    class="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-sm font-bold border border-emerald-100 hover:bg-emerald-100 transition-all">
-                                    <i class="fas fa-plus mr-2"></i> Tạo Voucher mới
-                                </button>
                                 <div
                                     class="flex items-center gap-4 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
                                     <c:choose>

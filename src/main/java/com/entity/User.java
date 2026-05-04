@@ -27,6 +27,12 @@ public class User {
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
     private List<Order> orders;
 
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
+    private List<ChatRoom> chatRooms;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserVoucher> userVouchers;
+
     @Column(name = "is_active")
     private boolean isActive = true;
 
@@ -51,6 +57,10 @@ public class User {
     public void setProfile(UserProfile profile) { this.profile = profile; }
     public List<Order> getOrders() { return orders; }
     public void setOrders(List<Order> orders) { this.orders = orders; }
+    public List<ChatRoom> getChatRooms() { return chatRooms; }
+    public void setChatRooms(List<ChatRoom> chatRooms) { this.chatRooms = chatRooms; }
+    public List<UserVoucher> getUserVouchers() { return userVouchers; }
+    public void setUserVouchers(List<UserVoucher> userVouchers) { this.userVouchers = userVouchers; }
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
     public LocalDateTime getCreatedAt() { return createdAt; }
