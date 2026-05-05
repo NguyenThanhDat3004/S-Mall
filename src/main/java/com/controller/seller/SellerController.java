@@ -224,6 +224,11 @@ public class SellerController {
         }
         return response;
     }
+
+    @GetMapping("/ai/agent")
+    public String getAiAgentPage() {
+        return "seller/ai/agent";
+    }
 }
 
 

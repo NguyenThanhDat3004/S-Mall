@@ -7,6 +7,8 @@ import com.repository.ShopRepository;
 import com.repository.UserVoucherRepository;
 import com.service.VoucherService;
 import com.entity.User;
+import com.entity.UserVoucher;
+import com.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,9 @@ public class VoucherServiceImpl implements VoucherService {
 
     @Autowired
     private UserVoucherRepository userVoucherRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     @Transactional
@@ -98,5 +103,43 @@ public class VoucherServiceImpl implements VoucherService {
         System.out.println(">>> [DEBUG VOUCHER] Sau khi lọc (hạn dùng & số lượng): " + filtered.size());
         
         return filtered;
+    }
+
+    @Override
+    @Transactional
+    public void assignVoucherToUser(Long voucherId, Long userId) {
+        Voucher voucher = voucherRepository.findById(voucherId)
+                .orElseThrow(() -> new RuntimeException("Voucher not found"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (voucher.getQuantity() <= 0) {
+            throw new RuntimeException("Voucher is out of stock");
+        }
+
+        UserVoucher uv = new UserVoucher();
+        uv.setUser(user);
+        uv.setVoucher(voucher);
+        uv.setAssignedAt(LocalDateTime.now());
+        userVoucherRepository.save(uv);
+
+        // Giảm số lượng voucher
+        voucher.setQuantity(voucher.getQuantity() - 1);
+        voucherRepository.save(voucher);
+    }
+
+    @Override
+    @Transactional
+    public void createAndAssignVoucher(Long shopId, Long userId, double discount, int expiryDays) {
+        Voucher voucher = new Voucher();
+        voucher.setDiscountAmount(discount);
+        voucher.setMinOrderValue(0);
+        voucher.setQuantity(1);
+        voucher.setInitialQuantity(1);
+        voucher.setPublicVoucher(false); // Voucher riêng tư
+        voucher.setExpiryDate(LocalDateTime.now().plusDays(expiryDays));
+        
+        Voucher savedVoucher = createVoucher(voucher, shopId);
+        assignVoucherToUser(savedVoucher.getId(), userId);
     }
 }

@@ -84,4 +84,18 @@ public class MailService {
             e.printStackTrace();
         }
     }
+
+    public void sendMail(String to, String subject, String content) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "utf-8");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setFrom(fromEmail, "S-Mall");
+            helper.setText(content, true);
+            mailSender.send(mimeMessage);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

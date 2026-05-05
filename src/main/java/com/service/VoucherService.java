@@ -11,4 +11,9 @@ public interface VoucherService {
     
     // Mới: Lấy voucher khả dụng cho checkout
     List<Voucher> getAvailableVouchersForCheckout(User user, List<Long> shopIds);
+    // Mới: Gán voucher cho một User cụ thể (Voucher 1-1)
+    void assignVoucherToUser(Long voucherId, Long userId);
+
+    // Mới: Tạo và gán nhanh (Dùng cho AI)
+    void createAndAssignVoucher(Long shopId, Long userId, double discount, int expiryDays);
 }
