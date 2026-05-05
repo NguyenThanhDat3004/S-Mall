@@ -221,3 +221,40 @@ sequenceDiagram
 4.  **Tính nhất quán dữ liệu**: Toàn bộ danh sách mã đã chọn được lưu vết và gửi kèm theo đơn hàng để đảm bảo tính minh bạch giữa Client và Server.
 
 ---
+
+## 8. Hệ thống Sidebar Thu gọn Toàn cục (Global Collapsible Sidebar)
+Hệ thống quản lý trạng thái hiển thị của Sidebar một cách đồng bộ trên toàn bộ Seller Center, tối ưu hóa diện tích làm việc cho người bán.
+
+### Quy trình kỹ thuật:
+1.  **Cấu trúc Layout**: Sử dụng `sidebar.jsp` làm thành phần dùng chung. Nội dung chính của trang được bao bọc trong một container `<div id="main-content">`.
+2.  **Trạng thái Toggle**: Khi người dùng nhấn nút Hamburger, hàm `toggleSidebar()` sẽ thêm/xóa class `.collapsed` vào Sidebar và cập nhật lề (`margin-left`) của `main-content`.
+3.  **Đồng bộ giao diện**: Tất cả các trang quản trị (Dashboard, Order, Product, Voucher, Customers) đều chia sẻ chung một bộ ID và Class CSS để đảm bảo tính nhất quán khi chuyển trang.
+
+---
+
+## 9. Giao diện Chat SMall AI (Chat UI Alignment Logic)
+Trợ lý ảo SMall AI sử dụng cơ chế căn chỉnh tin nhắn thông minh để phân biệt rõ ràng giữa Người dùng và AI, mang lại trải nghiệm chat chuyên nghiệp.
+
+### Logic căn chỉnh Flexbox:
+1.  **Container chính**: `#history` (hoặc `#chat-messages`) được thiết lập là `display: flex; flex-direction: column;`.
+2.  **Tin nhắn Người dùng (USER)**:
+    - Sử dụng class `self-end` để đẩy bubble về phía bên phải.
+    - Màu sắc: Xanh Emerald (`bg-emerald-600` hoặc `#10b981`).
+    - Bo góc: `rounded-br-none` (góc dưới bên phải vuông) để tạo cảm giác hội thoại.
+3.  **Tin nhắn AI (SMall AI)**:
+    - Sử dụng class `self-start` để đẩy bubble về phía bên trái.
+    - Màu sắc: Xám nhạt/Xanh nhạt (`bg-slate-800` hoặc `#f0fdf4`).
+    - Bo góc: `rounded-bl-none` (góc dưới bên trái vuông).
+
+### Sơ đồ luồng hiển thị:
+```mermaid
+graph TD
+    A[Nhận tin nhắn] --> B{Kiểm tra Role?}
+    B -- isUser=true --> C[Thêm class self-end + Màu xanh]
+    B -- isUser=false --> D[Thêm class self-start + Màu xám]
+    C --> E[Render vào #history]
+    D --> E
+    E --> F[Scroll to Bottom]
+```
+
+---
