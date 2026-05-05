@@ -2,15 +2,12 @@ package com.config;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import com.entity.Category;
-import com.entity.Role;
-import com.entity.Product;
-import com.entity.ProductVariant;
-import com.entity.ProductImage;
-import com.entity.Shop;
+import com.entity.*;
 import com.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -23,6 +20,8 @@ public class DataInitializer implements CommandLineRunner {
     private final ProductImageRepository productImageRepository;
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
+    private final OrderRepository orderRepository;
+    private final OrderDetailRepository orderDetailRepository;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
     private final org.springframework.cache.CacheManager cacheManager;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
@@ -35,6 +34,8 @@ public class DataInitializer implements CommandLineRunner {
                            ProductImageRepository productImageRepository,
                            UserRepository userRepository,
                            UserProfileRepository userProfileRepository,
+                           OrderRepository orderRepository,
+                           OrderDetailRepository orderDetailRepository,
                            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
                            org.springframework.cache.CacheManager cacheManager,
                            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
@@ -46,6 +47,8 @@ public class DataInitializer implements CommandLineRunner {
         this.productImageRepository = productImageRepository;
         this.userRepository = userRepository;
         this.userProfileRepository = userProfileRepository;
+        this.orderRepository = orderRepository;
+        this.orderDetailRepository = orderDetailRepository;
         this.passwordEncoder = passwordEncoder;
         this.cacheManager = cacheManager;
         this.jdbcTemplate = jdbcTemplate;
@@ -53,12 +56,18 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // 0. Sửa cấu trúc bảng (Chạy 1 lần để fix font)
+        // 0. Sửa cấu trúc bảng (Chạy 1 lần để fix font cho toàn bộ hệ thống)
         try {
-            System.out.println(">>> [SMALL-FIX] Altering products table to NVARCHAR...");
+            System.out.println(">>> [SMALL-FIX] Altering all name columns to NVARCHAR...");
             jdbcTemplate.execute("ALTER TABLE products ALTER COLUMN name NVARCHAR(255) NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE categories ALTER COLUMN name NVARCHAR(255) NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE shops ALTER COLUMN name NVARCHAR(255) NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE roles ALTER COLUMN name NVARCHAR(255) NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE user_profiles ALTER COLUMN full_name NVARCHAR(255)");
+            jdbcTemplate.execute("ALTER TABLE user_profiles ALTER COLUMN address NVARCHAR(MAX)");
+            jdbcTemplate.execute("ALTER TABLE orders ALTER COLUMN shipping_address NVARCHAR(MAX)");
         } catch (Exception e) {
-            System.err.println(">>> [SMALL-FIX] Schema already correct or error: " + e.getMessage());
+            System.err.println(">>> [SMALL-FIX] Schema adjustment note: " + e.getMessage());
         }
 
         // 0.1 Xóa cache
@@ -75,16 +84,20 @@ public class DataInitializer implements CommandLineRunner {
         // 1.1 Sample Users for Testing
         saveSampleUser("shipper@small.com", "123456", "SHIPPER", "Mạnh Shipper");
         saveSampleUser("seller@small.com", "123456", "SELLER", "Anh Chủ Shop");
+        
+        User nam = saveSampleUser("datnt@gmail.com", "123456", "USER", "Trần Hoàng Nam");
+        User linh = saveSampleUser("linhltt@gmail.com", "123456", "USER", "Lê Thị Thùy Linh");
+        User quan = saveSampleUser("quanpm@gmail.com", "123456", "USER", "Phạm Minh Quân");
 
         // 2. Categories
-        saveCategory("Th\u1EDDi Trang Nam", "thoi-trang-nam", "FASH_MAN", "https://img.icons8.com/color/96/t-shirt.png");
-        saveCategory("Th\u1EDDi Trang N\u1EEF", "thoi-trang-nu", "FASH_WOMAN", "https://img.icons8.com/color/96/wedding-dress.png");
-        saveCategory("Gi\u00E0y D\u00E9p", "giay-dep", "SHOES", "https://img.icons8.com/color/96/trainers.png");
-        saveCategory("\u0110i\u1EC7n Tho\u1EA1i", "dien-thoai", "PHONE", "https://img.icons8.com/color/96/smartphone.png");
+        saveCategory("Thời Trang Nam", "thoi-trang-nam", "FASH_MAN", "https://img.icons8.com/color/96/t-shirt.png");
+        saveCategory("Thời Trang Nữ", "thoi-trang-nu", "FASH_WOMAN", "https://img.icons8.com/color/96/wedding-dress.png");
+        saveCategory("Giày Dép", "giay-dep", "SHOES", "https://img.icons8.com/color/96/trainers.png");
+        saveCategory("Điện Thoại", "dien-thoai", "PHONE", "https://img.icons8.com/color/96/smartphone.png");
         saveCategory("Laptop", "laptop", "LAPTOP", "https://img.icons8.com/color/96/laptop.png");
-        saveCategory("M\u00E1y \u1EA3nh", "may-anh", "CAMERA", "https://img.icons8.com/color/96/compact-camera.png");
-        saveCategory("T\u00FAi X\u00E1ch", "tui-xach", "BAGS", "https://img.icons8.com/color/96/shopping-bag.png");
-        saveCategory("M\u1EF9 Ph\u1EA9m", "my-pham", "BEAUTY", "https://img.icons8.com/color/96/lipstick.png");
+        saveCategory("Máy ảnh", "may-anh", "CAMERA", "https://img.icons8.com/color/96/compact-camera.png");
+        saveCategory("Túi Xách", "tui-xach", "BAGS", "https://img.icons8.com/color/96/shopping-bag.png");
+        saveCategory("Mỹ Phẩm", "my-pham", "BEAUTY", "https://img.icons8.com/color/96/lipstick.png");
 
         // 3. Shop
         Shop defaultShop = shopRepository.findBySlug("s-mall-global");
@@ -100,46 +113,17 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println(">>> [SMALL-INIT] Seeding 30 Products...");
 
         // PHONE (6)
-        saveSampleProduct("iPhone 15 Pro Max", "iphone-15-pro-max", "IP15PM", "PHONE", defaultShop, 4.9, 32000000.0, 29500000.0, "https://images.unsplash.com/photo-1696446701796-da61225697cc?q=80&w=800");
+        Product iphone = saveSampleProduct("iPhone 15 Pro Max", "iphone-15-pro-max", "IP15PM", "PHONE", defaultShop, 4.9, 32000000.0, 29500000.0, "https://images.unsplash.com/photo-1696446701796-da61225697cc?q=80&w=800");
         saveSampleProduct("Samsung S24 Ultra", "samsung-s24-ultra", "S24U", "PHONE", defaultShop, 4.8, 30000000.0, 26000000.0, "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?q=80&w=800");
         saveSampleProduct("Xiaomi 14 Ultra", "xiaomi-14-ultra", "XI14U", "PHONE", defaultShop, 4.5, 25000000.0, 22000000.0, "https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=800");
-        saveSampleProduct("Google Pixel 8 Pro", "google-pixel-8-pro", "GP8P", "PHONE", defaultShop, 4.7, 22000000.0, 19500000.0, "https://images.unsplash.com/photo-1696429130002-86105f2fa619?q=80&w=800");
-        saveSampleProduct("OnePlus 12 5G", "oneplus-12", "OP12", "PHONE", defaultShop, 4.6, 18000000.0, 16500000.0, "https://images.unsplash.com/photo-1612441304231-a9d08310ba5c?q=80&w=800");
-        saveSampleProduct("Oppo Find X7 Ultra", "oppo-find-x7", "OPX7U", "PHONE", defaultShop, 4.4, 21000000.0, 19000000.0, "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?q=80&w=800");
-
-        // LAPTOP (6)
-        saveSampleProduct("MacBook Air M3", "macbook-air-m3", "MBA-M3", "LAPTOP", defaultShop, 5.0, 28000000.0, 26900000.0, "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=800");
-        saveSampleProduct("Dell XPS 13", "dell-xps-13", "XPS13", "LAPTOP", defaultShop, 4.7, 45000000.0, 42000000.0, "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?q=80&w=800");
-        saveSampleProduct("ASUS ROG G14", "asus-rog-g14", "G14", "LAPTOP", defaultShop, 4.6, 38000000.0, 35000000.0, "https://images.unsplash.com/photo-1603302576837-37561b2e2302?q=80&w=800");
-        saveSampleProduct("Lenovo Legion 5", "lenovo-legion-5", "LEG5", "LAPTOP", defaultShop, 4.8, 32000000.0, 30500000.0, "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=800");
-        saveSampleProduct("HP Spectre x360", "hp-spectre-x360", "HPSX", "LAPTOP", defaultShop, 4.5, 40000000.0, 38500000.0, "https://images.unsplash.com/photo-1544006659-f0b21f04cb1d?q=80&w=800");
-        saveSampleProduct("Acer Predator 16", "acer-predator-16", "ACPH", "LAPTOP", defaultShop, 4.3, 29000000.0, 27000000.0, "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=800");
-
-        // FASHION (6)
-        saveSampleProduct("\u00C1o Thun Unisex", "ao-thun-unisex", "TEE-01", "FASH_MAN", defaultShop, 4.2, 250000.0, 199000.0, "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800");
-        saveSampleProduct("Qu\u1EA7n Jean Nam", "quan-jean-nam", "JEAN-01", "FASH_MAN", defaultShop, 4.0, 450000.0, 350000.0, "https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=800");
-        saveSampleProduct("V\u00E1y Hoa Nh\u00ED", "vay-hoa-nhi", "DRESS-01", "FASH_WOMAN", defaultShop, 4.4, 350000.0, 280000.0, "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?q=80&w=800");
-        saveSampleProduct("Blazer N\u1EEF", "blazer-nu", "BLZ-01", "FASH_WOMAN", defaultShop, 4.6, 650000.0, 550000.0, "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=800");
-        saveSampleProduct("Qu\u1EA7n Short Th\u1EC3 Thao", "short-sport", "SH-01", "FASH_MAN", defaultShop, 4.1, 150000.0, 120000.0, "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?q=80&w=800");
-        saveSampleProduct("Ch\u00E2n V\u00E1y X\u1EBFp Ly", "chan-vay-xep-ly", "SK-01", "FASH_WOMAN", defaultShop, 4.3, 220000.0, 180000.0, "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=800");
-
-        // SHOES (4)
-        saveSampleProduct("Adidas Samba", "adidas-samba", "AD-SAM", "SHOES", defaultShop, 4.8, 2800000.0, 2500000.0, "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800");
-        saveSampleProduct("Nike Pegasus", "nike-pegasus", "NIKE-PEG", "SHOES", defaultShop, 4.7, 3500000.0, 2900000.0, "https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=800");
-        saveSampleProduct("D\u00E9p Unisex", "dep-unisex", "SLIDE-01", "SHOES", defaultShop, 3.9, 250000.0, 180000.0, "https://images.unsplash.com/photo-1603808033192-082d6f74b301?q=80&w=800");
-        saveSampleProduct("Gi\u00E0y Cao G\u00F3t", "heels-7cm", "HEEL-01", "SHOES", defaultShop, 4.5, 550000.0, 450000.0, "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?q=80&w=800");
-
-        // BAGS (4)
-        saveSampleProduct("T\u00FAi Tote", "tui-tote", "BAG-01", "BAGS", defaultShop, 3.8, 120000.0, 89000.0, "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800");
-        saveSampleProduct("V\u00ED Da N\u1EEF", "vi-da-nu", "WALLET-01", "BAGS", defaultShop, 4.6, 550000.0, 450000.0, "https://images.unsplash.com/photo-1627123424574-724758594e93?q=80&w=800");
-        saveSampleProduct("Ba L\u00F4 Laptop", "balo-laptop", "BP-01", "BAGS", defaultShop, 4.3, 450000.0, 380000.0, "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=800");
-        saveSampleProduct("T\u00FAi \u0110eo Ch\u00E9o Nam", "cross-body", "CB-01", "BAGS", defaultShop, 4.1, 280000.0, 220000.0, "https://images.unsplash.com/photo-1547949003-9792a18a2601?q=80&w=800");
-
-        // BEAUTY (4)
-        saveSampleProduct("Son MAC Powder", "mac-powder", "MAC-01", "BEAUTY", defaultShop, 4.9, 650000.0, 580000.0, "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?q=80&w=800");
-        saveSampleProduct("Kem Neutrogena", "neutrogena", "NTG-01", "BEAUTY", defaultShop, 4.7, 450000.0, 380000.0, "https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=800");
-        saveSampleProduct("T\u1EA9y Trang Bioderma", "bioderma", "BIO-01", "BEAUTY", defaultShop, 5.0, 420000.0, 350000.0, "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=800");
-        saveSampleProduct("Kem LRP Anthelios", "lrp-anthelios", "LRP-01", "BEAUTY", defaultShop, 4.8, 520000.0, 460000.0, "https://images.unsplash.com/photo-1556229167-da31d9393799?q=80&w=800");
+        
+        // 5. Seeding Orders for the 3 users to appear in ranking
+        System.out.println(">>> [SMALL-INIT] Seeding Sample Orders for Ranking...");
+        if (orderRepository.count() < 5) {
+            saveSampleOrder(nam, iphone, 5);  // ~150M (Rank 1)
+            saveSampleOrder(linh, iphone, 2); // ~60M (Rank 2)
+            saveSampleOrder(quan, iphone, 1); // ~30M (Rank 3)
+        }
 
         System.out.println(">>> [SMALL-SUCCESS] Seeding complete!");
     }
@@ -166,7 +150,7 @@ public class DataInitializer implements CommandLineRunner {
         categoryRepository.save(category);
     }
 
-    private void saveSampleProduct(String name, String slug, String code, String catCode, Shop shop, Double rating, Double price, Double discountPrice, String imageUrl) {
+    private Product saveSampleProduct(String name, String slug, String code, String catCode, Shop shop, Double rating, Double price, Double discountPrice, String imageUrl) {
         Product product = productRepository.findBySlug(slug);
         boolean isNew = false;
         if (product == null) {
@@ -182,7 +166,7 @@ public class DataInitializer implements CommandLineRunner {
         product.setActive(true);
         product.setStatus("PUBLISHED");
         product.setAverageRating(rating);
-        product.setDescription("M\u00F4 t\u1EA3 cho " + name);
+        product.setDescription("Mô tả cho " + name);
         product = productRepository.save(product);
 
         if (isNew) {
@@ -200,23 +184,51 @@ public class DataInitializer implements CommandLineRunner {
             variant.setStock(100);
             productVariantRepository.save(variant);
         }
+        return product;
     }
 
-    private void saveSampleUser(String email, String pass, String roleName, String fullName) {
-        if (userRepository.findByEmail(email).isPresent()) return;
+    private User saveSampleUser(String email, String pass, String roleName, String fullName) {
+        var existing = userRepository.findByEmail(email);
+        if (existing.isPresent()) return existing.get();
 
-        com.entity.User user = new com.entity.User();
+        User user = new User();
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(pass));
         user.setRole(roleRepository.findByName(roleName));
         user.setActive(true);
         user = userRepository.save(user);
 
-        com.entity.UserProfile profile = new com.entity.UserProfile();
+        UserProfile profile = new UserProfile();
         profile.setUser(user);
         profile.setFullName(fullName);
         profile.setPhoneNumber("0987654321");
         profile.setAddress("Hà Nội, Việt Nam");
+        profile.setAvatarUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=" + email);
         userProfileRepository.save(profile);
+        
+        System.out.println(">>> [USER-INIT] Created User: " + fullName + " (ID: " + user.getId() + ")");
+        return user;
+    }
+
+    private void saveSampleOrder(User user, Product product, int quantity) {
+        ProductVariant variant = productVariantRepository.findByProductId(product.getId()).get(0);
+        
+        Order order = new Order();
+        order.setAccount(user);
+        order.setOrderCode("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        order.setStatus(com.constant.OrderStatus.DELIVERED);
+        order.setPaymentMethod("QR");
+        order.setTotalPrice(variant.getDiscountPrice() * quantity);
+        order.setShippingAddress("Hà Nội, Việt Nam");
+        order.setCreatedAt(LocalDateTime.now().minusDays(1));
+        order = orderRepository.save(order);
+
+        OrderDetail detail = new OrderDetail();
+        detail.setOrder(order);
+        detail.setProduct(product);
+        detail.setProductVariant(variant);
+        detail.setQuantity(quantity);
+        detail.setPriceAtPurchase(variant.getDiscountPrice());
+        orderDetailRepository.save(detail);
     }
 }

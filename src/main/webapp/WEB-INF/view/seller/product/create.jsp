@@ -27,9 +27,12 @@
             <body>
                 <jsp:include page="../layout/sidebar.jsp" />
 
-                <div class="content-wrapper">
-                    <div class="header-content mb-4">
-                        <h2 style="font-weight: 700; color: #1e293b;">${isEdit ? 'Chỉnh sửa Sản phẩm' : 'Quản lý Sản phẩm'}</h2>
+                <div id="main-content" class="content-wrapper transition-all duration-300 ease-in-out">
+                    <div class="header-content mb-4 flex items-center gap-4">
+                        <button onclick="toggleSidebar()" class="w-10 h-10 bg-white shadow-sm border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all mt-1">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h2 style="font-weight: 700; color: #1e293b; margin: 0;">${isEdit ? 'Chỉnh sửa Sản phẩm' : 'Quản lý Sản phẩm'}</h2>
                     </div>
 
                     <!-- Hiển thị thông báo (Sạch bóng vạch đỏ) -->

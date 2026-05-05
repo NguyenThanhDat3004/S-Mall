@@ -64,15 +64,20 @@
     <jsp:include page="/WEB-INF/view/seller/layout/sidebar.jsp" />
 
     <!-- Main Content Wrapper -->
-    <div class="md:pl-64 flex flex-col min-h-screen">
+    <div id="main-content" class="md:pl-64 flex flex-col min-h-screen transition-all duration-300 ease-in-out">
         
         <!-- Sticky Header Section -->
         <div class="sticky-header">
             <div class="px-8 py-6">
                 <div class="flex items-center justify-between mb-6">
-                    <div class="flex-1">
-                        <h1 class="text-3xl font-semibold text-small-navy mb-1">Quản lý đơn hàng</h1>
-                        <p class="text-sm text-gray-500">Theo dõi và vận hành đơn hàng của bạn hiệu quả</p>
+                    <div class="flex items-center gap-4 flex-1">
+                        <button onclick="toggleSidebar()" class="w-10 h-10 bg-white shadow-sm border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <h1 class="text-3xl font-semibold text-small-navy mb-1">Quản lý đơn hàng</h1>
+                            <p class="text-sm text-gray-500">Theo dõi và vận hành đơn hàng của bạn hiệu quả</p>
+                        </div>
                     </div>
                     
                     <!-- Search Bar -->

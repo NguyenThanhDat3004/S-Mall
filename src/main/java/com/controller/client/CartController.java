@@ -76,11 +76,15 @@ public class CartController {
     @GetMapping("/api/cart/check-status")
     @org.springframework.web.bind.annotation.ResponseBody
     public java.util.Map<String, Object> checkCartStatus(
-            @RequestParam String ids,
+            @RequestParam(required = false) String ids,
             Principal principal,
             HttpSession session) {
         
         java.util.Map<String, Object> response = new java.util.HashMap<>();
+        if (ids == null || ids.isEmpty()) {
+            response.put("isDone", false);
+            return response;
+        }
         String cartKey = getCartKey(principal, session);
         CartDTO cart = cartService.getCart(cartKey);
         
@@ -98,7 +102,7 @@ public class CartController {
 
     @GetMapping({"/payment/confirm", "/cart/payment/confirm"})
     public String confirmOrder(
-            @RequestParam String ids,
+            @RequestParam(required = false) String ids,
             @RequestParam String ship,
             @RequestParam String addr,
             @RequestParam boolean ins,
@@ -109,6 +113,7 @@ public class CartController {
         
         Optional<User> userOpt = userService.getUserByEmail(principal.getName());
         if (userOpt.isPresent()) {
+            if (ids == null || ids.isEmpty()) return "redirect:/";
             User user = userOpt.get();
 
             // Lưu địa chỉ nếu người dùng chọn
@@ -157,12 +162,16 @@ public class CartController {
 
     @GetMapping("/payment")
     public String getPaymentPage(
-            @RequestParam("ids") String ids,
+            @RequestParam(value = "ids", required = false) String ids,
             Model model, 
             Principal principal, 
             HttpSession session) {
         if (principal == null) {
             return "redirect:/login";
+        }
+
+        if (ids == null || ids.isEmpty()) {
+            return "redirect:/cart";
         }
 
         Optional<User> userOpt = userService.getUserByEmail(principal.getName());

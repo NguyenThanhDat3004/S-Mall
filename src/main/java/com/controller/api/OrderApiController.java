@@ -32,7 +32,7 @@ public class OrderApiController {
 
     @PostMapping("/place")
     public ResponseEntity<?> placeOrder(
-            @RequestParam String ids, // variantIds separated by comma
+            @RequestParam(required = false) String ids, // variantIds separated by comma
             @RequestParam String shippingMethod,
             @RequestParam boolean insurance,
             @RequestParam String paymentMethod,
@@ -43,6 +43,10 @@ public class OrderApiController {
         
         if (principal == null) {
             return ResponseEntity.status(401).body(Map.of("message", "Vui lòng đăng nhập"));
+        }
+
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Danh sách sản phẩm không được để trống"));
         }
 
         try {

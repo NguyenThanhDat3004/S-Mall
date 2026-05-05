@@ -1119,6 +1119,13 @@
                     function submitOrder() {
                         const urlParams = new URLSearchParams(window.location.search);
                         const ids = urlParams.get('ids');
+                        
+                        if (!ids) {
+                            alert('Không tìm thấy danh sách sản phẩm. Vui lòng quay lại giỏ hàng!');
+                            window.location.href = '${pageContext.request.contextPath}/cart';
+                            return;
+                        }
+
                         const shipMethod = document.querySelector('input[name="shippingMethod"]:checked').value;
                         const payMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
                         const insurance = document.getElementById('insuranceCheck').checked;

@@ -13,10 +13,10 @@
                 <div class="container d-flex justify-content-between align-items-center">
                     <div class="top-header-left">
                         <c:choose>
-                            <c:when test="${sessionScope.userRole == 'SELLER' || sessionScope.userRole == 'ADMIN'}">
+                            <c:when test="${pageContext.request.isUserInRole('SELLER') || pageContext.request.isUserInRole('ADMIN')}">
                                 <a href="${url}/seller/dashboard">Kênh người bán</a>
                             </c:when>
-                            <c:when test="${sessionScope.userRole == 'SHIPPER'}">
+                            <c:when test="${pageContext.request.isUserInRole('SHIPPER')}">
                                 <a href="${url}/seller/orders">Quản lý giao hàng</a>
                             </c:when>
                             <c:otherwise>

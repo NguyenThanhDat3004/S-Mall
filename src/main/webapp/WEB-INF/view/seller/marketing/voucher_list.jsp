@@ -45,14 +45,19 @@
     <jsp:include page="/WEB-INF/view/seller/layout/sidebar.jsp" />
 
     <!-- Main Wrapper -->
-    <div class="md:pl-64 flex flex-col min-h-screen">
+    <div id="main-content" class="md:pl-64 flex flex-col min-h-screen transition-all duration-300 ease-in-out">
         
         <!-- Header -->
         <header class="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 px-8 py-6">
             <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-small-navy tracking-tight">Quản lý Voucher</h1>
-                    <p class="text-sm text-slate-500">Tạo mã giảm giá công khai hoặc ưu đãi riêng tư.</p>
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="w-10 h-10 bg-white shadow-sm border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <h1 class="text-2xl font-bold text-small-navy tracking-tight">Quản lý Voucher</h1>
+                        <p class="text-sm text-slate-500">Tạo mã giảm giá công khai hoặc ưu đãi riêng tư.</p>
+                    </div>
                 </div>
                 <button @click="showModal = true" 
                         class="bg-emerald-600 text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all">

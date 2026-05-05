@@ -72,17 +72,20 @@
             <div class="p-6 border-b border-white/10 flex justify-between items-center bg-slate-900">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white"><i class="fas fa-robot"></i></div>
-                    <span class="font-bold text-white text-sm">AI Core v2.0</span>
+                    <div>
+                        <span class="font-bold text-white text-sm block">SMall AI</span>
+                        <span class="text-[10px] text-emerald-400">● Đang hoạt động</span>
+                    </div>
                 </div>
-                <button onclick="location.reload()" class="text-xs text-slate-500 hover:text-white">Reload</button>
+                <button onclick="location.reload()" class="text-xs text-slate-500 hover:text-white transition-colors"><i class="fas fa-rotate-right mr-1"></i>Làm mới</button>
             </div>
 
             <div id="chat-messages" class="space-y-6">
                 <!-- Tin nhắn bot -->
-                <div class="flex gap-3">
-                    <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-[10px]">AI</div>
-                    <div class="bg-slate-800 p-4 rounded-2xl rounded-tl-none text-xs text-slate-300 max-w-[85%]">
-                        Chào bạn! Tôi đã được nâng cấp logic. Bây giờ tôi sẽ phân tích dữ liệu thực tế cho bạn.
+                <div class="flex gap-2 items-end">
+                    <div class="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-[9px] font-bold text-white shrink-0">AI</div>
+                    <div class="bg-slate-800 p-3 rounded-2xl rounded-bl-none text-xs text-slate-300 max-w-[80%] leading-relaxed">
+                        Xin chào! Tôi là <strong class="text-emerald-400">SMall AI</strong> — trợ lý thông minh của cửa hàng bạn. Hãy hỏi tôi bất cứ điều gì nhé!
                     </div>
                 </div>
                 <div id="history"></div>
@@ -90,9 +93,9 @@
 
             <!-- Input Area -->
             <div class="p-4 bg-slate-900 border-t border-white/10">
-                <div class="flex gap-2 bg-slate-800 rounded-xl p-2">
-                    <input id="prompt" type="text" placeholder="Hỏi AI..." class="flex-1 bg-transparent border-none text-xs text-white focus:ring-0">
-                    <button onclick="chat()" class="bg-emerald-600 p-2 rounded-lg text-white"><i class="fas fa-arrow-up text-xs"></i></button>
+                <div class="flex gap-2 bg-slate-800 rounded-xl p-2 items-center">
+                    <input id="prompt" type="text" placeholder="Nhập câu hỏi..." class="flex-1 bg-transparent border-none text-xs text-white focus:ring-0 focus:outline-none placeholder-slate-500" onkeydown="if(event.key==='Enter') chat()">
+                    <button onclick="chat()" class="bg-emerald-600 hover:bg-emerald-500 transition-colors p-2 rounded-lg text-white"><i class="fas fa-paper-plane text-xs"></i></button>
                 </div>
             </div>
         </div>
@@ -121,9 +124,15 @@
 
         function append(txt, isMe) {
             const h = document.getElementById('history');
-            const html = isMe ? 
-                `<div class="flex justify-end mb-4"><div class="bg-emerald-600 text-white p-3 rounded-xl rounded-tr-none text-xs">${txt}</div></div>` :
-                `<div class="flex gap-3 mb-4"><div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-[10px]">AI</div><div class="bg-slate-800 p-3 rounded-xl rounded-tl-none text-xs text-slate-300 whitespace-pre-line">${txt}</div></div>`;
+            // User → bên PHẢI (justify-end), AI → bên TRÁI (flex gap)
+            const html = isMe 
+                ? `<div class="flex justify-end mb-3 items-end">
+                       <div class="bg-emerald-600 text-white p-3 rounded-2xl rounded-br-none text-xs max-w-[80%] leading-relaxed">${txt}</div>
+                   </div>`
+                : `<div class="flex gap-2 mb-3 items-end">
+                       <div class="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-[9px] font-bold text-white shrink-0">AI</div>
+                       <div class="bg-slate-800 p-3 rounded-2xl rounded-bl-none text-xs text-slate-300 whitespace-pre-line max-w-[80%] leading-relaxed">${txt}</div>
+                   </div>`;
             h.innerHTML += html;
         }
 

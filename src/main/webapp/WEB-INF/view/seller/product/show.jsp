@@ -76,7 +76,7 @@
     <jsp:include page="/WEB-INF/view/seller/layout/sidebar.jsp" />
 
     <!-- Main Content Wrapper -->
-    <div class="md:pl-64 flex flex-col min-h-screen">
+    <div id="main-content" class="md:pl-64 flex flex-col min-h-screen transition-all duration-300 ease-in-out">
         
         <!-- Inner Container -->
         <div class="w-full max-w-7xl mx-auto px-10">
@@ -84,9 +84,14 @@
             <!-- Header Top Section -->
             <div class="pt-10 pb-6">
                 <div class="flex items-start justify-between mb-8">
-                    <div>
-                        <h1 class="text-3xl font-semibold text-small-navy mb-2">Product Management</h1>
-                        <p class="text-sm text-gray-500">Manage and analyze all your products with AI-powered insights</p>
+                    <div class="flex items-center gap-4">
+                        <button onclick="toggleSidebar()" class="w-10 h-10 bg-white shadow-sm border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 hover:text-emerald-500 hover:border-emerald-100 transition-all mt-1">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <h1 class="text-3xl font-semibold text-small-navy mb-2">Product Management</h1>
+                            <p class="text-sm text-gray-500">Manage and analyze all your products with AI-powered insights</p>
+                        </div>
                     </div>
                     <a href="${url}/seller/product/create" class="flex items-center gap-3 px-6 py-3.5 bg-small-emerald text-white rounded-2xl hover:bg-emerald-900 transition-all shadow-xl shadow-emerald-900/20 font-bold">
                         <i class="fas fa-plus"></i>
