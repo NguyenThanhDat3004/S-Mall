@@ -250,9 +250,14 @@
                         <span class="block text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Online</span>
                     </div>
                 </div>
-                <button onclick="toggleAI()" class="text-slate-300 hover:text-slate-500 transition-colors">
-                    <i class="fas fa-times text-sm"></i>
-                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="refreshChat()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 transition-all" title="Phiên mới">
+                        <i class="fas fa-rotate-right text-xs"></i>
+                    </button>
+                    <button onclick="toggleAI()" class="text-slate-300 hover:text-slate-500 transition-colors">
+                        <i class="fas fa-times text-sm"></i>
+                    </button>
+                </div>
             </div>
 
             <div id="chat-scroller" class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50/30">
@@ -302,14 +307,25 @@
             } catch(e) {}
         })();
 
-        window.addEventListener('beforeunload', function() {
-            if (currentSessionId) navigator.sendBeacon('${url}/api/seller/ai/session/' + currentSessionId + '/summarize');
-        });
+
+
 
         function toggleAI() {
             sidebar.classList.toggle('open');
             fab.classList.toggle('hidden-fab');
             setTimeout(() => { scroller.scrollTop = scroller.scrollHeight; }, 400);
+        }
+
+        function refreshChat() {
+            if (currentSessionId) {
+                fetch('${url}/api/seller/ai/session/' + currentSessionId + '/summarize', { method: 'POST' }).catch(function(){});
+            }
+            currentSessionId = null;
+            historyDiv.innerHTML = '<div class="flex w-full justify-start mb-2"><div class="px-5 py-4 max-w-[85%] rounded-[24px] rounded-tl-none bubble-ai text-sm shadow-sm leading-relaxed">Phiên mới! Hãy hỏi tôi bất cứ điều gì nhé!</div></div>';
+            fetch('${url}/api/seller/ai/session', { method: 'POST' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) { if (data.id) currentSessionId = data.id; })
+                .catch(function(){});
         }
 
         function analyzeDirectly(name, email) {

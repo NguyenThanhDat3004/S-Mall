@@ -168,7 +168,8 @@ public class SellerAgentService {
     }
 
     /**
-     * Tự động dọn dẹp và học Persona cho các session bị bỏ quên (ví dụ: tắt trình duyệt, mất điện)
+     * Tự động dọn dẹp và học Persona cho các session bị bỏ quên (ví dụ: tắt trình
+     * duyệt, mất điện)
      * Chạy mỗi 10 phút, kiểm tra các session active > 30 phút
      */
     @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 600000) // 10 phút
@@ -176,7 +177,7 @@ public class SellerAgentService {
     public void autoCleanupSessions() {
         LocalDateTime thirtyMinsAgo = LocalDateTime.now().minusMinutes(30);
         List<AiChatSession> idleSessions = sessionRepository.findAllByIsActiveTrueAndCreatedAtBefore(thirtyMinsAgo);
-        
+
         if (!idleSessions.isEmpty()) {
             log.info(">>> [AI-CLEANUP] Tự động đóng {} phiên chat bị bỏ quên...", idleSessions.size());
             for (AiChatSession s : idleSessions) {
@@ -206,7 +207,7 @@ public class SellerAgentService {
         List<CustomerInsightDTO> data = customerInsightSkill.getTopBuyersThisYear(shopId);
         if (data.isEmpty())
             return "Chưa có dữ liệu năm nay.";
-        
+
         int currentYear = java.time.LocalDate.now().getYear();
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("### BẢNG XẾP HẠNG VÀ HẠNG THÀNH VIÊN %d:\n", currentYear));
@@ -214,19 +215,21 @@ public class SellerAgentService {
         sb.append("|------|----------------|------|---------|--------|----------|\n");
         for (int i = 0; i < Math.min(data.size(), 5); i++) {
             CustomerInsightDTO d = data.get(i);
-            sb.append(String.format("| %d | %s | %d | **%s** | %d đơn | %,.0f đ |\n", 
-                (i + 1), d.getFullName(), d.getPoints(), d.getMembershipRank(), d.getTotalOrders(), d.getTotalSpent()));
+            sb.append(String.format("| %d | %s | %d | **%s** | %d đơn | %,.0f đ |\n",
+                    (i + 1), d.getFullName(), d.getPoints(), d.getMembershipRank(), d.getTotalOrders(),
+                    d.getTotalSpent()));
         }
         return sb.toString();
     }
 
     private String formatLimitedHistory(AiChatSession session, int limit) {
-        List<AiChatMessage> dbHistory = messageRepository.findBySessionOrderByCreatedAtAsc(session);
-        List<AiChatMessage> bufferHistory = chatBuffer.getOrDefault(session.getId(), new ArrayList<>());
-        List<AiChatMessage> combined = new ArrayList<>(dbHistory);
-        combined.addAll(bufferHistory);
+        List<AiChatMessage> history = messageRepository.findBySessionOrderByCreatedAtAsc(session);
+        List<AiChatMessage> buffered = chatBuffer.getOrDefault(session.getId(), new ArrayList<>());
+        List<AiChatMessage> combined = new ArrayList<>(history);
+        combined.addAll(buffered);
 
-        if (combined.isEmpty()) return "Trống";
+        if (combined.isEmpty())
+            return "Trống";
         return combined.stream().skip(Math.max(0, combined.size() - limit))
                 .map(h -> (h.getRole().equals("USER") ? "U" : "A") + ": " + h.getContent())
                 .collect(Collectors.joining(" | "));
@@ -234,7 +237,8 @@ public class SellerAgentService {
 
     public List<AiChatMessage> getHistory(Long sessionId) {
         AiChatSession session = sessionRepository.findById(sessionId).orElse(null);
-        if (session == null) return new ArrayList<>();
+        if (session == null)
+            return new ArrayList<>();
         List<AiChatMessage> dbHistory = messageRepository.findBySessionOrderByCreatedAtAsc(session);
         List<AiChatMessage> bufferHistory = chatBuffer.getOrDefault(sessionId, new ArrayList<>());
         List<AiChatMessage> combined = new ArrayList<>(dbHistory);
@@ -251,11 +255,14 @@ public class SellerAgentService {
     private void parseAiOutputWithRegex(String output, GameReasoning reasoning, Long shopId) {
         Pattern anaPattern = Pattern.compile("(?s)ANALYSIS:(.*?)(?=RESPONSE:|$)", Pattern.CASE_INSENSITIVE);
         Matcher ma = anaPattern.matcher(output);
-        if (ma.find()) reasoning.addThought(ma.group(1).trim());
+        if (ma.find())
+            reasoning.addThought(ma.group(1).trim());
 
         Pattern resPattern = Pattern.compile("(?s)RESPONSE:(.*)", Pattern.CASE_INSENSITIVE);
         Matcher mr = resPattern.matcher(output);
-        if (mr.find()) reasoning.setFinalResponse(mr.group(1).trim());
-        else reasoning.setFinalResponse(output.replaceAll("(?i)ANALYSIS:.*", "").trim());
+        if (mr.find())
+            reasoning.setFinalResponse(mr.group(1).trim());
+        else
+            reasoning.setFinalResponse(output.replaceAll("(?i)ANALYSIS:.*", "").trim());
     }
 }
