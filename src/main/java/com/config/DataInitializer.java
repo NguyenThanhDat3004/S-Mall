@@ -69,6 +69,23 @@ public class DataInitializer implements CommandLineRunner {
             // Đối với membership_ranks, do có constraint nên chúng ta sẽ xử lý cẩn thận hoặc bỏ qua nếu đã là NVARCHAR
         } catch (Exception e) {}
 
+        // Migrate voucher discount_type cho dữ liệu cũ
+        try {
+            jdbcTemplate.execute("UPDATE vouchers SET discount_type = 'FIXED' WHERE discount_type IS NULL");
+        } catch (Exception e) {}
+
+        // Drop UNIQUE constraint trên ai_chat_personas (MSSQL)
+        try {
+            String dropSql = 
+                "DECLARE @name NVARCHAR(255); " +
+                "SELECT @name = dc.name FROM sys.key_constraints dc " +
+                "JOIN sys.index_columns ic ON dc.parent_object_id = ic.object_id AND dc.unique_index_id = ic.index_id " +
+                "WHERE dc.parent_object_id = OBJECT_ID('ai_chat_personas') " +
+                "AND ic.column_id = COLUMNPROPERTY(OBJECT_ID('ai_chat_personas'), 'user_id', 'ColumnId'); " +
+                "IF @name IS NOT NULL EXEC('ALTER TABLE ai_chat_personas DROP CONSTRAINT ' + @name);";
+            jdbcTemplate.execute(dropSql);
+        } catch (Exception e) {}
+
         // 1. Roles
         saveRole("USER", "Người dùng");
         saveRole("SELLER", "Người bán");

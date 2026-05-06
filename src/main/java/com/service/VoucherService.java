@@ -15,5 +15,5 @@ public interface VoucherService {
     void assignVoucherToUser(Long voucherId, Long userId);
 
     // Mới: Tạo và gán nhanh (Dùng cho AI)
-    void createAndAssignVoucher(Long shopId, Long userId, double discount, int expiryDays);
+    void createAndAssignVoucher(Long shopId, Long userId, double discount, com.entity.Voucher.DiscountType type, int expiryDays);
 }

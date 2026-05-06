@@ -316,16 +316,14 @@
             setTimeout(() => { scroller.scrollTop = scroller.scrollHeight; }, 400);
         }
 
-        function refreshChat() {
-            if (currentSessionId) {
-                fetch('${url}/api/seller/ai/session/' + currentSessionId + '/summarize', { method: 'POST' }).catch(function(){});
-            }
+        async function refreshChat() {
             currentSessionId = null;
             historyDiv.innerHTML = '<div class="flex w-full justify-start mb-2"><div class="px-5 py-4 max-w-[85%] rounded-[24px] rounded-tl-none bubble-ai text-sm shadow-sm leading-relaxed">Phiên mới! Hãy hỏi tôi bất cứ điều gì nhé!</div></div>';
-            fetch('${url}/api/seller/ai/session', { method: 'POST' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) { if (data.id) currentSessionId = data.id; })
-                .catch(function(){});
+            try {
+                var res = await fetch('${url}/api/seller/ai/session', { method: 'POST' });
+                var data = await res.json();
+                if (data.id) currentSessionId = data.id;
+            } catch(e) {}
         }
 
         function analyzeDirectly(name, email) {

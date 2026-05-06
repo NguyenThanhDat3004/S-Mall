@@ -18,6 +18,13 @@ public class MarketingServiceImpl implements MarketingService {
     private com.repository.MembershipRankRepository membershipRankRepository;
 
     @Override
+    public List<CustomerInsightDTO> getCustomerInsights(Long shopId) {
+        List<CustomerInsightDTO> insights = orderRepository.findCustomerInsightsByShopId(shopId);
+        populateRanks(insights);
+        return insights;
+    }
+
+    @Override
     public List<CustomerInsightDTO> getCustomerInsightsByYear(Long shopId, int year) {
         List<CustomerInsightDTO> insights = orderRepository.findCustomerInsightsByShopIdAndYear(shopId, year);
         populateRanks(insights);

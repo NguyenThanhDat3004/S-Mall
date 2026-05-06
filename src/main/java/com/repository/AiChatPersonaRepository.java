@@ -4,9 +4,9 @@ import com.entity.AiChatPersona;
 import com.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface AiChatPersonaRepository extends JpaRepository<AiChatPersona, Long> {
-    Optional<AiChatPersona> findByUser(User user);
+    List<AiChatPersona> findTop3ByUserOrderByUpdatedAtDesc(User user);
 }

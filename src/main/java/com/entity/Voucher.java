@@ -10,6 +10,12 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "vouchers")
 public class Voucher {
+
+    public enum DiscountType {
+        FIXED,       // Giảm cố định VNĐ
+        PERCENTAGE   // Giảm theo %
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,6 +25,10 @@ public class Voucher {
 
     @Column(name = "discount_amount")
     private double discountAmount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "discount_type", columnDefinition = "VARCHAR(20)")
+    private DiscountType discountType = DiscountType.FIXED;
 
     @Column(name = "min_order_value")
     private double minOrderValue;
@@ -53,6 +63,8 @@ public class Voucher {
     public void setCode(String code) { this.code = code; }
     public double getDiscountAmount() { return discountAmount; }
     public void setDiscountAmount(double discountAmount) { this.discountAmount = discountAmount; }
+    public DiscountType getDiscountType() { return discountType; }
+    public void setDiscountType(DiscountType discountType) { this.discountType = discountType; }
     public double getMinOrderValue() { return minOrderValue; }
     public void setMinOrderValue(double minOrderValue) { this.minOrderValue = minOrderValue; }
     public LocalDateTime getExpiryDate() { return expiryDate; }
@@ -73,5 +85,25 @@ public class Voucher {
     public String getFormattedExpiryDate() {
         if (expiryDate == null) return "N/A";
         return expiryDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+    }
+
+    /**
+     * Tính số tiền giảm thực tế dựa trên loại voucher.
+     * FIXED: trả về discountAmount trực tiếp (VNĐ)
+     * PERCENTAGE: tính % trên orderTotal
+     */
+    public double calculateDiscount(double orderTotal) {
+        if (discountType == DiscountType.PERCENTAGE) {
+            return orderTotal * discountAmount / 100.0;
+        }
+        return discountAmount; // FIXED
+    }
+
+    /** Label hiển thị: "10%" hoặc "50.000đ" */
+    public String getDiscountLabel() {
+        if (discountType == DiscountType.PERCENTAGE) {
+            return String.format("%.0f%%", discountAmount);
+        }
+        return String.format("%,.0fđ", discountAmount);
     }
 }

@@ -25,10 +25,11 @@ public class VoucherAgentSkill {
     /**
      * Tool: Tạo voucher định danh 1-1 cho một User
      */
-    public String createUniqueVoucher(Long shopId, Long userId, double discount, int expiryDays) {
+    public String createUniqueVoucher(Long shopId, Long userId, double discount, com.entity.Voucher.DiscountType type, int expiryDays) {
         try {
-            voucherService.createAndAssignVoucher(shopId, userId, discount, expiryDays);
-            return "SUCCESS: Đã tạo và gán voucher giảm " + discount + " cho người dùng ID " + userId;
+            voucherService.createAndAssignVoucher(shopId, userId, discount, type, expiryDays);
+            String unit = (type == com.entity.Voucher.DiscountType.PERCENTAGE) ? "%" : "đ";
+            return "SUCCESS: Đã tạo và gán voucher giảm " + discount + unit + " cho người dùng ID " + userId;
         } catch (Exception e) {
             return "ERROR: Không thể tạo voucher: " + e.getMessage();
         }

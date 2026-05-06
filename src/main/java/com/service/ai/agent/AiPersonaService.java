@@ -11,8 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.entity.AiChatMessage;
 import com.entity.AiChatPersona;
+import com.entity.AiChatSession;
 import com.entity.User;
 import com.repository.AiChatPersonaRepository;
+import com.repository.AiChatSessionRepository;
 import com.service.ai.infrastructure.LLM;
 
 @Service
@@ -23,6 +25,9 @@ public class AiPersonaService {
 
     @Autowired
     private AiChatPersonaRepository personaRepository;
+
+    @Autowired
+    private AiChatSessionRepository sessionRepository;
 
     @Async
     @Transactional
@@ -54,15 +59,13 @@ public class AiPersonaService {
             String summary = llm.generate(summarizePromptTemplate.replace("%s", conversation));
             System.err.println(">>> [ASYNC-AI] Kết quả đúc kết chạy ngầm: " + summary);
 
-            AiChatPersona persona = personaRepository.findByUser(user)
-                    .orElse(new AiChatPersona(user, ""));
-
-            String oldData = persona.getPersonaData() != null ? persona.getPersonaData() : "";
-            persona.setPersonaData(oldData + "\n[Session-" + sessionId + "]: " + summary);
-            persona.setUpdatedAt(LocalDateTime.now());
+            // Tạo bản ghi persona MỚI cho mỗi session
+            AiChatSession session = sessionRepository.findById(sessionId).orElse(null);
+            AiChatPersona persona = new AiChatPersona(user, session, summary);
             personaRepository.save(persona);
+            personaRepository.flush(); // Ép xuống DB ngay lập tức
             
-            System.err.println(">>> [ASYNC-AI] Đã cập nhật Persona thành công (Chạy ngầm).");
+            System.err.println(">>> [ASYNC-AI] Đã tạo thành công Persona ID: " + persona.getId() + " cho Session: " + sessionId);
         } catch (Exception e) {
             System.err.println(">>> [ASYNC-AI-ERROR] Lỗi đúc kết ngầm: " + e.getMessage());
         }
