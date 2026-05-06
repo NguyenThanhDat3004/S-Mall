@@ -3,23 +3,19 @@ package com.entity;
 import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
-/**
- * Lưu trữ lịch sử hội thoại và quá trình tư duy (Reasoning) của AI Agent
- */
 @Entity
-@Table(name = "ai_agent_history")
-public class AiAgentHistory {
+@Table(name = "ai_chat_messages")
+public class AiChatMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seller_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
-    private User seller;
+    @JoinColumn(name = "session_id", nullable = false)
+    private AiChatSession session;
 
     @Column(nullable = false)
-    private String role; // USER, ASSISTANT, THOUGHT, TOOL
+    private String role; // USER, ASSISTANT
 
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String content;
@@ -27,10 +23,10 @@ public class AiAgentHistory {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    public AiAgentHistory() {}
+    public AiChatMessage() {}
 
-    public AiAgentHistory(User seller, String role, String content) {
-        this.seller = seller;
+    public AiChatMessage(AiChatSession session, String role, String content) {
+        this.session = session;
         this.role = role;
         this.content = content;
         this.createdAt = LocalDateTime.now();
@@ -38,8 +34,8 @@ public class AiAgentHistory {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public User getSeller() { return seller; }
-    public void setSeller(User seller) { this.seller = seller; }
+    public AiChatSession getSession() { return session; }
+    public void setSession(AiChatSession session) { this.session = session; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
     public String getContent() { return content; }
