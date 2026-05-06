@@ -7,13 +7,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.entity.*;
-import com.repository.*;
+import com.repository.AiChatSessionRepository;
+import com.repository.AiChatMessageRepository;
+import com.repository.AiChatPlanRepository;
+import com.repository.AiChatPersonaRepository;
+import com.repository.ShopRepository;
+import com.repository.UserRepository;
 import com.service.ai.agent.model.GameReasoning;
 import com.service.ai.agent.model.Message;
 import com.service.ai.infrastructure.LLM;
@@ -39,6 +45,9 @@ public class SellerAgentService {
     private AiChatPersonaRepository personaRepository;
 
     @Autowired
+    private AiPersonaService aiPersonaService;
+
+    @Autowired
     private LLM llm;
 
     @Autowired
@@ -56,19 +65,23 @@ public class SellerAgentService {
     private final Map<Long, List<AiChatMessage>> chatBuffer = new ConcurrentHashMap<>();
 
     private static final String SYSTEM_PROMPT_TEMPLATE = """
-            Bạn là S-Mall AI Advisor - Cộng sự thông minh, thấu hiểu người dùng.
+            Bạn là S-Mall AI Advisor - Chuyên gia phân tích dữ liệu của shop: %s.
 
-            HỒ SƠ NGƯỜI DÙNG (Dựa trên các cuộc trò chuyện trước):
+            [KIẾN THỨC HỆ THỐNG - NGUỒN SỰ THẬT DUY NHẤT]:
+            Sử dụng bảng dưới đây để trả lời chính xác về số đơn, chi tiêu và HẠNG THÀNH VIÊN.
             %s
 
-            NHIỆM VỤ CỦA BẠN:
-            1. Phân tích dữ liệu khách hàng hiện tại.
-            2. Dựa vào TÍNH CÁCH và THÓI QUEN của Seller để đưa ra đề xuất Voucher phù hợp nhất với gu của họ.
-            3. Dự đoán nhu cầu tiếp theo của Seller dựa trên PHONG CÁCH làm việc của họ.
+            [HỆ THỐNG PHÂN HẠNG]:
+            - Kim cương: >= 5000 điểm
+            - Vàng: >= 2000 điểm
+            - Bạc: >= 1000 điểm
+            - Đồng: >= 10 điểm
+            (1000đ chi tiêu = 1 điểm)
 
-            QUY TẮC PHẢN HỒI:
-            - ANALYSIS: Phân tích ngắn gọn dựa trên dữ liệu và hồ sơ người dùng.
-            - RESPONSE: Câu trả lời quyết đoán, cá nhân hóa cao.
+            [HỒ SƠ NGƯỜI BÁN]:
+            %s
+
+            QUY TẮC: Luôn ưu tiên KHÁCH KIM CƯƠNG và VÀNG khi đề xuất Voucher.
             """;
 
     @Transactional
@@ -86,7 +99,6 @@ public class SellerAgentService {
 
     @Transactional
     public GameReasoning processRequest(User seller, Long sessionId, String userMessage) {
-        System.err.println(">>> [DEBUG-AI] BẮT ĐẦU XỬ LÝ - Session: " + sessionId);
         try {
             AiChatSession session = sessionRepository.findById(sessionId)
                     .orElseThrow(() -> new RuntimeException("Session không tồn tại"));
@@ -98,34 +110,26 @@ public class SellerAgentService {
             if (shop == null)
                 return fallback("Lỗi: Không tìm thấy Shop.");
 
-            String historyStr = formatLimitedHistory(session, 3);
+            String shopName = shop.getName();
             String personaContext = getRichPersona(seller);
-            String systemPrompt = SYSTEM_PROMPT_TEMPLATE.replace("%s", personaContext);
             String dataContext = fetchBriefData(shop.getId());
+            String historyStr = formatLimitedHistory(session, 5);
+
+            String systemPrompt = String.format(SYSTEM_PROMPT_TEMPLATE, shopName, dataContext, personaContext);
 
             List<Message> messages = new ArrayList<>();
             messages.add(new Message("system", systemPrompt));
 
-            String prompt = "SHOP: " + shop.getName() +
-                    "\nDATA: " + dataContext +
-                    "\nHISTORY: " + historyStr +
-                    "\nUSER: " + userMessage;
+            String prompt = "[HISTORY]: " + historyStr + "\nUSER: " + userMessage;
             messages.add(new Message("user", prompt));
-
-            System.err.println(">>> [DEBUG-AI] PROMPT GỬI AI:\n" + prompt);
 
             chatBuffer.computeIfAbsent(sessionId, k -> new ArrayList<>())
                     .add(new AiChatMessage(session, "USER", userMessage));
 
-            System.err.println(">>> [DEBUG-AI] ĐANG CHỜ PHẢN HỒI TỪ GROQ...");
             String aiOutput = llm.generate(messages);
-            System.err.println(">>> [DEBUG-AI] PHẢN HỒI THÔ:\n" + aiOutput);
-
             GameReasoning reasoning = new GameReasoning();
             reasoning.setGoal(userMessage);
             parseAiOutputWithRegex(aiOutput, reasoning, shop.getId());
-
-            System.err.println(">>> [DEBUG-AI] PHÂN TÍCH XONG: " + reasoning.getFinalResponse());
 
             chatBuffer.get(sessionId).add(new AiChatMessage(session, "ASSISTANT", reasoning.getFinalResponse()));
 
@@ -133,11 +137,10 @@ public class SellerAgentService {
                 planRepository.save(new AiChatPlan(session, String.join("\n", reasoning.getAnalysis())));
             }
 
-            log.info(">>> [DEBUG-AI] Xử lý hoàn tất thành công.");
             return reasoning;
         } catch (Exception e) {
-            log.error(">>> [DEBUG-AI-ERROR] Lỗi tại processRequest: {}", e.getMessage(), e);
-            return fallback("Sự cố kỹ thuật: " + e.getMessage());
+            log.error(">>> [AI-ERROR] processRequest: {}", e.getMessage());
+            return fallback("Sự cố: " + e.getMessage());
         }
     }
 
@@ -152,46 +155,34 @@ public class SellerAgentService {
         List<AiChatMessage> allMessages = new ArrayList<>(dbMessages);
         allMessages.addAll(bufferedMessages);
 
-        if (!allMessages.isEmpty()) {
-            if (!bufferedMessages.isEmpty()) {
-                messageRepository.saveAll(bufferedMessages);
-                chatBuffer.remove(sessionId);
-            }
-
-            try {
-                String conversation = allMessages.stream()
-                        .map(m -> m.getRole() + ": " + m.getContent())
-                        .collect(Collectors.joining("\n"));
-
-                String summarizePromptTemplate = """
-                        Hãy phân tích cuộc hội thoại sau và trích xuất hồ sơ người dùng theo 3 mục:
-                        1. TÍNH CÁCH (Vd: Quyết đoán, tỉ mỉ, hay nóng vội...)
-                        2. PHONG CÁCH (Vd: Ưu tiên lợi nhuận, thích tặng quà khách, hay dùng số liệu...)
-                        3. THÓI QUEN (Vd: Hay hỏi về Voucher vào cuối tuần, thích kiểm tra đơn hàng VIP...)
-
-                        Viết kết quả dưới dạng: 'Tính cách: ... | Phong cách: ... | Thói quen: ...'
-
-                        CONVERSATION:
-                        %s
-                        """;
-
-                String finalSummarizePrompt = summarizePromptTemplate.replace("%s", conversation);
-                String summary = llm.generate(finalSummarizePrompt);
-
-                AiChatPersona persona = personaRepository.findByUser(session.getUser())
-                        .orElse(new AiChatPersona(session.getUser(), ""));
-
-                String oldData = persona.getPersonaData() != null ? persona.getPersonaData() : "";
-                persona.setPersonaData(oldData + "\n[Session-" + sessionId + "]: " + summary);
-                persona.setUpdatedAt(java.time.LocalDateTime.now());
-                personaRepository.save(persona);
-            } catch (Exception e) {
-                log.error(">>> [AI-ERROR] summarize failed: {}", e.getMessage());
-            }
+        if (!bufferedMessages.isEmpty()) {
+            messageRepository.saveAll(bufferedMessages);
+            chatBuffer.remove(sessionId);
         }
+
+        // Đảm bảo cập nhật Persona ngay cả khi tắt tab
+        aiPersonaService.summarizeAndUpdatePersona(session.getUser(), sessionId, allMessages);
 
         session.setActive(false);
         sessionRepository.save(session);
+    }
+
+    /**
+     * Tự động dọn dẹp và học Persona cho các session bị bỏ quên (ví dụ: tắt trình duyệt, mất điện)
+     * Chạy mỗi 10 phút, kiểm tra các session active > 30 phút
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 600000) // 10 phút
+    @Transactional
+    public void autoCleanupSessions() {
+        LocalDateTime thirtyMinsAgo = LocalDateTime.now().minusMinutes(30);
+        List<AiChatSession> idleSessions = sessionRepository.findAllByIsActiveTrueAndCreatedAtBefore(thirtyMinsAgo);
+        
+        if (!idleSessions.isEmpty()) {
+            log.info(">>> [AI-CLEANUP] Tự động đóng {} phiên chat bị bỏ quên...", idleSessions.size());
+            for (AiChatSession s : idleSessions) {
+                summarizeAndCloseSession(s.getId());
+            }
+        }
     }
 
     public String getRichPersona(User user) {
@@ -199,7 +190,7 @@ public class SellerAgentService {
                 .map(p -> {
                     String raw = p.getPersonaData();
                     if (raw == null || raw.isBlank())
-                        return "Người dùng mới.";
+                        return "Mới.";
                     String[] lines = raw.split("\n");
                     int start = Math.max(0, lines.length - 3);
                     StringBuilder sb = new StringBuilder();
@@ -208,47 +199,44 @@ public class SellerAgentService {
                     }
                     return sb.toString();
                 })
-                .orElse("Người dùng mới.");
-    }
-
-    public String getPersona(User user) {
-        return personaRepository.findByUser(user)
-                .map(AiChatPersona::getPersonaData)
-                .orElse("Đây là người dùng mới, hãy phục vụ theo phong cách mặc định.");
+                .orElse("Mới.");
     }
 
     private String fetchBriefData(Long shopId) {
-        List<CustomerInsightDTO> data = customerInsightSkill.getTopBuyersThisMonth(shopId);
+        List<CustomerInsightDTO> data = customerInsightSkill.getTopBuyersThisYear(shopId);
         if (data.isEmpty())
-            return "Chưa có đơn hàng mới.";
-        return data.stream()
-                .limit(3)
-                .map(d -> d.getFullName() + ":" + d.getTotalOrders() + " đơn")
-                .collect(Collectors.joining(", "));
+            return "Chưa có dữ liệu năm nay.";
+        
+        int currentYear = java.time.LocalDate.now().getYear();
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("### BẢNG XẾP HẠNG VÀ HẠNG THÀNH VIÊN %d:\n", currentYear));
+        sb.append("| Hạng | Tên khách hàng | Điểm | Hạng TV | Số đơn | Chi tiêu |\n");
+        sb.append("|------|----------------|------|---------|--------|----------|\n");
+        for (int i = 0; i < Math.min(data.size(), 5); i++) {
+            CustomerInsightDTO d = data.get(i);
+            sb.append(String.format("| %d | %s | %d | **%s** | %d đơn | %,.0f đ |\n", 
+                (i + 1), d.getFullName(), d.getPoints(), d.getMembershipRank(), d.getTotalOrders(), d.getTotalSpent()));
+        }
+        return sb.toString();
     }
 
     private String formatLimitedHistory(AiChatSession session, int limit) {
         List<AiChatMessage> dbHistory = messageRepository.findBySessionOrderByCreatedAtAsc(session);
         List<AiChatMessage> bufferHistory = chatBuffer.getOrDefault(session.getId(), new ArrayList<>());
-
         List<AiChatMessage> combined = new ArrayList<>(dbHistory);
         combined.addAll(bufferHistory);
 
-        if (combined.isEmpty())
-            return "None";
+        if (combined.isEmpty()) return "Trống";
         return combined.stream().skip(Math.max(0, combined.size() - limit))
-                .map(h -> (h.getRole().equals("USER") ? "U:" : "A:") + h.getContent())
+                .map(h -> (h.getRole().equals("USER") ? "U" : "A") + ": " + h.getContent())
                 .collect(Collectors.joining(" | "));
     }
 
     public List<AiChatMessage> getHistory(Long sessionId) {
         AiChatSession session = sessionRepository.findById(sessionId).orElse(null);
-        if (session == null)
-            return new ArrayList<>();
-
+        if (session == null) return new ArrayList<>();
         List<AiChatMessage> dbHistory = messageRepository.findBySessionOrderByCreatedAtAsc(session);
         List<AiChatMessage> bufferHistory = chatBuffer.getOrDefault(sessionId, new ArrayList<>());
-
         List<AiChatMessage> combined = new ArrayList<>(dbHistory);
         combined.addAll(bufferHistory);
         return combined;
@@ -263,16 +251,11 @@ public class SellerAgentService {
     private void parseAiOutputWithRegex(String output, GameReasoning reasoning, Long shopId) {
         Pattern anaPattern = Pattern.compile("(?s)ANALYSIS:(.*?)(?=RESPONSE:|$)", Pattern.CASE_INSENSITIVE);
         Matcher ma = anaPattern.matcher(output);
-        if (ma.find()) {
-            reasoning.addThought(ma.group(1).trim());
-        }
+        if (ma.find()) reasoning.addThought(ma.group(1).trim());
 
         Pattern resPattern = Pattern.compile("(?s)RESPONSE:(.*)", Pattern.CASE_INSENSITIVE);
         Matcher mr = resPattern.matcher(output);
-        if (mr.find()) {
-            reasoning.setFinalResponse(mr.group(1).trim());
-        } else {
-            reasoning.setFinalResponse(output.replaceAll("(?i)ANALYSIS:.*", "").trim());
-        }
+        if (mr.find()) reasoning.setFinalResponse(mr.group(1).trim());
+        else reasoning.setFinalResponse(output.replaceAll("(?i)ANALYSIS:.*", "").trim());
     }
 }

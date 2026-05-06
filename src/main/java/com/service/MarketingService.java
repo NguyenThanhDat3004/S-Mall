@@ -5,4 +5,5 @@ import java.util.List;
 
 public interface MarketingService {
     List<CustomerInsightDTO> getCustomerInsights(Long shopId);
+    List<CustomerInsightDTO> getCustomerInsightsByYear(Long shopId, int year);
 }

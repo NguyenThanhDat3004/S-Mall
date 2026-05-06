@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface AiChatSessionRepository extends JpaRepository<AiChatSession, Long> {
     List<AiChatSession> findByUserOrderByCreatedAtDesc(User user);
     Optional<AiChatSession> findTopByUserAndIsActiveTrueOrderByCreatedAtDesc(User user);
+    List<AiChatSession> findAllByIsActiveTrueAndCreatedAtBefore(java.time.LocalDateTime dateTime);
 }

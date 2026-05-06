@@ -84,10 +84,27 @@ public class SellerAiApiController {
         return ResponseEntity.ok(history);
     }
 
-    // Xử lý trường hợp gọi /history mà quên sessionId
     @GetMapping("/history")
-    public ResponseEntity<?> getHistoryMissingId() {
-        return ResponseEntity.badRequest().body(java.util.Map.of("error", "Vui lòng cung cấp Session ID. Ví dụ: /api/seller/ai/history/1", "status", 400));
+    public ResponseEntity<?> getHistory(Principal principal, jakarta.servlet.http.HttpSession httpSession) {
+        if (principal == null) return ResponseEntity.status(403).build();
+        User seller = userRepository.findByEmail(principal.getName()).orElse(null);
+        if (seller == null) return ResponseEntity.status(403).build();
+
+        Long sessionId = (Long) httpSession.getAttribute("ACTIVE_AI_SESSION_ID");
+        if (sessionId == null) {
+            AiChatSession activeSession = sellerAgentService.getActiveSession(seller);
+            if (activeSession != null) {
+                sessionId = activeSession.getId();
+                httpSession.setAttribute("ACTIVE_AI_SESSION_ID", sessionId);
+            }
+        }
+
+        if (sessionId == null) {
+            return ResponseEntity.ok(java.util.Map.of("history", List.of(), "sessionId", null));
+        }
+
+        List<AiChatMessage> history = sellerAgentService.getHistory(sessionId);
+        return ResponseEntity.ok(java.util.Map.of("history", history, "sessionId", sessionId));
     }
 
     @PostMapping("/session/{sessionId}/summarize")
