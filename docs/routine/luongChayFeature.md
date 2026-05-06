@@ -258,3 +258,43 @@ graph TD
 ```
 
 ---
+
+## 10. SMall AI Advisor: Persistence & Intelligence
+Hệ thống trợ lý ảo thông minh tích hợp sâu vào quy trình vận hành của Seller, hỗ trợ phân tích dữ liệu khách hàng và thực thi các hành động marketing tự động.
+
+### Sơ đồ Luồng Hoạt động (Execution Flow):
+```mermaid
+sequenceDiagram
+    participant Seller as Chủ Shop
+    participant Agent as SellerAgentService
+    participant Buffer as chatBuffer (RAM)
+    participant LLM as Groq LLM (Llama-3.1-8b)
+    participant Tool as VoucherAgentSkill
+    participant DB as SQL Server
+
+    Seller->>Agent: Gửi tin nhắn (Chat)
+    Agent->>Buffer: Lưu tin nhắn USER vào RAM
+    Agent->>LLM: Gửi Prompt (Context + Persona + Tools)
+    LLM-->>Agent: Trả về Analysis + Response
+    
+    alt Có lệnh EXECUTION (Đã được xác nhận)
+        Agent->>Tool: executeTool(createVoucher)
+        Tool->>DB: INSERT vouchers
+    end
+
+    Agent->>Buffer: Lưu phản hồi ASSISTANT vào RAM
+    Agent-->>Seller: Hiển thị câu trả lời (Thảo mai)
+
+    Note over Seller, DB: Khi bấm Refresh / Logout
+    Agent->>DB: Flush toàn bộ Buffer vào ai_chat_messages
+    Agent->>LLM: Summarize Persona (Đúc kết hồ sơ)
+    LLM-->>Agent: Trích xuất Tính cách / Phong cách / Thói quen
+    Agent->>DB: INSERT ai_chat_personas (Bản ghi mới)
+```
+
+### Các công nghệ & Giải pháp áp dụng:
+1.  **High-Performance Buffering**: Sử dụng `ConcurrentHashMap` để lưu trữ tin nhắn tạm thời trong RAM. Hệ thống chỉ ghi vào database (I/O) một lần duy nhất khi kết thúc phiên chat, giảm tải cho SQL Server đến 90%.
+2.  **Persona Evolution**: Thay vì ghi đè, hệ thống tạo bản ghi mới cho mỗi phiên chat. Khi khởi động phiên mới, AI sẽ đọc **3 bản ghi gần nhất** để hiểu "quá trình tiến hóa" của người dùng, đảm bảo trí nhớ dài hạn mà không tốn quá nhiều Token.
+3.  **Diplomatic Persona (Thảo mai)**: AI được cấu hình để xưng hô đích danh tên chủ shop, sử dụng ngôn ngữ khéo léo và hỗ trợ.
+4.  **Secure Tool-Use**: AI không bao giờ tự ý thực thi hành động. Nó phải đề xuất phương án và chỉ thực thi lệnh `createVoucher` khi nhận được sự đồng ý rõ ràng từ chủ shop.
+5.  **Robust Persistence**: Xử lý triệt để các lỗi đệ quy JSON (Jackson) và xung đột ràng buộc database (Unique Constraint) trong môi trường chạy ngầm (Async).
