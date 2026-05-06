@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.dto.CustomerInsightDTO;
 import com.repository.OrderRepository;
+import com.repository.MembershipRankRepository;
+import com.entity.MembershipRank;
 
 /**
  * Skill: Phân tích khách hàng (Customer Insight)
@@ -15,37 +17,49 @@ public class CustomerInsightSkill {
     @Autowired
     private OrderRepository orderRepository;
 
-    /**
-     * Lấy danh sách top khách hàng chi tiêu nhiều nhất của Shop (All-time)
-     */
+    @Autowired
+    private MembershipRankRepository membershipRankRepository;
+
     public List<CustomerInsightDTO> getTopBuyers(Long shopId) {
         List<CustomerInsightDTO> insights = orderRepository.findCustomerInsightsByShopId(shopId);
+        populateRanks(insights);
         return insights.size() > 5 ? insights.subList(0, 5) : insights;
     }
 
-    /**
-     * Lấy danh sách top khách hàng theo tháng hiện tại
-     */
     public List<CustomerInsightDTO> getTopBuyersThisMonth(Long shopId) {
         java.time.LocalDateTime since = java.time.LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0);
         List<CustomerInsightDTO> insights = orderRepository.findCustomerInsightsByShopIdAndDate(shopId, since);
+        populateRanks(insights);
         return insights.size() > 5 ? insights.subList(0, 5) : insights;
     }
 
-    /**
-     * Lấy danh sách top khách hàng theo năm hiện tại
-     */
     public List<CustomerInsightDTO> getTopBuyersThisYear(Long shopId) {
-        java.time.LocalDateTime since = java.time.LocalDateTime.now().withDayOfYear(1).withHour(0).withMinute(0);
-        List<CustomerInsightDTO> insights = orderRepository.findCustomerInsightsByShopIdAndDate(shopId, since);
+        int currentYear = java.time.LocalDate.now().getYear();
+        List<CustomerInsightDTO> insights = orderRepository.findCustomerInsightsByShopIdAndYear(shopId, currentYear);
+        populateRanks(insights);
         return insights.size() > 5 ? insights.subList(0, 5) : insights;
     }
 
-    /**
-     * Lấy thông tin chi tiết của một khách hàng cụ thể dựa trên Email hoặc Tên
-     */
+    private void populateRanks(List<CustomerInsightDTO> insights) {
+        List<MembershipRank> ranks = membershipRankRepository.findAllByOrderByMinPointsDesc();
+        for (CustomerInsightDTO dto : insights) {
+            long points = (long) (dto.getTotalSpent() / 1000);
+            dto.setPoints(points);
+            
+            String rankName = "THÀNH VIÊN";
+            for (MembershipRank r : ranks) {
+                if (points >= r.getMinPoints()) {
+                    rankName = r.getRankName();
+                    break;
+                }
+            }
+            dto.setMembershipRank(rankName);
+        }
+    }
+
     public CustomerInsightDTO findCustomerByName(Long shopId, String name) {
         List<CustomerInsightDTO> all = orderRepository.findCustomerInsightsByShopId(shopId);
+        populateRanks(all);
         return all.stream()
                 .filter(c -> c.getFullName().toLowerCase().contains(name.toLowerCase()))
                 .findFirst()

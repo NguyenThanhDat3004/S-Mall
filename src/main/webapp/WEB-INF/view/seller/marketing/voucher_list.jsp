@@ -126,7 +126,14 @@
                                         <div class="text-right">
                                             <div class="text-xs text-slate-400">Giảm giá</div>
                                             <div class="text-lg font-bold text-emerald-600">
-                                                <fmt:formatNumber value="${v.discountAmount}" type="currency" currencySymbol="₫" />
+                                                <c:choose>
+                                                    <c:when test="${v.discountType == 'PERCENTAGE'}">
+                                                        <fmt:formatNumber value="${v.discountAmount}" pattern="#,###" />%
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <fmt:formatNumber value="${v.discountAmount}" type="currency" currencySymbol="₫" />
+                                                    </c:otherwise>
+                                                </c:choose>
                                             </div>
                                         </div>
                                     </div>
@@ -216,12 +223,24 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-6">
+                <div class="grid grid-cols-2 gap-6" x-data="{ discountType: 'FIXED' }">
                     <div class="space-y-2">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Số tiền giảm (₫)</label>
-                        <input type="number" name="discountAmount" required min="1000" step="1000" placeholder="10.000" 
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Loại giảm giá</label>
+                        <select name="discountType" x-model="discountType"
+                                class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
+                            <option value="FIXED">Cố định (₫)</option>
+                            <option value="PERCENTAGE">Phần trăm (%)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                            Mức giảm (<span x-text="discountType == 'FIXED' ? '₫' : '%'"></span>)
+                        </label>
+                        <input type="number" name="discountAmount" required min="1" :step="discountType == 'FIXED' ? 1000 : 1" 
+                               :placeholder="discountType == 'FIXED' ? '10.000' : '10'" 
                                class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
                     </div>
+                </div>
                     <div class="space-y-2">
                         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Đơn tối thiểu (₫)</label>
                         <input type="number" name="minOrderValue" required min="0" step="1000" placeholder="50.000" 

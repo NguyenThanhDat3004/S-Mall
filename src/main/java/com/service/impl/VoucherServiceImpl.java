@@ -130,9 +130,10 @@ public class VoucherServiceImpl implements VoucherService {
 
     @Override
     @Transactional
-    public void createAndAssignVoucher(Long shopId, Long userId, double discount, int expiryDays) {
+    public void createAndAssignVoucher(Long shopId, Long userId, double discount, Voucher.DiscountType type, int expiryDays) {
         Voucher voucher = new Voucher();
         voucher.setDiscountAmount(discount);
+        voucher.setDiscountType(type);
         voucher.setMinOrderValue(0);
         voucher.setQuantity(1);
         voucher.setInitialQuantity(1);

@@ -34,8 +34,10 @@ public class SellerMarketingController {
             return "redirect:/login";
         }
 
-        List<CustomerInsightDTO> customers = marketingService.getCustomerInsights(shopId);
+        int currentYear = java.time.LocalDate.now().getYear();
+        List<CustomerInsightDTO> customers = marketingService.getCustomerInsightsByYear(shopId, currentYear);
         model.addAttribute("customers", customers);
+        model.addAttribute("currentYear", currentYear);
         return "seller/marketing/customers";
     }
 

@@ -10,6 +10,8 @@ public class CustomerInsightDTO {
     private long totalOrders;
     private double totalSpent;
     private LocalDateTime lastOrderDate;
+    private String membershipRank;
+    private long points;
 
     public CustomerInsightDTO(Long userId, String email, String fullName, String avatarUrl, long totalOrders, double totalSpent, LocalDateTime lastOrderDate) {
         this.userId = userId;
@@ -36,4 +38,8 @@ public class CustomerInsightDTO {
     public void setTotalSpent(double totalSpent) { this.totalSpent = totalSpent; }
     public LocalDateTime getLastOrderDate() { return lastOrderDate; }
     public void setLastOrderDate(LocalDateTime lastOrderDate) { this.lastOrderDate = lastOrderDate; }
+    public String getMembershipRank() { return membershipRank; }
+    public void setMembershipRank(String membershipRank) { this.membershipRank = membershipRank; }
+    public long getPoints() { return points; }
+    public void setPoints(long points) { this.points = points; }
 }

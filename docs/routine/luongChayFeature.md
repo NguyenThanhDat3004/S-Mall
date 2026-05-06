@@ -221,3 +221,80 @@ sequenceDiagram
 4.  **Tính nhất quán dữ liệu**: Toàn bộ danh sách mã đã chọn được lưu vết và gửi kèm theo đơn hàng để đảm bảo tính minh bạch giữa Client và Server.
 
 ---
+
+## 8. Hệ thống Sidebar Thu gọn Toàn cục (Global Collapsible Sidebar)
+Hệ thống quản lý trạng thái hiển thị của Sidebar một cách đồng bộ trên toàn bộ Seller Center, tối ưu hóa diện tích làm việc cho người bán.
+
+### Quy trình kỹ thuật:
+1.  **Cấu trúc Layout**: Sử dụng `sidebar.jsp` làm thành phần dùng chung. Nội dung chính của trang được bao bọc trong một container `<div id="main-content">`.
+2.  **Trạng thái Toggle**: Khi người dùng nhấn nút Hamburger, hàm `toggleSidebar()` sẽ thêm/xóa class `.collapsed` vào Sidebar và cập nhật lề (`margin-left`) của `main-content`.
+3.  **Đồng bộ giao diện**: Tất cả các trang quản trị (Dashboard, Order, Product, Voucher, Customers) đều chia sẻ chung một bộ ID và Class CSS để đảm bảo tính nhất quán khi chuyển trang.
+
+---
+
+## 9. Giao diện Chat SMall AI (Chat UI Alignment Logic)
+Trợ lý ảo SMall AI sử dụng cơ chế căn chỉnh tin nhắn thông minh để phân biệt rõ ràng giữa Người dùng và AI, mang lại trải nghiệm chat chuyên nghiệp.
+
+### Logic căn chỉnh Flexbox:
+1.  **Container chính**: `#history` (hoặc `#chat-messages`) được thiết lập là `display: flex; flex-direction: column;`.
+2.  **Tin nhắn Người dùng (USER)**:
+    - Sử dụng class `self-end` để đẩy bubble về phía bên phải.
+    - Màu sắc: Xanh Emerald (`bg-emerald-600` hoặc `#10b981`).
+    - Bo góc: `rounded-br-none` (góc dưới bên phải vuông) để tạo cảm giác hội thoại.
+3.  **Tin nhắn AI (SMall AI)**:
+    - Sử dụng class `self-start` để đẩy bubble về phía bên trái.
+    - Màu sắc: Xám nhạt/Xanh nhạt (`bg-slate-800` hoặc `#f0fdf4`).
+    - Bo góc: `rounded-bl-none` (góc dưới bên trái vuông).
+
+### Sơ đồ luồng hiển thị:
+```mermaid
+graph TD
+    A[Nhận tin nhắn] --> B{Kiểm tra Role?}
+    B -- isUser=true --> C[Thêm class self-end + Màu xanh]
+    B -- isUser=false --> D[Thêm class self-start + Màu xám]
+    C --> E[Render vào #history]
+    D --> E
+    E --> F[Scroll to Bottom]
+```
+
+---
+
+## 10. SMall AI Advisor: Persistence & Intelligence
+Hệ thống trợ lý ảo thông minh tích hợp sâu vào quy trình vận hành của Seller, hỗ trợ phân tích dữ liệu khách hàng và thực thi các hành động marketing tự động.
+
+### Sơ đồ Luồng Hoạt động (Execution Flow):
+```mermaid
+sequenceDiagram
+    participant Seller as Chủ Shop
+    participant Agent as SellerAgentService
+    participant Buffer as chatBuffer (RAM)
+    participant LLM as Groq LLM (Llama-3.1-8b)
+    participant Tool as VoucherAgentSkill
+    participant DB as SQL Server
+
+    Seller->>Agent: Gửi tin nhắn (Chat)
+    Agent->>Buffer: Lưu tin nhắn USER vào RAM
+    Agent->>LLM: Gửi Prompt (Context + Persona + Tools)
+    LLM-->>Agent: Trả về Analysis + Response
+    
+    alt Có lệnh EXECUTION (Đã được xác nhận)
+        Agent->>Tool: executeTool(createVoucher)
+        Tool->>DB: INSERT vouchers
+    end
+
+    Agent->>Buffer: Lưu phản hồi ASSISTANT vào RAM
+    Agent-->>Seller: Hiển thị câu trả lời (Thảo mai)
+
+    Note over Seller, DB: Khi bấm Refresh / Logout
+    Agent->>DB: Flush toàn bộ Buffer vào ai_chat_messages
+    Agent->>LLM: Summarize Persona (Đúc kết hồ sơ)
+    LLM-->>Agent: Trích xuất Tính cách / Phong cách / Thói quen
+    Agent->>DB: INSERT ai_chat_personas (Bản ghi mới)
+```
+
+### Các công nghệ & Giải pháp áp dụng:
+1.  **High-Performance Buffering**: Sử dụng `ConcurrentHashMap` để lưu trữ tin nhắn tạm thời trong RAM. Hệ thống chỉ ghi vào database (I/O) một lần duy nhất khi kết thúc phiên chat, giảm tải cho SQL Server đến 90%.
+2.  **Persona Evolution**: Thay vì ghi đè, hệ thống tạo bản ghi mới cho mỗi phiên chat. Khi khởi động phiên mới, AI sẽ đọc **3 bản ghi gần nhất** để hiểu "quá trình tiến hóa" của người dùng, đảm bảo trí nhớ dài hạn mà không tốn quá nhiều Token.
+3.  **Diplomatic Persona (Thảo mai)**: AI được cấu hình để xưng hô đích danh tên chủ shop, sử dụng ngôn ngữ khéo léo và hỗ trợ.
+4.  **Secure Tool-Use**: AI không bao giờ tự ý thực thi hành động. Nó phải đề xuất phương án và chỉ thực thi lệnh `createVoucher` khi nhận được sự đồng ý rõ ràng từ chủ shop.
+5.  **Robust Persistence**: Xử lý triệt để các lỗi đệ quy JSON (Jackson) và xung đột ràng buộc database (Unique Constraint) trong môi trường chạy ngầm (Async).

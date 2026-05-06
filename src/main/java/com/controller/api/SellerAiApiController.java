@@ -6,17 +6,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.service.ai.agent.SellerAgentService;
 import com.service.ai.agent.model.GameReasoning;
-import com.entity.AiAgentHistory;
+import com.service.ai.agent.model.ChatRequest;
+import com.entity.AiChatMessage;
+import com.entity.AiChatSession;
 import com.entity.User;
 import com.repository.UserRepository;
-import com.repository.AiAgentHistoryRepository;
-import jakarta.servlet.http.HttpSession;
 import java.security.Principal;
-import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/seller/ai")
 public class SellerAiApiController {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SellerAiApiController.class);
 
     @Autowired
     private SellerAgentService sellerAgentService;
@@ -24,33 +25,102 @@ public class SellerAiApiController {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private AiAgentHistoryRepository historyRepository;
-
-    @PostMapping("/chat")
-    public ResponseEntity<GameReasoning> chat(@RequestBody com.service.ai.agent.model.ChatRequest request, Principal principal) {
+    @PostMapping("/session")
+    public ResponseEntity<AiChatSession> startSession(Principal principal, jakarta.servlet.http.HttpSession httpSession) {
         if (principal == null) return ResponseEntity.status(403).build();
         User seller = userRepository.findByEmail(principal.getName()).orElse(null);
         if (seller == null) return ResponseEntity.status(403).build();
 
-        GameReasoning response = sellerAgentService.processRequest(seller, request.getMessage());
+        AiChatSession session = sellerAgentService.startNewSession(seller);
+        
+        // Lưu sessionId vào Redis Session
+        httpSession.setAttribute("ACTIVE_AI_SESSION_ID", session.getId());
+        System.err.println(">>> [CONTROLLER] Đã lưu SessionID " + session.getId() + " vào Redis.");
+        
+        return ResponseEntity.ok(session);
+    }
+
+    @PostMapping("/chat")
+    public ResponseEntity<?> chat(@RequestBody ChatRequest request, Principal principal, jakarta.servlet.http.HttpSession httpSession) {
+        System.err.println(">>> [CONTROLLER] NHẬN REQUEST CHAT - Msg: " + request.getMessage());
+        if (principal == null) return ResponseEntity.status(403).build();
+        User seller = userRepository.findByEmail(principal.getName()).orElse(null);
+        if (seller == null) return ResponseEntity.status(403).build();
+
+        Long sessionId = request.getSessionId();
+        
+        // 1. Ưu tiên lấy sessionId từ Request
+        // 2. Nếu null, thử lấy từ Redis Session
+        if (sessionId == null) {
+            sessionId = (Long) httpSession.getAttribute("ACTIVE_AI_SESSION_ID");
+            if (sessionId != null) {
+                System.err.println(">>> [CONTROLLER] Lấy được SessionID từ Redis: " + sessionId);
+            }
+        }
+        
+        // 3. Nếu vẫn null, tự động tìm session active trong DB
+        if (sessionId == null) {
+            System.err.println(">>> [CONTROLLER] Redis trống, đang tìm session active trong DB...");
+            AiChatSession activeSession = sellerAgentService.getActiveSession(seller);
+            if (activeSession != null) {
+                sessionId = activeSession.getId();
+                httpSession.setAttribute("ACTIVE_AI_SESSION_ID", sessionId); // Cập nhật ngược lại Redis
+            } else {
+                System.err.println(">>> [CONTROLLER] Không có session nào, đang tạo mới...");
+                AiChatSession newSession = sellerAgentService.startNewSession(seller);
+                sessionId = newSession.getId();
+                httpSession.setAttribute("ACTIVE_AI_SESSION_ID", sessionId);
+            }
+        }
+
+        GameReasoning response = sellerAgentService.processRequest(seller, sessionId, request.getMessage());
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/history")
-    public ResponseEntity<List<AiAgentHistory>> getHistory(Principal principal) {
+    @GetMapping("/history/{sessionId}")
+    public ResponseEntity<List<AiChatMessage>> getHistory(@PathVariable Long sessionId, Principal principal) {
         if (principal == null) return ResponseEntity.status(403).build();
-        User seller = userRepository.findByEmail(principal.getName()).orElse(null);
-        List<AiAgentHistory> history = sellerAgentService.getHistory(seller.getId());
+        List<AiChatMessage> history = sellerAgentService.getHistory(sessionId);
         return ResponseEntity.ok(history);
     }
 
-    @DeleteMapping("/history")
-    @Transactional
-    public ResponseEntity<Void> clearHistory(Principal principal) {
+    @GetMapping("/history")
+    public ResponseEntity<?> getHistory(Principal principal, jakarta.servlet.http.HttpSession httpSession) {
         if (principal == null) return ResponseEntity.status(403).build();
         User seller = userRepository.findByEmail(principal.getName()).orElse(null);
-        historyRepository.deleteBySellerId(seller.getId());
-        return ResponseEntity.ok().build();
+        if (seller == null) return ResponseEntity.status(403).build();
+
+        Long sessionId = (Long) httpSession.getAttribute("ACTIVE_AI_SESSION_ID");
+        if (sessionId == null) {
+            AiChatSession activeSession = sellerAgentService.getActiveSession(seller);
+            if (activeSession != null) {
+                sessionId = activeSession.getId();
+                httpSession.setAttribute("ACTIVE_AI_SESSION_ID", sessionId);
+            }
+        }
+
+        if (sessionId == null) {
+            return ResponseEntity.ok(java.util.Map.of("history", List.of(), "sessionId", null));
+        }
+
+        List<AiChatMessage> history = sellerAgentService.getHistory(sessionId);
+        return ResponseEntity.ok(java.util.Map.of("history", history, "sessionId", sessionId));
+    }
+
+    @PostMapping("/session/{sessionId}/summarize")
+    public ResponseEntity<?> summarizeSession(@PathVariable Long sessionId, Principal principal, jakarta.servlet.http.HttpSession httpSession) {
+        if (principal == null) return ResponseEntity.status(403).build();
+        
+        sellerAgentService.summarizeAndCloseSession(sessionId);
+        
+        // Xóa khỏi Redis sau khi đã đóng và đúc kết xong để giải phóng bộ nhớ
+        Long activeIdInRedis = (Long) httpSession.getAttribute("ACTIVE_AI_SESSION_ID");
+        if (sessionId.equals(activeIdInRedis)) {
+            httpSession.removeAttribute("ACTIVE_AI_SESSION_ID");
+            System.err.println(">>> [CONTROLLER] Đã xóa SessionID " + sessionId + " khỏi Redis.");
+        }
+        
+        return ResponseEntity.ok(java.util.Map.of("status", "success", "message", "Session closed and persona updated"));
     }
 }
+
