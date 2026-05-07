@@ -8,12 +8,18 @@ import com.repository.ChatMessageRepository;
 import com.repository.ChatRoomRepository;
 import com.repository.ShopRepository;
 import com.repository.UserRepository;
+import com.dto.ChatMessageBufferDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ChatServiceImpl implements ChatService {
@@ -29,6 +35,19 @@ public class ChatServiceImpl implements ChatService {
 
     @Autowired
     private ShopRepository shopRepository;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private static final String CHAT_BUFFER_KEY = "chat:buffer:messages";
+
+    @Override
+    public ChatRoom findRoom(Long customerId, Long shopId) {
+        return chatRoomRepository.findByCustomerIdAndShopId(customerId, shopId).orElse(null);
+    }
 
     @Override
     @Transactional
@@ -48,10 +67,73 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    public ChatMessageBufferDTO bufferMessage(Long roomId, Long senderId, String content, Long shopId) {
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Nếu là tin nhắn đầu tiên (Lazy Creation), tạo phòng trong MySQL ngay
+        Long actualRoomId = roomId;
+        if (actualRoomId == null || actualRoomId == 0) {
+            ChatRoom room = getOrCreateRoom(senderId, shopId);
+            actualRoomId = room.getId();
+        }
+
+        ChatMessageBufferDTO dto = ChatMessageBufferDTO.builder()
+                .roomId(actualRoomId)
+                .senderId(senderId)
+                .content(content)
+                .senderName(sender.getProfile() != null ? sender.getProfile().getFullName() : sender.getEmail())
+                .senderAvatar(sender.getProfile() != null ? sender.getProfile().getAvatarUrl() : null)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        // Đẩy vào Redis Buffer
+        redisTemplate.opsForList().rightPush(CHAT_BUFFER_KEY, dto);
+
+        return dto;
+    }
+
+    @Override
+    public List<ChatMessageBufferDTO> getMessagesCombined(Long roomId) {
+        // 1. Lấy từ DB
+        List<ChatMessage> dbMessages = getMessagesByRoom(roomId);
+        List<ChatMessageBufferDTO> result = dbMessages.stream().map(m -> ChatMessageBufferDTO.builder()
+                .roomId(roomId)
+                .senderId(m.getSender().getId())
+                .content(m.getContent())
+                .senderName(m.getSender().getProfile() != null ? m.getSender().getProfile().getFullName() : m.getSender().getEmail())
+                .senderAvatar(m.getSender().getProfile() != null ? m.getSender().getProfile().getAvatarUrl() : null)
+                .createdAt(m.getCreatedAt())
+                .build()).collect(Collectors.toList());
+
+        // 2. Lấy từ Redis Buffer (lọc theo roomId)
+        List<Object> bufferRaw = redisTemplate.opsForList().range(CHAT_BUFFER_KEY, 0, -1);
+        if (bufferRaw != null) {
+            for (Object obj : bufferRaw) {
+                ChatMessageBufferDTO dto = objectMapper.convertValue(obj, ChatMessageBufferDTO.class);
+                if (dto.getRoomId().equals(roomId)) {
+                    result.add(dto);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @Override
     @Transactional
-    public ChatMessage saveMessage(Long roomId, Long senderId, String content) {
-        ChatRoom room = chatRoomRepository.findById(roomId)
-                .orElseThrow(() -> new RuntimeException("ChatRoom not found: " + roomId));
+    public ChatMessage saveMessage(Long roomId, Long senderId, String content, Long shopId) {
+        ChatRoom room;
+        if (roomId != null && roomId > 0) {
+            room = chatRoomRepository.findById(roomId)
+                    .orElseThrow(() -> new RuntimeException("ChatRoom not found: " + roomId));
+        } else if (shopId != null) {
+            // Lazy Creation: Tạo phòng khi gửi tin nhắn đầu tiên
+            room = getOrCreateRoom(senderId, shopId);
+        } else {
+            throw new RuntimeException("Cannot save message: Both roomId and shopId are null");
+        }
+
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + senderId));
 

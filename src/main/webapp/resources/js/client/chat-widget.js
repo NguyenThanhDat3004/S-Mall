@@ -3,6 +3,7 @@
 (function() {
     const url = window.location.origin + (window.location.pathname.startsWith('/spring_mvc') ? '/spring_mvc' : '');
     let currentRoomId = null;
+    let currentShopId = null;
     let stompClient = null;
     let isWindowOpen = false;
 
@@ -104,8 +105,9 @@
             toggleWindow(forceOpen);
         },
 
-        openRoom: function(roomId, partnerName) {
+        openRoom: function(roomId, partnerName, shopId = null) {
             currentRoomId = roomId;
+            currentShopId = shopId;
             roomList.style.display = 'none';
             conversation.style.display = 'flex';
             backBtn.style.display = 'block';
@@ -122,7 +124,7 @@
             fetch(url + '/api/chat/rooms/init?shopId=' + shopId, { method: 'POST' })
                 .then(res => res.json())
                 .then(data => {
-                    this.openRoom(data.roomId, data.partnerName);
+                    this.openRoom(data.roomId, data.partnerName, shopId);
                 });
         }
     };
@@ -163,6 +165,7 @@
 
         window.stompClient.send('/app/chat.send', {}, JSON.stringify({
             roomId: currentRoomId,
+            shopId: currentShopId,
             content: content
         }));
 
@@ -177,6 +180,10 @@
         if (window.stompClient && window.stompClient.connected) {
             window.stompClient.subscribe('/user/queue/messages', function(message) {
                 const msg = JSON.parse(message.body);
+                // Nếu vừa gửi tin nhắn đầu tiên và phòng mới được tạo
+                if (!currentRoomId && currentShopId && msg.roomId) {
+                    currentRoomId = msg.roomId;
+                }
                 if (msg.roomId === currentRoomId) {
                     appendMessage(msg);
                 }

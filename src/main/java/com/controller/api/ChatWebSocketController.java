@@ -45,21 +45,26 @@ public class ChatWebSocketController {
     public void sendMessage(@Payload Map<String, Object> payload, Principal principal) {
         if (principal == null) return;
 
-        Long roomId = Long.valueOf(payload.get("roomId").toString());
+        Object roomIdObj = payload.get("roomId");
+        Long roomId = (roomIdObj != null && !roomIdObj.toString().equals("null")) 
+                        ? Long.valueOf(roomIdObj.toString()) : null;
+        Object shopIdObj = payload.get("shopId");
+        Long shopId = (shopIdObj != null) ? Long.valueOf(shopIdObj.toString()) : null;
         String content = payload.get("content").toString();
 
         // Lấy sender
         User sender = userService.getUserByEmail(principal.getName()).orElse(null);
         if (sender == null) return;
 
-        // Lưu tin nhắn vào DB
-        ChatMessage saved = chatService.saveMessage(roomId, sender.getId(), content);
+        // Lưu tin nhắn vào Redis Buffer (có thể tạo phòng mới nếu roomId null)
+        com.dto.ChatMessageBufferDTO saved = chatService.bufferMessage(roomId, sender.getId(), content, shopId);
+        Long actualRoomId = saved.getRoomId();
 
         // Build DTO để gửi qua WebSocket
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         Map<String, Object> messageDto = new HashMap<>();
         messageDto.put("id", saved.getId());
-        messageDto.put("roomId", roomId);
+        messageDto.put("roomId", actualRoomId);
         messageDto.put("content", saved.getContent());
         messageDto.put("senderId", sender.getId());
         messageDto.put("senderName", sender.getProfile() != null && sender.getProfile().getFullName() != null

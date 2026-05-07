@@ -142,21 +142,18 @@ public class ChatApiController {
         // Đánh dấu đã đọc khi mở phòng
         chatService.markRoomAsRead(roomId, user.getId());
 
-        List<ChatMessage> messages = chatService.getMessagesByRoom(roomId);
+        List<com.dto.ChatMessageBufferDTO> messages = chatService.getMessagesCombined(roomId);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
         List<Map<String, Object>> result = new ArrayList<>();
-        for (ChatMessage msg : messages) {
+        for (com.dto.ChatMessageBufferDTO msg : messages) {
             Map<String, Object> dto = new HashMap<>();
-            dto.put("id", msg.getId());
             dto.put("content", msg.getContent());
-            dto.put("senderId", msg.getSender().getId());
-            dto.put("senderName", msg.getSender().getProfile() != null && msg.getSender().getProfile().getFullName() != null
-                    ? msg.getSender().getProfile().getFullName() : msg.getSender().getEmail());
-            dto.put("senderAvatar", msg.getSender().getProfile() != null
-                    ? msg.getSender().getProfile().getAvatarUrl() : null);
+            dto.put("senderId", msg.getSenderId());
+            dto.put("senderName", msg.getSenderName());
+            dto.put("senderAvatar", msg.getSenderAvatar());
             dto.put("time", msg.getCreatedAt().format(formatter));
-            dto.put("isOwn", msg.getSender().getId().equals(user.getId()));
+            dto.put("isOwn", msg.getSenderId().equals(user.getId()));
             result.add(dto);
         }
 
@@ -173,11 +170,13 @@ public class ChatApiController {
         User user = userService.getUserByEmail(principal.getName()).orElse(null);
         if (user == null) return ResponseEntity.badRequest().build();
 
-        ChatRoom room = chatService.getOrCreateRoom(user.getId(), shopId);
-        Shop shop = room.getShop();
+        // Chỉ tìm, không tạo mới ngay
+        ChatRoom room = chatService.findRoom(user.getId(), shopId);
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new RuntimeException("Shop not found"));
 
         Map<String, Object> resp = new HashMap<>();
-        resp.put("roomId", room.getId());
+        resp.put("roomId", room != null ? room.getId() : null);
         resp.put("partnerName", shop.getName());
         resp.put("partnerAvatar", shop.getLogoUrl());
 

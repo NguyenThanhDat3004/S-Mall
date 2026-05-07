@@ -2,19 +2,32 @@ package com.service.chat;
 
 import com.entity.ChatMessage;
 import com.entity.ChatRoom;
+import com.dto.ChatMessageBufferDTO;
 import java.util.List;
 
 public interface ChatService {
 
     /**
-     * Tìm phòng chat đã tồn tại hoặc tạo mới giữa Customer và Shop
+     * Tìm phòng chat giữa Customer và Shop (không tạo mới)
      */
+    ChatRoom findRoom(Long customerId, Long shopId);
+
     ChatRoom getOrCreateRoom(Long customerId, Long shopId);
 
     /**
-     * Lưu tin nhắn mới vào Database
+     * Lưu tin nhắn vào Redis Buffer (không ghi MySQL ngay)
      */
-    ChatMessage saveMessage(Long roomId, Long senderId, String content);
+    ChatMessageBufferDTO bufferMessage(Long roomId, Long senderId, String content, Long shopId);
+
+    /**
+     * Lấy lịch sử chat (kết hợp MySQL + Redis Buffer)
+     */
+    List<ChatMessageBufferDTO> getMessagesCombined(Long roomId);
+
+    /**
+     * Lưu tin nhắn vào MySQL (Dùng cho Sync Task hoặc các trường hợp đặc biệt)
+     */
+    ChatMessage saveMessage(Long roomId, Long senderId, String content, Long shopId);
 
     /**
      * Lấy lịch sử chat theo phòng
