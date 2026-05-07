@@ -23,7 +23,6 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Cacheable(value = "categories", key = "'all'")
     public List<Category> getAllCategories() {
-        System.out.println("Cache Miss - Lấy toàn bộ Category từ Database");
         return this.categoryRepository.findByIsActiveTrue();
     }
 
@@ -42,7 +41,6 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @CacheEvict(value = "categories", allEntries = true)
     public Category handleSaveCategory(Category category) {
-        System.out.println("Clear Cache - Cập nhật dữ liệu Category");
         return this.categoryRepository.save(category);
     }
 

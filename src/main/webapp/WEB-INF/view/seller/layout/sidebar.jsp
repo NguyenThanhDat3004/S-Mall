@@ -53,6 +53,11 @@
             <span class="text-[15px] font-semibold">Đơn hàng</span>
         </a>
 
+        <a href="${url}/seller/chat" class="nav-item group flex items-center gap-4 px-4 py-4 rounded-2xl transition-all hover:bg-slate-50" id="nav-chat">
+            <i class="fas fa-comments w-6 text-center text-base opacity-70 group-hover:text-emerald-500 transition-colors"></i>
+            <span class="text-[15px] font-semibold">Chat</span>
+        </a>
+
         <a href="${url}/seller/marketing/customers" class="nav-item group flex items-center gap-4 px-4 py-4 rounded-2xl transition-all hover:bg-slate-50" id="nav-customers">
             <i class="fas fa-users w-6 text-center text-base opacity-70 group-hover:text-emerald-500 transition-colors"></i>
             <span class="text-[15px] font-semibold">Customers</span>

@@ -7,6 +7,9 @@
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
             rel="stylesheet">
         <link rel="stylesheet" href="${url}/resources/css/client/header.css">
+        <c:if test="${not empty pageContext.request.userPrincipal}">
+            <link rel="stylesheet" href="${url}/resources/css/client/chat-widget.css">
+        </c:if>
 
         <header>
             <nav class="top-header">
@@ -115,7 +118,7 @@
                     </div>
 
                     <div class="cart-section">
-                        <a href="${url}/messages" class="cart-icon-wrapper">
+                        <a href="javascript:void(0)" onclick="window.chatWidget.toggle()" class="cart-icon-wrapper">
                             <i class="fas fa-comment-dots cart-icon"></i>
                             <span class="d-none d-lg-inline" style="font-size: 14px; font-weight: 500;">Chat</span>
                             <span class="cart-badge" id="chatBadge">0</span>
@@ -144,6 +147,7 @@
                     const socket = new SockJS(`${url}/ws`);
                     const stompClient = Stomp.over(socket);
                     stompClient.debug = null; 
+                    window.stompClient = stompClient; // Expose to window for chat-widget
 
                     stompClient.connect({}, function (frame) {
                         stompClient.subscribe('/user/topic/notifications', function (message) {
@@ -155,6 +159,12 @@
                                 bell.classList.add('fa-shake');
                                 setTimeout(() => bell.classList.remove('fa-shake'), 2000);
                             }
+                        });
+
+                        // Subscribe tin nhắn chat để cập nhật badge
+                        stompClient.subscribe('/user/queue/messages', function (message) {
+                            console.log("Real-time Chat Message Received!");
+                            updateChatCount();
                         });
                     }, function (error) {
                         console.log('WebSocket Error: ' + error);
@@ -272,8 +282,22 @@
                 updateCartCount();
                 updateNotifications();
 
-                updateCartCount();
-                updateNotifications();
+                // Cập nhật Chat Badge
+                window.updateChatCount = function() {
+                    fetch(`${url}/api/chat/unread-count`)
+                        .then(res => res.json())
+                        .then(data => {
+                            const chatBadge = document.getElementById('chatBadge');
+                            if (chatBadge) {
+                                const count = data.count || 0;
+                                chatBadge.innerText = formatCount(count);
+                                chatBadge.style.display = count > 0 ? 'flex' : 'none';
+                            }
+                        })
+                        .catch(() => {});
+                };
+
+                updateChatCount();
 
                 // Cập nhật giỏ hàng mỗi 30 giây
                 setInterval(updateCartCount, 30000);
@@ -314,3 +338,6 @@
                 }
             });
         </script>
+        <c:if test="${not empty pageContext.request.userPrincipal}">
+            <script src="${url}/resources/js/client/chat-widget.js"></script>
+        </c:if>

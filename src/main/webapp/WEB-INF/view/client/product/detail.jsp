@@ -107,6 +107,11 @@
                         </div>
                     </c:when>
                     <c:otherwise>
+                        <c:if test="${not empty pageContext.request.userPrincipal}">
+                            <a href="javascript:void(0)" onclick="window.chatWidget.initChat(${product.shop.id})" class="btn-cart" style="background: white; color: #EE4D2D; border: 1px solid #EE4D2D; text-decoration: none; text-align: center;">
+                                <i class="fas fa-comment-dots me-2"></i>Chat với Shop
+                            </a>
+                        </c:if>
                         <button class="btn-cart" id="addToCartBtn">
                             <i class="fas fa-cart-plus me-2"></i> Thêm Vào Giỏ Hàng
                         </button>

@@ -45,7 +45,7 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("Tài khoản của bạn đã bị khóa.");
         }
 
-        System.out.println(">>> [OK] Đã tìm thấy User. Password trong DB (BCrypt): " + user.getPassword());
+        System.out.println(">>> [OK] Đã tìm thấy User (ID: " + user.getId() + ")");
 
         // Tên role trong DB (ví dụ ADMIN) cần được thêm tiền tố "ROLE_" cho Spring Security
         // Nếu DB đã có sẵn ROLE_ thì không thêm nữa để tránh lỗi ROLE_ROLE_...

@@ -56,7 +56,7 @@
             <div class="mb-12">
                 <div class="flex items-center gap-2 mb-8">
                     <i class="fas fa-crown text-yellow-500"></i>
-                    <h2 class="text-lg font-bold text-slate-800">Top 3 Khách Hàng Xuất Sắc</h2>
+                    <h2 class="text-lg font-bold text-slate-800">Top 3 Khách Hàng</h2>
                 </div>
 
                 <div class="flex items-end justify-center gap-6">
