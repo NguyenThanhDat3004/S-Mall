@@ -20,9 +20,14 @@ public interface ChatService {
     ChatMessageBufferDTO bufferMessage(Long roomId, Long senderId, String content, Long shopId);
 
     /**
-     * Lấy lịch sử chat (kết hợp MySQL + Redis Buffer)
+     * Lấy tin nhắn theo trang (kết hợp DB + Buffer)
      */
-    List<ChatMessageBufferDTO> getMessagesCombined(Long roomId);
+    List<ChatMessageBufferDTO> getMessagesPaged(Long roomId, int page, int size);
+
+    /**
+     * Xóa cache tin nhắn khi đóng khung chat để giải phóng Redis
+     */
+    void clearChatCache(Long roomId);
 
     /**
      * Lưu tin nhắn vào MySQL (Dùng cho Sync Task hoặc các trường hợp đặc biệt)

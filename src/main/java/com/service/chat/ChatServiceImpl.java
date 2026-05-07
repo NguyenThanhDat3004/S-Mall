@@ -43,6 +43,8 @@ public class ChatServiceImpl implements ChatService {
     private ObjectMapper objectMapper;
 
     private static final String CHAT_BUFFER_KEY = "chat:buffer:messages";
+    private static final String CHAT_CACHE_PREFIX = "chat:cache:";
+    private static final int CHAT_CACHE_TTL_MINUTES = 10;
 
     @Override
     public ChatRoom findRoom(Long customerId, Long shopId) {
@@ -94,30 +96,88 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    public List<ChatMessageBufferDTO> getMessagesCombined(Long roomId) {
-        // 1. Lấy từ DB
-        List<ChatMessage> dbMessages = getMessagesByRoom(roomId);
-        List<ChatMessageBufferDTO> result = dbMessages.stream().map(m -> ChatMessageBufferDTO.builder()
-                .roomId(roomId)
-                .senderId(m.getSender().getId())
-                .content(m.getContent())
-                .senderName(m.getSender().getProfile() != null ? m.getSender().getProfile().getFullName() : m.getSender().getEmail())
-                .senderAvatar(m.getSender().getProfile() != null ? m.getSender().getProfile().getAvatarUrl() : null)
-                .createdAt(m.getCreatedAt())
-                .build()).collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public List<ChatMessageBufferDTO> getMessagesPaged(Long roomId, int page, int size) {
+        String cacheKey = CHAT_CACHE_PREFIX + roomId + ":page:" + page;
+        
+        // 1. Thử lấy từ Redis Cache trước
+        try {
+            List<Object> cached = redisTemplate.opsForList().range(cacheKey, 0, -1);
+            if (cached != null && !cached.isEmpty()) {
+                return cached.stream()
+                    .map(obj -> objectMapper.convertValue(obj, ChatMessageBufferDTO.class))
+                    .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            System.err.println("[ChatService] Cache error: " + e.getMessage());
+        }
 
-        // 2. Lấy từ Redis Buffer (lọc theo roomId)
-        List<Object> bufferRaw = redisTemplate.opsForList().range(CHAT_BUFFER_KEY, 0, -1);
-        if (bufferRaw != null) {
-            for (Object obj : bufferRaw) {
-                ChatMessageBufferDTO dto = objectMapper.convertValue(obj, ChatMessageBufferDTO.class);
-                if (dto.getRoomId().equals(roomId)) {
-                    result.add(dto);
+        List<ChatMessageBufferDTO> result = new ArrayList<>();
+        if (roomId == null) return result;
+
+        // 2. Lấy từ DB
+        try {
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                page, size, org.springframework.data.domain.Sort.by("createdAt").descending());
+            
+            org.springframework.data.domain.Page<ChatMessage> dbPage = chatMessageRepository.findByChatRoomId(roomId, pageable);
+            
+            // Chuyển sang DTO và đảo ngược lại thành ASC (để hiển thị đúng thứ tự thời gian trong 1 trang)
+            List<ChatMessage> content = new ArrayList<>(dbPage.getContent());
+            java.util.Collections.reverse(content);
+
+            for (ChatMessage m : content) {
+                result.add(ChatMessageBufferDTO.builder()
+                    .roomId(roomId)
+                    .senderId(m.getSender().getId())
+                    .content(m.getContent())
+                    .senderName(m.getSender().getProfile() != null ? m.getSender().getProfile().getFullName() : m.getSender().getEmail())
+                    .senderAvatar(m.getSender().getProfile() != null ? m.getSender().getProfile().getAvatarUrl() : null)
+                    .createdAt(m.getCreatedAt())
+                    .build());
+            }
+
+            // 3. Nếu là trang 0 (mới nhất), gộp thêm tin nhắn từ Buffer (Redis List)
+            if (page == 0) {
+                List<Object> bufferRaw = redisTemplate.opsForList().range(CHAT_BUFFER_KEY, 0, -1);
+                if (bufferRaw != null) {
+                    for (Object obj : bufferRaw) {
+                        ChatMessageBufferDTO dto = objectMapper.convertValue(obj, ChatMessageBufferDTO.class);
+                        if (dto.getRoomId() != null && String.valueOf(dto.getRoomId()).equals(String.valueOf(roomId))) {
+                            result.add(dto);
+                        }
+                    }
                 }
             }
+
+            // 4. Lưu vào Redis Cache (nếu trang có dữ liệu)
+            if (!result.isEmpty()) {
+                try {
+                    redisTemplate.opsForList().rightPushAll(cacheKey, result.toArray());
+                    redisTemplate.expire(cacheKey, java.time.Duration.ofMinutes(CHAT_CACHE_TTL_MINUTES));
+                } catch (Exception e) {
+                    System.err.println("[ChatService] Failed to cache messages: " + e.getMessage());
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("[ChatService] DB Error: " + e.getMessage());
         }
 
         return result;
+    }
+
+    @Override
+    public void clearChatCache(Long roomId) {
+        try {
+            String pattern = CHAT_CACHE_PREFIX + roomId + ":*";
+            java.util.Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+            }
+        } catch (Exception e) {
+            System.err.println("[ChatService] Clear cache error: " + e.getMessage());
+        }
     }
 
     @Override

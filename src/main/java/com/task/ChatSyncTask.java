@@ -26,9 +26,9 @@ public class ChatSyncTask {
     private static final String CHAT_BUFFER_KEY = "chat:buffer:messages";
 
     /**
-     * Đồng bộ tin nhắn từ Redis vào MySQL mỗi 1 phút.
+     * Đồng bộ tin nhắn từ Redis vào MySQL mỗi 10 giây.
      */
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 10000)
     public void syncMessagesToDb() {
         Long size = redisTemplate.opsForList().size(CHAT_BUFFER_KEY);
         if (size == null || size == 0) return;

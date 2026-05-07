@@ -4,6 +4,7 @@ import com.entity.ChatMessage;
 import com.entity.ChatRoom;
 import com.entity.Shop;
 import com.entity.User;
+import com.repository.ChatRoomRepository;
 import com.repository.ShopRepository;
 import com.service.UserService;
 import com.service.chat.ChatService;
@@ -35,6 +36,9 @@ public class ChatWebSocketController {
     private ShopRepository shopRepository;
 
     @Autowired
+    private ChatRoomRepository chatRoomRepository;
+
+    @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
     /**
@@ -63,7 +67,6 @@ public class ChatWebSocketController {
         // Build DTO để gửi qua WebSocket
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         Map<String, Object> messageDto = new HashMap<>();
-        messageDto.put("id", saved.getId());
         messageDto.put("roomId", actualRoomId);
         messageDto.put("content", saved.getContent());
         messageDto.put("senderId", sender.getId());
@@ -73,8 +76,10 @@ public class ChatWebSocketController {
                 ? sender.getProfile().getAvatarUrl() : null);
         messageDto.put("time", saved.getCreatedAt().format(formatter));
 
-        // Xác định người nhận từ room info
-        ChatRoom chatRoom = saved.getChatRoom();
+        // Xác định người nhận từ room info (Dùng JOIN FETCH để tránh LazyInitializationException)
+        ChatRoom chatRoom = chatRoomRepository.findByIdWithDetails(actualRoomId).orElse(null);
+        if (chatRoom == null) return;
+        
         User customer = chatRoom.getCustomer();
         Shop shop = chatRoom.getShop();
         User shopOwner = shop.getUser();

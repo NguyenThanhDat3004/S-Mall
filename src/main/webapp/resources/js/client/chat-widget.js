@@ -4,6 +4,9 @@
     const url = window.location.origin + (window.location.pathname.startsWith('/spring_mvc') ? '/spring_mvc' : '');
     let currentRoomId = null;
     let currentShopId = null;
+    let currentPage = 0;
+    let isLoadingMore = false;
+    let hasMore = true;
     let stompClient = null;
     let isWindowOpen = false;
 
@@ -59,11 +62,17 @@
 
     closeBtn.onclick = (e) => {
         e.stopPropagation();
+        if (currentRoomId) {
+            fetch(url + '/api/chat/rooms/' + currentRoomId + '/close', { method: 'POST' });
+        }
         isWindowOpen = false;
         windowEl.style.display = 'none';
     };
 
     backBtn.onclick = () => {
+        if (currentRoomId) {
+            fetch(url + '/api/chat/rooms/' + currentRoomId + '/close', { method: 'POST' });
+        }
         currentRoomId = null;
         conversation.style.display = 'none';
         roomList.style.display = 'flex';
@@ -115,7 +124,10 @@
             
             toggleWindow(true);
 
-            loadMessages(roomId);
+            currentPage = 0;
+            hasMore = true;
+            messagesEl.innerHTML = '';
+            loadMessages(roomId, 0);
             fetch(url + '/api/chat/rooms/' + roomId + '/read', { method: 'POST' });
         },
         
@@ -129,18 +141,81 @@
         }
     };
 
-    function loadMessages(roomId) {
-        messagesEl.innerHTML = '<div class="text-center p-3 text-muted small">Đang tải tin nhắn...</div>';
-        fetch(url + '/api/chat/rooms/' + roomId + '/messages')
-            .then(res => res.json())
+    function loadMessages(roomId, page) {
+        if (!roomId) {
+            messagesEl.innerHTML = '<div class="text-center p-3 text-muted small">Hãy gửi tin nhắn đầu tiên!</div>';
+            return;
+        }
+        
+        if (page === 0) {
+            messagesEl.innerHTML = '<div class="text-center p-3 text-muted small">Đang tải tin nhắn...</div>';
+        } else {
+            const loading = document.createElement('div');
+            loading.id = 'cwLoadingMore';
+            loading.className = 'text-center p-2 text-muted small';
+            loading.innerText = 'Đang tải tin nhắn cũ...';
+            messagesEl.prepend(loading);
+        }
+
+        isLoadingMore = true;
+        fetch(url + '/api/chat/rooms/' + roomId + '/messages?page=' + page + '&size=20')
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load messages');
+                return res.json();
+            })
             .then(messages => {
-                messagesEl.innerHTML = '';
-                messages.forEach(msg => appendMessage(msg));
-                scrollToBottom();
+                const loadingMore = document.getElementById('cwLoadingMore');
+                if (loadingMore) loadingMore.remove();
+
+                if (page === 0) {
+                    messagesEl.innerHTML = '';
+                    if (messages.length === 0) {
+                        messagesEl.innerHTML = '<div class="text-center p-3 text-muted small">Chưa có tin nhắn</div>';
+                    }
+                }
+                
+                if (messages.length < 20) {
+                    hasMore = false;
+                }
+
+                const oldScrollHeight = messagesEl.scrollHeight;
+                
+                // Đảo ngược để prepend đúng thứ tự (vì API trả về ASC trong trang)
+                messages.slice().reverse().forEach(msg => prependMessage(msg));
+                
+                if (page === 0) {
+                    scrollToBottom();
+                } else {
+                    // Giữ vị trí cuộn khi load thêm
+                    messagesEl.scrollTop = messagesEl.scrollHeight - oldScrollHeight;
+                }
+                
+                isLoadingMore = false;
+            })
+            .catch(err => {
+                console.error(err);
+                if (page === 0) {
+                    messagesEl.innerHTML = '<div class="text-center p-3 text-danger small">Lỗi khi tải tin nhắn</div>';
+                }
+                isLoadingMore = false;
             });
     }
 
+    function prependMessage(msg) {
+        if (messagesEl.querySelector('.text-muted')) {
+            messagesEl.innerHTML = '';
+        }
+        const div = document.createElement('div');
+        div.className = 'cw-msg ' + (msg.isOwn ? 'out' : 'in');
+        div.innerText = msg.content;
+        messagesEl.prepend(div);
+    }
+
     function appendMessage(msg) {
+        // Xóa placeholder nếu là tin nhắn đầu tiên
+        if (messagesEl.querySelector('.text-muted')) {
+            messagesEl.innerHTML = '';
+        }
         const div = document.createElement('div');
         div.className = 'cw-msg ' + (msg.isOwn ? 'out' : 'in');
         div.innerText = msg.content;
@@ -152,10 +227,18 @@
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
+    messagesEl.onscroll = () => {
+        if (messagesEl.scrollTop === 0 && hasMore && !isLoadingMore && currentRoomId) {
+            currentPage++;
+            loadMessages(currentRoomId, currentPage);
+        }
+    };
+
     // Send Message
     function sendMessage() {
         const content = input.value.trim();
-        if (!content || !currentRoomId) return;
+        if (!content) return;
+        if (!currentRoomId && !currentShopId) return;
 
         // Ensure WebSocket is connected
         if (!window.stompClient) {
