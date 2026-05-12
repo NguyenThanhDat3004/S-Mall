@@ -105,6 +105,10 @@
                         (room.unreadCount > 0 ? '<span class="badge bg-danger rounded-pill">' + room.unreadCount + '</span>' : '') +
                     '</div>';
                 }).join('');
+            })
+            .catch(err => {
+                console.error("Error loading rooms:", err);
+                roomList.innerHTML = '<div class="p-4 text-center text-danger small">Lỗi tải danh sách phòng. Vui lòng thử lại.</div>';
             });
     }
 
@@ -182,6 +186,14 @@
                 
                 // Đảo ngược để prepend đúng thứ tự (vì API trả về ASC trong trang)
                 messages.slice().reverse().forEach(msg => prependMessage(msg));
+                
+                // --- DEBUG BLOCK: LUÔN IN RAW JSON LÊN ĐẦU ---
+                const debugDiv = document.createElement('div');
+                debugDiv.className = 'p-2 text-danger small bg-light border';
+                debugDiv.style.wordBreak = 'break-all';
+                debugDiv.style.fontSize = '10px';
+                debugDiv.innerText = 'DEBUG JSON: ' + JSON.stringify(messages);
+                messagesEl.prepend(debugDiv);
                 
                 if (page === 0) {
                     scrollToBottom();

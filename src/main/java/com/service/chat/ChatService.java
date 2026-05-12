@@ -35,6 +35,11 @@ public interface ChatService {
     ChatMessage saveMessage(Long roomId, Long senderId, String content, Long shopId);
 
     /**
+     * Lấy tin nhắn cuối cùng để làm preview
+     */
+    ChatMessage getLastMessage(Long roomId);
+
+    /**
      * Lấy lịch sử chat theo phòng
      */
     List<ChatMessage> getMessagesByRoom(Long roomId);

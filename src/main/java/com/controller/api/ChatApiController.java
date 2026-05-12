@@ -31,6 +31,9 @@ public class ChatApiController {
     @Autowired
     private ShopRepository shopRepository;
 
+    @Autowired
+    private com.repository.ChatMessageRepository chatMessageRepository;
+
     /**
      * Lấy danh sách phòng chat.
      * Nếu có param shopId → lấy phòng theo Shop (Seller view)
@@ -46,14 +49,24 @@ public class ChatApiController {
         if (user == null)
             return ResponseEntity.badRequest().build();
 
+        // Tự động phát hiện nếu là chủ shop
+        Shop userShop = shopRepository.findByUser(user).orElse(null);
+        Long effectiveShopId = (shopId != null) ? shopId : (userShop != null ? userShop.getId() : null);
+
         List<ChatRoom> rooms;
         Long currentUserId = user.getId();
 
-        if (shopId != null) {
-            // Seller đang xem danh sách chat của shop mình
-            rooms = chatService.getRoomsByShop(shopId);
+        if (effectiveShopId != null) {
+            // Lấy cả phòng của shop mình và phòng mình đi mua hàng
+            rooms = new ArrayList<>(chatService.getRoomsByShop(effectiveShopId));
+            List<ChatRoom> customerRooms = chatService.getRoomsByCustomer(user.getId());
+            // Tránh trùng lặp
+            for (ChatRoom cr : customerRooms) {
+                if (rooms.stream().noneMatch(r -> r.getId().equals(cr.getId()))) {
+                    rooms.add(cr);
+                }
+            }
         } else {
-            // Buyer đang xem danh sách chat
             rooms = chatService.getRoomsByCustomer(user.getId());
         }
 
@@ -61,78 +74,63 @@ public class ChatApiController {
         List<Map<String, Object>> result = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM");
 
-        for (ChatRoom room : rooms) {
-            Map<String, Object> dto = new HashMap<>();
-            dto.put("roomId", room.getId());
-            dto.put("lastMessageAt", room.getLastMessageAt() != null
-                    ? room.getLastMessageAt().format(formatter)
-                    : "");
+        try {
+            for (ChatRoom room : rooms) {
+                Map<String, Object> dto = new HashMap<>();
+                dto.put("roomId", room.getId());
+                dto.put("lastMessageAt", room.getLastMessageAt() != null
+                        ? room.getLastMessageAt().format(formatter)
+                        : "");
 
-            // Thông tin đối phương
-            if (shopId != null) {
-                // Seller đang xem → hiển thị thông tin Customer
-                User customer = room.getCustomer();
-                dto.put("partnerName", customer.getProfile() != null && customer.getProfile().getFullName() != null
-                        ? customer.getProfile().getFullName()
-                        : customer.getEmail());
-                dto.put("partnerAvatar", customer.getProfile() != null
-                        ? customer.getProfile().getAvatarUrl()
-                        : null);
-            } else {
-                // Buyer đang xem → hiển thị thông tin Shop
-                Shop shop = room.getShop();
-                dto.put("partnerName", shop.getName());
-                dto.put("partnerAvatar", shop.getLogoUrl());
-            }
+                // Xác định vai trò của người dùng trong phòng chat này
+                boolean isSellerInThisRoom = effectiveShopId != null && room.getShop() != null && room.getShop().getId().equals(effectiveShopId);
 
-            // Tin nhắn cuối cùng (preview)
-            List<ChatMessage> messages = chatService.getMessagesByRoom(room.getId());
-            if (!messages.isEmpty()) {
-                ChatMessage lastMsg = messages.get(messages.size() - 1);
-                String preview = lastMsg.getContent();
-                if (preview != null && preview.length() > 50) {
-                    preview = preview.substring(0, 50) + "...";
+                if (isSellerInThisRoom) {
+                    // Đang xem với tư cách người bán → hiển thị thông tin Khách hàng
+                    User customer = room.getCustomer();
+                    dto.put("partnerName", customer != null && customer.getProfile() != null && customer.getProfile().getFullName() != null
+                            ? customer.getProfile().getFullName()
+                            : (customer != null ? customer.getEmail() : "Khách vãng lai"));
+                    dto.put("partnerAvatar", customer != null && customer.getProfile() != null
+                            ? customer.getProfile().getAvatarUrl()
+                            : null);
+                } else {
+                    // Đang xem với tư cách người mua → hiển thị thông tin Shop
+                    Shop shop = room.getShop();
+                    dto.put("partnerName", shop != null ? shop.getName() : "Shop ẩn");
+                    dto.put("partnerAvatar", shop != null ? shop.getLogoUrl() : null);
                 }
-                dto.put("lastMessage", preview);
-            } else {
-                dto.put("lastMessage", "Chưa có tin nhắn");
-            }
 
-            // Số tin nhắn chưa đọc
-            long unread = 0;
-            try {
-                unread = rooms.stream()
-                        .filter(r -> r.getId().equals(room.getId()))
-                        .count() > 0
-                                ? countUnreadForRoom(room, currentUserId, shopId)
-                                : 0;
-            } catch (Exception e) {
-                // ignore
-            }
-            dto.put("unreadCount", unread);
+                // Tin nhắn cuối cùng (preview) & Pre-load trang đầu vào Redis
+                List<com.dto.ChatMessageBufferDTO> firstPage = chatService.getMessagesPaged(room.getId(), 0, 20);
+                if (!firstPage.isEmpty()) {
+                    com.dto.ChatMessageBufferDTO lastMsg = firstPage.get(firstPage.size() - 1);
+                    String preview = lastMsg.getContent();
+                    if (preview != null && preview.length() > 50) {
+                        preview = preview.substring(0, 50) + "...";
+                    }
+                    dto.put("lastMessage", preview);
+                } else {
+                    dto.put("lastMessage", "Chưa có tin nhắn");
+                }
 
-            result.add(dto);
+                // Số tin nhắn chưa đọc
+                long unread = countUnreadForRoom(room, currentUserId, isSellerInThisRoom);
+                dto.put("unreadCount", unread);
+
+                result.add(dto);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("GET ROOMS ERROR: " + e.getMessage());
         }
 
         return ResponseEntity.ok(result);
     }
 
-    private long countUnreadForRoom(ChatRoom room, Long currentUserId, Long shopId) {
-        if (shopId != null) {
-            // Seller: đếm tin chưa đọc mà customer gửi
-            Shop shop = room.getShop();
-            if (shop != null && shop.getUser() != null) {
-                return chatService.getMessagesByRoom(room.getId()).stream()
-                        .filter(m -> !m.isRead() && !m.getSender().getId().equals(shop.getUser().getId()))
-                        .count();
-            }
-        } else {
-            // Buyer: đếm tin chưa đọc mà seller gửi
-            return chatService.getMessagesByRoom(room.getId()).stream()
-                    .filter(m -> !m.isRead() && !m.getSender().getId().equals(currentUserId))
-                    .count();
-        }
-        return 0;
+    private long countUnreadForRoom(ChatRoom room, Long currentUserId, boolean isSellerInThisRoom) {
+        // Dùng truy vấn CSDL để đếm thay vì kéo toàn bộ tin nhắn lên RAM
+        return chatMessageRepository.countByChatRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), currentUserId);
     }
 
     /**
@@ -160,15 +158,20 @@ public class ChatApiController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
         List<Map<String, Object>> result = new ArrayList<>();
-        for (ChatMessageBufferDTO msg : messages) {
-            Map<String, Object> dto = new HashMap<>();
-            dto.put("content", msg.getContent());
-            dto.put("senderId", msg.getSenderId());
-            dto.put("senderName", msg.getSenderName());
-            dto.put("senderAvatar", msg.getSenderAvatar());
-            dto.put("time", msg.getCreatedAt() != null ? msg.getCreatedAt().format(formatter) : "");
-            dto.put("isOwn", msg.getSenderId().equals(user.getId()));
-            result.add(dto);
+        try {
+            for (ChatMessageBufferDTO msg : messages) {
+                Map<String, Object> dto = new HashMap<>();
+                dto.put("content", msg.getContent());
+                dto.put("senderId", msg.getSenderId());
+                dto.put("senderName", msg.getSenderName());
+                dto.put("senderAvatar", msg.getSenderAvatar());
+                dto.put("time", msg.getCreatedAt() != null ? msg.getCreatedAt().format(formatter) : "");
+                dto.put("isOwn", msg.getSenderId() != null && msg.getSenderId().equals(user.getId()));
+                result.add(dto);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("GET MESSAGES ERROR: " + e.getMessage());
         }
 
         return ResponseEntity.ok(result);
@@ -237,12 +240,16 @@ public class ChatApiController {
         if (user == null)
             return ResponseEntity.badRequest().build();
 
-        long count;
-        if (shopId != null) {
-            count = chatService.countUnreadByShop(shopId);
-        } else {
-            count = chatService.countUnreadByCustomer(user.getId());
+        // Tự động phát hiện nếu là chủ shop
+        Shop userShop = shopRepository.findByUser(user).orElse(null);
+        Long effectiveShopId = (shopId != null) ? shopId : (userShop != null ? userShop.getId() : null);
+
+        long count = 0;
+        if (effectiveShopId != null) {
+            count += chatService.countUnreadByShop(effectiveShopId);
         }
+        // Cộng thêm tin nhắn chưa đọc với tư cách là người mua hàng
+        count += chatService.countUnreadByCustomer(user.getId());
 
         return ResponseEntity.ok(Map.of("count", count));
     }

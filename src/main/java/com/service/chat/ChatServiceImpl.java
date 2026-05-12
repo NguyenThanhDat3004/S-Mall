@@ -92,6 +92,13 @@ public class ChatServiceImpl implements ChatService {
         // Đẩy vào Redis Buffer
         redisTemplate.opsForList().rightPush(CHAT_BUFFER_KEY, dto);
 
+        // Xóa cache của trang đầu tiên (page 0) để khi reload trang, API sẽ nạp lại dữ liệu mới nhất
+        try {
+            redisTemplate.delete("chat:cache:" + actualRoomId + ":page:0");
+        } catch (Exception e) {
+            System.err.println("Failed to clear chat cache: " + e.getMessage());
+        }
+
         return dto;
     }
 
@@ -129,10 +136,14 @@ public class ChatServiceImpl implements ChatService {
             for (ChatMessage m : content) {
                 result.add(ChatMessageBufferDTO.builder()
                     .roomId(roomId)
-                    .senderId(m.getSender().getId())
+                    .senderId(m.getSender() != null ? m.getSender().getId() : null)
                     .content(m.getContent())
-                    .senderName(m.getSender().getProfile() != null ? m.getSender().getProfile().getFullName() : m.getSender().getEmail())
-                    .senderAvatar(m.getSender().getProfile() != null ? m.getSender().getProfile().getAvatarUrl() : null)
+                    .senderName(m.getSender() != null 
+                            ? (m.getSender().getProfile() != null && m.getSender().getProfile().getFullName() != null 
+                                ? m.getSender().getProfile().getFullName() 
+                                : m.getSender().getEmail()) 
+                            : "Hệ thống")
+                    .senderAvatar(m.getSender() != null && m.getSender().getProfile() != null ? m.getSender().getProfile().getAvatarUrl() : null)
                     .createdAt(m.getCreatedAt())
                     .build());
             }
@@ -212,6 +223,11 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
+    public ChatMessage getLastMessage(Long roomId) {
+        return chatMessageRepository.findFirstByChatRoomIdOrderByCreatedAtDesc(roomId);
+    }
+
+    @Override
     public List<ChatMessage> getMessagesByRoom(Long roomId) {
         return chatMessageRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
     }
@@ -230,8 +246,8 @@ public class ChatServiceImpl implements ChatService {
     public long countUnreadByCustomer(Long userId) {
         List<ChatRoom> rooms = chatRoomRepository.findByCustomerIdOrderByLastMessageAtDesc(userId);
         return rooms.stream()
-                .mapToLong(room -> chatMessageRepository.countByChatRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId))
-                .sum();
+                .filter(room -> chatMessageRepository.countByChatRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId) > 0)
+                .count();
     }
 
     @Override
@@ -242,8 +258,8 @@ public class ChatServiceImpl implements ChatService {
 
         Long sellerUserId = shop.getUser().getId();
         return rooms.stream()
-                .mapToLong(room -> chatMessageRepository.countByChatRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), sellerUserId))
-                .sum();
+                .filter(room -> chatMessageRepository.countByChatRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), sellerUserId) > 0)
+                .count();
     }
 
     @Override
