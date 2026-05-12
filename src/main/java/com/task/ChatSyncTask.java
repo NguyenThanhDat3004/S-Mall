@@ -48,7 +48,8 @@ public class ChatSyncTask {
                 ChatMessageBufferDTO dto = objectMapper.convertValue(obj, ChatMessageBufferDTO.class);
                 chatService.saveMessage(dto.getRoomId(), dto.getSenderId(), dto.getContent(), dto.getShopId());
             } catch (Exception e) {
-                System.err.println("[ChatSync] Error saving message: " + e.getMessage());
+                System.err.println("[ChatSync] Error saving message from buffer: " + e.getMessage());
+                e.printStackTrace();
                 // Nếu lỗi, có thể đẩy ngược lại Redis hoặc log để xử lý sau
             }
         }

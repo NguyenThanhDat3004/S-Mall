@@ -85,16 +85,26 @@ public class ChatWebSocketController {
         User shopOwner = shop.getUser();
 
         // Gửi cho cả 2 bên
-        // 1. Gửi cho Customer
-        Map<String, Object> customerMsg = new HashMap<>(messageDto);
-        customerMsg.put("isOwn", sender.getId().equals(customer.getId()));
-        messagingTemplate.convertAndSendToUser(
-                customer.getEmail(), "/queue/messages", customerMsg);
+        try {
+            if (customer != null && customer.getEmail() != null) {
+                Map<String, Object> customerMsg = new HashMap<>(messageDto);
+                customerMsg.put("isOwn", sender.getId().equals(customer.getId()));
+                messagingTemplate.convertAndSendToUser(
+                        customer.getEmail(), "/queue/messages", customerMsg);
+            }
 
-        // 2. Gửi cho Shop Owner
-        Map<String, Object> sellerMsg = new HashMap<>(messageDto);
-        sellerMsg.put("isOwn", sender.getId().equals(shopOwner.getId()));
-        messagingTemplate.convertAndSendToUser(
-                shopOwner.getEmail(), "/queue/messages", sellerMsg);
+            if (shopOwner != null && shopOwner.getEmail() != null) {
+                Map<String, Object> sellerMsg = new HashMap<>(messageDto);
+                sellerMsg.put("isOwn", sender.getId().equals(shopOwner.getId()));
+                messagingTemplate.convertAndSendToUser(
+                        shopOwner.getEmail(), "/queue/messages", sellerMsg);
+                System.out.println("[WebSocket] Sent message to shop owner: " + shopOwner.getEmail());
+            } else {
+                System.err.println("[WebSocket] Shop owner or email is null for room: " + actualRoomId);
+            }
+        } catch (Exception e) {
+            System.err.println("[WebSocket] Error broadcasting message: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

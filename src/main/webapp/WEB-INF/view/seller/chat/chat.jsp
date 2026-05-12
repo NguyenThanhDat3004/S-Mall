@@ -136,23 +136,33 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const url = '${url}';
-        const currentUserId = ${currentUserId};
-        const shopId = ${shopId};
         let currentRoomId = null;
+        let currentPage = 0;
+        let isLoadingMore = false;
+        let hasMore = true;
+        const shopId = ${shopId};
+        const currentUserId = ${currentUserId};
         let stompClient = null;
 
         // ========== WEBSOCKET ==========
         function connectWebSocket() {
             const socket = new SockJS(url + '/ws');
             stompClient = Stomp.over(socket);
-            stompClient.debug = null;
+            stompClient.debug = console.log;
+            console.log('[S-Mall Seller Chat] Connecting to WebSocket...');
 
             stompClient.connect({}, function(frame) {
+                console.log('[S-Mall Seller Chat] WebSocket Connected:', frame);
                 stompClient.subscribe('/user/queue/messages', function(message) {
                     const msg = JSON.parse(message.body);
-                    if (msg.roomId === currentRoomId) {
+                    console.log('[S-Mall Seller Chat] WebSocket message received:', msg);
+                    
+                    if (msg.roomId == currentRoomId) {
+                        console.log('[S-Mall Seller Chat] Appending message to current room');
                         appendMessage(msg);
                         fetch(url + '/api/chat/rooms/' + currentRoomId + '/read', { method: 'POST' });
+                    } else {
+                        console.log('[S-Mall Seller Chat] Message for different room. current:', currentRoomId, 'target:', msg.roomId);
                     }
                     loadRooms();
                 });
@@ -198,13 +208,17 @@
 
         // ========== OPEN ROOM ==========
         window.openSellerRoom = function(roomId, partnerName) {
+            console.log('[S-Mall Seller Chat] Opening room:', roomId);
             currentRoomId = roomId;
+            currentPage = 0;
+            hasMore = true;
+            isLoadingMore = false;
 
             document.getElementById('sellerEmptyState').style.display = 'none';
             document.getElementById('sellerChatHeader').style.display = 'flex';
             document.getElementById('sellerChatMessages').style.display = 'block';
             document.getElementById('sellerChatInput').style.display = 'flex';
-
+            
             document.getElementById('sellerPartnerName').textContent = partnerName;
             document.getElementById('sellerPartnerInitial').textContent = partnerName.charAt(0).toUpperCase();
 
@@ -212,26 +226,98 @@
                 el.classList.toggle('room-active', parseInt(el.dataset.roomId) === roomId);
             });
 
-            loadSellerMessages(roomId);
+            document.getElementById('sellerChatMessages').innerHTML = '';
+            loadSellerMessages(roomId, 0);
             document.getElementById('sellerInput').focus();
-        }
+            
+            // Đánh dấu đã đọc
+            fetch(url + '/api/chat/rooms/' + roomId + '/read', { method: 'POST' });
+        };
 
         // ========== LOAD MESSAGES ==========
-        function loadSellerMessages(roomId) {
-            fetch(url + '/api/chat/rooms/' + roomId + '/messages')
-                .then(res => res.json())
+        function loadSellerMessages(roomId, page) {
+            if (isLoadingMore || !hasMore) return;
+            
+            console.log('[S-Mall Seller Chat] --- LOADING MESSAGES ---');
+            console.log('[S-Mall Seller Chat] Room ID:', roomId, 'Page:', page);
+            
+            isLoadingMore = true;
+            
+            // Hiển thị indicator nếu đang load trang cũ
+            if (page > 0) {
+                const container = document.getElementById('sellerChatMessages');
+                const loadingDiv = document.createElement('div');
+                loadingDiv.id = 'historyLoading';
+                loadingDiv.className = 'text-center py-2 text-slate-400 text-[10px]';
+                loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Đang tải tin nhắn cũ...';
+                container.prepend(loadingDiv);
+            }
+
+            fetch(url + '/api/chat/rooms/' + roomId + '/messages?page=' + page + '&size=20')
+                .then(res => {
+                    if (res.status === 403) throw new Error('403: Không có quyền truy cập.');
+                    if (!res.ok) throw new Error('Lỗi máy chủ: ' + res.status);
+                    return res.json();
+                })
                 .then(messages => {
                     const container = document.getElementById('sellerChatMessages');
-                    container.innerHTML = '';
-                    if (messages.length === 0) {
-                        container.innerHTML = '<div class="flex justify-center py-8 text-slate-400 text-sm"><i class="fas fa-hand-peace mr-2"></i>Gửi tin nhắn đầu tiên!</div>';
+                    const loadingDiv = document.getElementById('historyLoading');
+                    if (loadingDiv) loadingDiv.remove();
+
+                    if (!Array.isArray(messages)) {
+                        console.error('[S-Mall Seller Chat] Invalid data:', messages);
                         return;
                     }
-                    messages.forEach(msg => appendMessage(msg));
-                    scrollToBottom();
+
+                    if (messages.length < 20) {
+                        hasMore = false;
+                        console.log('[S-Mall Seller Chat] No more messages to load.');
+                    }
+
+                    if (page === 0 && messages.length === 0) {
+                        container.innerHTML = '<div class="flex justify-center py-8 text-slate-400 text-sm"><i class="fas fa-hand-peace mr-2"></i>Gửi tin nhắn đầu tiên!</div>';
+                    }
+
+                    const oldScrollHeight = container.scrollHeight;
+
+                    if (page === 0) {
+                        // Trang 0: Thêm vào cuối theo thứ tự thời gian (Oldest -> Newest)
+                        messages.forEach(msg => appendMessage(msg));
+                        scrollToBottom();
+                    } else {
+                        // Trang > 0: Thêm vào đầu, đảo ngược để prepend đúng thứ tự
+                        [...messages].reverse().forEach(msg => prependMessage(msg));
+                        // Giữ vị trí cuộn để không bị nhảy
+                        container.scrollTop = container.scrollHeight - oldScrollHeight;
+                    }
+
+                    isLoadingMore = false;
                     loadRooms();
+                })
+                .catch(err => {
+                    console.error('[S-Mall Seller Chat] Load error:', err);
+                    isLoadingMore = false;
                 });
         }
+
+        function prependMessage(msg) {
+            const container = document.getElementById('sellerChatMessages');
+            const isOwn = msg.isOwn || msg.senderId === currentUserId;
+            
+            const html = isOwn
+                ? '<div class="flex justify-end mb-4"><div class="max-w-[65%]"><div class="chat-bubble-out px-4 py-2.5 text-sm">' + escapeHtml(msg.content) + '</div><div class="text-right text-[10px] text-slate-400 mt-1 pr-1">' + (msg.time || '') + '</div></div></div>'
+                : '<div class="flex gap-2 mb-4"><div class="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center text-slate-500 text-[10px] font-bold flex-shrink-0 mt-1">' + (msg.senderName || '?').charAt(0).toUpperCase() + '</div><div class="max-w-[65%]"><div class="chat-bubble-in px-4 py-2.5 text-sm text-small-navy">' + escapeHtml(msg.content) + '</div><div class="text-[10px] text-slate-400 mt-1 pl-1">' + (msg.time || '') + '</div></div></div>';
+            
+            container.insertAdjacentHTML('afterbegin', html);
+        }
+
+        // Xử lý cuộn để load thêm
+        document.getElementById('sellerChatMessages').addEventListener('scroll', function() {
+            if (this.scrollTop === 0 && hasMore && !isLoadingMore && currentRoomId) {
+                currentPage++;
+                loadSellerMessages(currentRoomId, currentPage);
+            }
+        });
 
         // ========== APPEND MESSAGE ==========
         function appendMessage(msg) {
@@ -242,8 +328,8 @@
             const isOwn = msg.isOwn || msg.senderId === currentUserId;
 
             const html = isOwn
-                ? '<div class="flex justify-end"><div class="max-w-[65%]"><div class="chat-bubble-out px-4 py-2.5 text-sm">' + escapeHtml(msg.content) + '</div><div class="text-right text-[10px] text-slate-400 mt-1 pr-1">' + (msg.time || '') + '</div></div></div>'
-                : '<div class="flex gap-2"><div class="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center text-slate-500 text-[10px] font-bold flex-shrink-0 mt-1">' + (msg.senderName || '?').charAt(0).toUpperCase() + '</div><div class="max-w-[65%]"><div class="chat-bubble-in px-4 py-2.5 text-sm text-small-navy">' + escapeHtml(msg.content) + '</div><div class="text-[10px] text-slate-400 mt-1 pl-1">' + (msg.time || '') + '</div></div></div>';
+                ? '<div class="flex justify-end mb-4"><div class="max-w-[65%]"><div class="chat-bubble-out px-4 py-2.5 text-sm">' + escapeHtml(msg.content) + '</div><div class="text-right text-[10px] text-slate-400 mt-1 pr-1">' + (msg.time || '') + '</div></div></div>'
+                : '<div class="flex gap-2 mb-4"><div class="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center text-slate-500 text-[10px] font-bold flex-shrink-0 mt-1">' + (msg.senderName || '?').charAt(0).toUpperCase() + '</div><div class="max-w-[65%]"><div class="chat-bubble-in px-4 py-2.5 text-sm text-small-navy">' + escapeHtml(msg.content) + '</div><div class="text-[10px] text-slate-400 mt-1 pl-1">' + (msg.time || '') + '</div></div></div>';
 
             container.insertAdjacentHTML('beforeend', html);
             scrollToBottom();
@@ -253,15 +339,32 @@
         function sendMessage() {
             const input = document.getElementById('sellerInput');
             const content = input.value.trim();
-            if (!content || !currentRoomId || !stompClient) return;
+            
+            console.log('[S-Mall Seller Chat] Attempting to send message:', content);
+            
+            if (!content) return;
+            if (!currentRoomId) {
+                console.error('[S-Mall Seller Chat] No active room ID!');
+                return;
+            }
+            if (!stompClient || !stompClient.connected) {
+                console.error('[S-Mall Seller Chat] WebSocket is not connected!');
+                alert('Mất kết nối máy chủ. Đang thử kết nối lại...');
+                connectWebSocket();
+                return;
+            }
 
-            stompClient.send('/app/chat.send', {}, JSON.stringify({
-                roomId: currentRoomId,
-                content: content
-            }));
-
-            input.value = '';
-            input.focus();
+            try {
+                stompClient.send('/app/chat.send', {}, JSON.stringify({
+                    roomId: currentRoomId,
+                    content: content
+                }));
+                console.log('[S-Mall Seller Chat] Message sent via WebSocket');
+                input.value = '';
+                input.focus();
+            } catch (err) {
+                console.error('[S-Mall Seller Chat] Error sending message:', err);
+            }
         }
 
         document.getElementById('sellerSendBtn').addEventListener('click', sendMessage);

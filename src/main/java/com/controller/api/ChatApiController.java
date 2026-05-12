@@ -32,6 +32,9 @@ public class ChatApiController {
     private ShopRepository shopRepository;
 
     @Autowired
+    private com.repository.ChatRoomRepository chatRoomRepository;
+
+    @Autowired
     private com.repository.ChatMessageRepository chatMessageRepository;
 
     /**
@@ -149,6 +152,18 @@ public class ChatApiController {
         if (user == null)
             return ResponseEntity.badRequest().build();
 
+        // KIỂM TRA BẢO MẬT: Chỉ cho phép Customer hoặc Chủ Shop truy cập
+        ChatRoom room = chatRoomRepository.findByIdWithDetails(roomId).orElse(null);
+        if (room == null) return ResponseEntity.notFound().build();
+        
+        boolean isCustomer = room.getCustomer().getId().equals(user.getId());
+        boolean isShopOwner = room.getShop() != null && room.getShop().getUser() != null && 
+                             room.getShop().getUser().getId().equals(user.getId());
+        
+        if (!isCustomer && !isShopOwner) {
+            return ResponseEntity.status(403).body(Map.of("error", "Unauthorized access to this chat room"));
+        }
+
         // Đánh dấu đã đọc khi mở phòng (chỉ làm ở trang đầu tiên)
         if (page == 0) {
             chatService.markRoomAsRead(roomId, user.getId());
@@ -158,20 +173,33 @@ public class ChatApiController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
 
         List<Map<String, Object>> result = new ArrayList<>();
-        try {
-            for (ChatMessageBufferDTO msg : messages) {
+        for (ChatMessageBufferDTO msg : messages) {
+            try {
+                if (msg == null) continue;
+                
                 Map<String, Object> dto = new HashMap<>();
                 dto.put("content", msg.getContent());
                 dto.put("senderId", msg.getSenderId());
                 dto.put("senderName", msg.getSenderName());
                 dto.put("senderAvatar", msg.getSenderAvatar());
-                dto.put("time", msg.getCreatedAt() != null ? msg.getCreatedAt().format(formatter) : "");
+                
+                // Robust Time Formatting
+                String formattedTime = "";
+                try {
+                    if (msg.getCreatedAt() != null) {
+                        formattedTime = msg.getCreatedAt().format(formatter);
+                    }
+                } catch (Exception timeEx) {
+                    // Fallback if it's not a LocalDateTime or format fails
+                    formattedTime = msg.getCreatedAt() != null ? String.valueOf(msg.getCreatedAt()) : "";
+                }
+                dto.put("time", formattedTime);
+                
                 dto.put("isOwn", msg.getSenderId() != null && msg.getSenderId().equals(user.getId()));
                 result.add(dto);
+            } catch (Exception msgEx) {
+                System.err.println("Error processing chat message: " + msgEx.getMessage());
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("GET MESSAGES ERROR: " + e.getMessage());
         }
 
         return ResponseEntity.ok(result);

@@ -190,11 +190,22 @@
 
         // ========== LOAD MESSAGES ==========
         function loadMessages(roomId) {
+            console.log('[S-Mall Chat] Loading messages for room:', roomId);
             fetch(url + '/api/chat/rooms/' + roomId + '/messages')
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) throw new Error('API return status ' + res.status);
+                    return res.json();
+                })
                 .then(messages => {
+                    console.log('[S-Mall Chat] Received messages:', messages);
                     const container = document.getElementById('chatMessages');
                     container.innerHTML = '';
+
+                    if (!Array.isArray(messages)) {
+                        console.error('[S-Mall Chat] Expected array but got:', messages);
+                        container.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 20px;">Lỗi tải tin nhắn: Dữ liệu không hợp lệ</div>';
+                        return;
+                    }
 
                     if (messages.length === 0) {
                         container.innerHTML = `
@@ -205,12 +216,23 @@
                         return;
                     }
 
-                    messages.forEach(msg => appendMessage(msg));
+                    messages.forEach(msg => {
+                        try {
+                            appendMessage(msg);
+                        } catch (err) {
+                            console.error('[S-Mall Chat] Error appending message:', err, msg);
+                        }
+                    });
                     scrollToBottom();
 
                     // Reload rooms to update unread count
                     loadRooms();
                     updateChatBadge();
+                })
+                .catch(err => {
+                    console.error('[S-Mall Chat] Fetch error:', err);
+                    const container = document.getElementById('chatMessages');
+                    container.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 20px;">Không thể tải tin nhắn. Vui lòng thử lại sau.</div>';
                 });
         }
 

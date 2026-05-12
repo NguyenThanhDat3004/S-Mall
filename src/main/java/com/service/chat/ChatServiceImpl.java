@@ -116,7 +116,8 @@ public class ChatServiceImpl implements ChatService {
                     .collect(Collectors.toList());
             }
         } catch (Exception e) {
-            System.err.println("[ChatService] Cache error: " + e.getMessage());
+            System.err.println("[ChatService] Cache hit error for room " + roomId + ": " + e.getMessage());
+            // Proceed to DB if cache fails
         }
 
         List<ChatMessageBufferDTO> result = new ArrayList<>();
@@ -172,7 +173,8 @@ public class ChatServiceImpl implements ChatService {
             }
 
         } catch (Exception e) {
-            System.err.println("[ChatService] DB Error: " + e.getMessage());
+            System.err.println("[ChatService] Data retrieval error for room " + roomId + ": " + e.getMessage());
+            e.printStackTrace();
         }
 
         return result;

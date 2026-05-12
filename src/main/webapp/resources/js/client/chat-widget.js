@@ -54,9 +54,8 @@
     function toggleWindow(forceOpen = null) {
         isWindowOpen = forceOpen !== null ? forceOpen : !isWindowOpen;
         windowEl.style.display = isWindowOpen ? 'flex' : 'none';
-        if (isWindowOpen) {
-            if (!currentRoomId) loadRooms();
-            else openRoom(currentRoomId, title.innerText);
+        if (isWindowOpen && !currentRoomId) {
+            loadRooms();
         }
     }
 

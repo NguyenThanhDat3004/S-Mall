@@ -296,5 +296,41 @@ sequenceDiagram
 1.  **High-Performance Buffering**: Sử dụng `ConcurrentHashMap` để lưu trữ tin nhắn tạm thời trong RAM. Hệ thống chỉ ghi vào database (I/O) một lần duy nhất khi kết thúc phiên chat, giảm tải cho SQL Server đến 90%.
 2.  **Persona Evolution**: Thay vì ghi đè, hệ thống tạo bản ghi mới cho mỗi phiên chat. Khi khởi động phiên mới, AI sẽ đọc **3 bản ghi gần nhất** để hiểu "quá trình tiến hóa" của người dùng, đảm bảo trí nhớ dài hạn mà không tốn quá nhiều Token.
 3.  **Diplomatic Persona (Thảo mai)**: AI được cấu hình để xưng hô đích danh tên chủ shop, sử dụng ngôn ngữ khéo léo và hỗ trợ.
-4.  **Secure Tool-Use**: AI không bao giờ tự ý thực thi hành động. Nó phải đề xuất phương án và chỉ thực thi lệnh `createVoucher` khi nhận được sự đồng ý rõ ràng từ chủ shop.
+- **Secure Tool-Use**: AI không bao giờ tự ý thực thi hành động. Nó phải đề xuất phương án và chỉ thực thi lệnh `createVoucher` khi nhận được sự đồng ý rõ ràng từ chủ shop.
 5.  **Robust Persistence**: Xử lý triệt để các lỗi đệ quy JSON (Jackson) và xung đột ràng buộc database (Unique Constraint) trong môi trường chạy ngầm (Async).
+
+## 11. Hệ thống Chat Real-time & Cuộn nạp lịch sử (Infinite Scroll Chat)
+Hệ thống tin nhắn tức thời cho phép người bán và người mua hội thoại trực tiếp, hỗ trợ lưu trữ bền bỉ và nạp dữ liệu thông minh.
+
+### Sơ đồ Luồng (Sequence Diagram)
+```mermaid
+sequenceDiagram
+    participant User as Người dùng (Buyer/Seller)
+    participant WS as WebSocket (STOMP/SockJS)
+    participant Ctrl as ChatWebSocketController
+    participant Svc as ChatService (Redis Buffer)
+    participant DB as SQL Database
+    
+    Note over User, WS: Giai đoạn: Gửi tin nhắn
+    User->>WS: SEND /app/chat.send {roomId, content}
+    WS->>Ctrl: handleMessage(payload)
+    Ctrl->>Svc: bufferMessage(...)
+    Svc->>DB: Lưu tin nhắn mới vào SQL
+    Svc->>Svc: Cập nhật Redis Buffer (Cache 20 tin gần nhất)
+    
+    Note over Ctrl, User: Giai đoạn: Phản hồi Real-time
+    Ctrl->>WS: convertAndSendToUser(targetEmail, payload)
+    WS-->>User: Hiển thị tin nhắn ngay lập tức (appendMessage)
+    
+    Note over User, Svc: Giai đoạn: Tải lịch sử (Scroll Up)
+    User->>User: Cuộn lên top (scrollTop == 0)
+    User->>Svc: API /api/chat/rooms/{id}/messages?page=N
+    Svc->>DB: Truy vấn phân trang tin nhắn cũ
+    Svc-->>User: Trả về dữ liệu -> prependMessage()
+```
+
+### Các quy tắc kỹ thuật & Tối ưu:
+1.  **Định danh WebSocket (User Destination)**: Sử dụng **Email** thay vì ID để khớp nối với `Principal` của Spring Security, đảm bảo tin nhắn được đẩy chính xác đến từng người dùng.
+2.  **Cơ chế Duy trì Vị trí Cuộn (Scroll Anchor)**: Khi nạp tin nhắn cũ lên đầu (`prepend`), hệ thống tính toán chênh lệch `scrollHeight` để giữ nguyên vị trí mắt đang đọc, tránh tình trạng màn hình bị nhảy xuống dưới.
+3.  **Phân tầng dữ liệu**: Ưu tiên hiển thị tin nhắn từ mảng tin nhắn tức thời của WebSocket trước, sau đó mới đến dữ liệu đồng bộ từ API nạp lịch sử.
+4.  **Phân quyền (Security)**: Mọi yêu cầu lấy tin nhắn đều được kiểm tra `isShopOwner || isCustomer`. Nếu không thỏa mãn, hệ thống trả về 403 Forbidden và hiển thị thông báo lỗi trực quan trên UI.
