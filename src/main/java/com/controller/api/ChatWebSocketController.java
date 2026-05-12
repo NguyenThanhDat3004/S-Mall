@@ -98,12 +98,8 @@ public class ChatWebSocketController {
                 sellerMsg.put("isOwn", sender.getId().equals(shopOwner.getId()));
                 messagingTemplate.convertAndSendToUser(
                         shopOwner.getEmail(), "/queue/messages", sellerMsg);
-                System.out.println("[WebSocket] Sent message to shop owner: " + shopOwner.getEmail());
-            } else {
-                System.err.println("[WebSocket] Shop owner or email is null for room: " + actualRoomId);
             }
         } catch (Exception e) {
-            System.err.println("[WebSocket] Error broadcasting message: " + e.getMessage());
             e.printStackTrace();
         }
     }

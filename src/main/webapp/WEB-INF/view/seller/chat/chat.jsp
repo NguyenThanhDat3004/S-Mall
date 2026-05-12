@@ -148,21 +148,14 @@
         function connectWebSocket() {
             const socket = new SockJS(url + '/ws');
             stompClient = Stomp.over(socket);
-            stompClient.debug = console.log;
-            console.log('[S-Mall Seller Chat] Connecting to WebSocket...');
+            stompClient.debug = null;
 
             stompClient.connect({}, function(frame) {
-                console.log('[S-Mall Seller Chat] WebSocket Connected:', frame);
                 stompClient.subscribe('/user/queue/messages', function(message) {
                     const msg = JSON.parse(message.body);
-                    console.log('[S-Mall Seller Chat] WebSocket message received:', msg);
-                    
                     if (msg.roomId == currentRoomId) {
-                        console.log('[S-Mall Seller Chat] Appending message to current room');
                         appendMessage(msg);
                         fetch(url + '/api/chat/rooms/' + currentRoomId + '/read', { method: 'POST' });
-                    } else {
-                        console.log('[S-Mall Seller Chat] Message for different room. current:', currentRoomId, 'target:', msg.roomId);
                     }
                     loadRooms();
                 });
@@ -237,13 +230,8 @@
         // ========== LOAD MESSAGES ==========
         function loadSellerMessages(roomId, page) {
             if (isLoadingMore || !hasMore) return;
-            
-            console.log('[S-Mall Seller Chat] --- LOADING MESSAGES ---');
-            console.log('[S-Mall Seller Chat] Room ID:', roomId, 'Page:', page);
-            
             isLoadingMore = true;
             
-            // Hiển thị indicator nếu đang load trang cũ
             if (page > 0) {
                 const container = document.getElementById('sellerChatMessages');
                 const loadingDiv = document.createElement('div');
@@ -264,14 +252,10 @@
                     const loadingDiv = document.getElementById('historyLoading');
                     if (loadingDiv) loadingDiv.remove();
 
-                    if (!Array.isArray(messages)) {
-                        console.error('[S-Mall Seller Chat] Invalid data:', messages);
-                        return;
-                    }
+                    if (!Array.isArray(messages)) return;
 
                     if (messages.length < 20) {
                         hasMore = false;
-                        console.log('[S-Mall Seller Chat] No more messages to load.');
                     }
 
                     if (page === 0 && messages.length === 0) {
@@ -340,16 +324,9 @@
             const input = document.getElementById('sellerInput');
             const content = input.value.trim();
             
-            console.log('[S-Mall Seller Chat] Attempting to send message:', content);
-            
             if (!content) return;
-            if (!currentRoomId) {
-                console.error('[S-Mall Seller Chat] No active room ID!');
-                return;
-            }
+            if (!currentRoomId) return;
             if (!stompClient || !stompClient.connected) {
-                console.error('[S-Mall Seller Chat] WebSocket is not connected!');
-                alert('Mất kết nối máy chủ. Đang thử kết nối lại...');
                 connectWebSocket();
                 return;
             }
@@ -359,7 +336,6 @@
                     roomId: currentRoomId,
                     content: content
                 }));
-                console.log('[S-Mall Seller Chat] Message sent via WebSocket');
                 input.value = '';
                 input.focus();
             } catch (err) {
