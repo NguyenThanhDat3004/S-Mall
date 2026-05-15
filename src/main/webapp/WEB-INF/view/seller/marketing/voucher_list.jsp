@@ -223,6 +223,7 @@
                     </div>
                 </div>
 
+
                 <div class="grid grid-cols-2 gap-6" x-data="{ discountType: 'FIXED' }">
                     <div class="space-y-2">
                         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Loại giảm giá</label>
@@ -236,23 +237,25 @@
                         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">
                             Mức giảm (<span x-text="discountType == 'FIXED' ? '₫' : '%'"></span>)
                         </label>
-                        <input type="number" name="discountAmount" required min="1" :step="discountType == 'FIXED' ? 1000 : 1" 
-                               :placeholder="discountType == 'FIXED' ? '10.000' : '10'" 
+                        <input type="number" name="discountAmount" required min="0" step="any"
+                               :placeholder="discountType == 'FIXED' ? '10000' : '10'" 
                                class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-emerald-600 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
                     </div>
                 </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Đơn tối thiểu (₫)</label>
-                        <input type="number" name="minOrderValue" required min="0" step="1000" placeholder="50.000" 
-                               class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
-                    </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Đơn tối thiểu (₫)</label>
+                    <input type="number" name="minOrderValue" required min="0" step="1000" placeholder="50000" 
+                           class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
                 </div>
 
                 <div class="space-y-2">
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Ngày hết hạn</label>
                     <input type="datetime-local" name="expiryDateStr" required 
+                           id="expiryDateInput"
                            class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all">
                 </div>
+
 
                 <div class="pt-4">
                     <button type="submit" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
@@ -300,5 +303,16 @@
         </div>
     </div>
 
+<script>
+    // Ngăn chọn ngày trong quá khứ cho trường Ngày hết hạn
+    document.addEventListener('DOMContentLoaded', function() {
+        const expiryInput = document.getElementById('expiryDateInput');
+        if (expiryInput) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            expiryInput.min = now.toISOString().slice(0, 16);
+        }
+    });
+</script>
 </body>
 </html>

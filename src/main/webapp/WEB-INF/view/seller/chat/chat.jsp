@@ -140,6 +140,8 @@
         let currentPage = 0;
         let isLoadingMore = false;
         let hasMore = true;
+        let lastAppendedTimestamp = 0; 
+        let lastPrependedTimestamp = 0; 
         const shopId = ${shopId};
         const currentUserId = ${currentUserId};
         let stompClient = null;
@@ -206,6 +208,8 @@
             currentPage = 0;
             hasMore = true;
             isLoadingMore = false;
+            lastAppendedTimestamp = 0;
+            lastPrependedTimestamp = 0;
 
             document.getElementById('sellerEmptyState').style.display = 'none';
             document.getElementById('sellerChatHeader').style.display = 'flex';
@@ -266,11 +270,17 @@
 
                     if (page === 0) {
                         // Trang 0: Thêm vào cuối theo thứ tự thời gian (Oldest -> Newest)
-                        messages.forEach(msg => appendMessage(msg));
+                        messages.forEach((msg, idx) => {
+                            if (idx === 0) lastPrependedTimestamp = msg.timestamp;
+                            appendMessage(msg);
+                        });
                         scrollToBottom();
                     } else {
                         // Trang > 0: Thêm vào đầu, đảo ngược để prepend đúng thứ tự
-                        [...messages].reverse().forEach(msg => prependMessage(msg));
+                        [...messages].reverse().forEach((msg, idx) => {
+                            prependMessage(msg);
+                            if (idx === messages.length - 1) lastPrependedTimestamp = msg.timestamp;
+                        });
                         // Giữ vị trí cuộn để không bị nhảy
                         container.scrollTop = container.scrollHeight - oldScrollHeight;
                     }
@@ -286,8 +296,15 @@
 
         function prependMessage(msg) {
             const container = document.getElementById('sellerChatMessages');
-            const isOwn = msg.isOwn || msg.senderId === currentUserId;
             
+            // Logic hiển thị thời gian: Nếu tin nhắn hiện tại cách tin nhắn "sau nó" (là lastPrepended) > 3p
+            if (lastPrependedTimestamp && (lastPrependedTimestamp - msg.timestamp > 3 * 60 * 1000)) {
+                const timeHtml = '<div class="flex justify-center my-4"><span class="px-3 py-1 bg-slate-100 text-slate-400 text-[10px] rounded-full font-medium">' + (msg.time || '') + '</span></div>';
+                container.insertAdjacentHTML('afterbegin', timeHtml);
+            }
+            lastPrependedTimestamp = msg.timestamp;
+
+            const isOwn = msg.isOwn || msg.senderId === currentUserId;
             const html = isOwn
                 ? '<div class="flex justify-end mb-4"><div class="max-w-[65%]"><div class="chat-bubble-out px-4 py-2.5 text-sm">' + escapeHtml(msg.content) + '</div><div class="text-right text-[10px] text-slate-400 mt-1 pr-1">' + (msg.time || '') + '</div></div></div>'
                 : '<div class="flex gap-2 mb-4"><div class="w-7 h-7 bg-slate-200 rounded-full flex items-center justify-center text-slate-500 text-[10px] font-bold flex-shrink-0 mt-1">' + (msg.senderName || '?').charAt(0).toUpperCase() + '</div><div class="max-w-[65%]"><div class="chat-bubble-in px-4 py-2.5 text-sm text-small-navy">' + escapeHtml(msg.content) + '</div><div class="text-[10px] text-slate-400 mt-1 pl-1">' + (msg.time || '') + '</div></div></div>';
@@ -308,6 +325,13 @@
             const container = document.getElementById('sellerChatMessages');
             const emptyMsg = container.querySelector('.flex.justify-center');
             if (emptyMsg) emptyMsg.remove();
+
+            // Logic hiển thị thời gian: Nếu tin nhắn hiện tại cách tin nhắn trước đó > 3p
+            if (!lastAppendedTimestamp || (msg.timestamp - lastAppendedTimestamp > 3 * 60 * 1000)) {
+                const timeHtml = '<div class="flex justify-center my-4"><span class="px-3 py-1 bg-slate-100 text-slate-400 text-[10px] rounded-full font-medium">' + (msg.time || '') + '</span></div>';
+                container.insertAdjacentHTML('beforeend', timeHtml);
+            }
+            lastAppendedTimestamp = msg.timestamp;
 
             const isOwn = msg.isOwn || msg.senderId === currentUserId;
 

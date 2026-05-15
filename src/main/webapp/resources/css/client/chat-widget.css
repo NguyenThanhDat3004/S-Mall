@@ -108,6 +108,20 @@
     text-overflow: ellipsis;
 }
 
+.chat-widget-room-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.chat-widget-room-time {
+    font-size: 10px;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
 /* Conversation View */
 .chat-widget-conversation {
     flex: 1;
@@ -155,6 +169,33 @@
     border-bottom-right-radius: 2px;
 }
 
+.cw-msg-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+}
+
+.cw-msg-wrapper.out {
+    align-self: flex-end;
+    align-items: flex-end;
+}
+
+.cw-msg-wrapper.in {
+    align-self: flex-start;
+    align-items: flex-start;
+}
+
+.cw-msg-wrapper .cw-msg {
+    max-width: 100%;
+}
+
+.cw-msg-time {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 2px;
+    padding: 0 4px;
+}
+
 .chat-widget-input-area {
     padding: 12px;
     border-top: 1px solid #e2e8f0;
@@ -192,4 +233,29 @@
 .chat-widget-messages::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 4px;
+}
+
+/* Date Separator */
+.cw-date-sep {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    margin: 4px 0;
+}
+
+.cw-date-sep::before,
+.cw-date-sep::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.cw-date-sep span {
+    font-size: 10px;
+    color: #b0bec5;
+    white-space: nowrap;
+    font-weight: 500;
+    letter-spacing: 0.3px;
 }

@@ -81,9 +81,9 @@ public class ChatApiController {
             for (ChatRoom room : rooms) {
                 Map<String, Object> dto = new HashMap<>();
                 dto.put("roomId", room.getId());
-                dto.put("lastMessageAt", room.getLastMessageAt() != null
-                        ? room.getLastMessageAt().format(formatter)
-                        : "");
+                dto.put("lastMessageAtMs", room.getLastMessageAt() != null
+                        ? room.getLastMessageAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                        : null);
 
                 // Xác định vai trò của người dùng trong phòng chat này
                 boolean isSellerInThisRoom = effectiveShopId != null && room.getShop() != null && room.getShop().getId().equals(effectiveShopId);
@@ -184,16 +184,12 @@ public class ChatApiController {
                 dto.put("senderAvatar", msg.getSenderAvatar());
                 
                 // Robust Time Formatting
-                String formattedTime = "";
-                try {
-                    if (msg.getCreatedAt() != null) {
-                        formattedTime = msg.getCreatedAt().format(formatter);
-                    }
-                } catch (Exception timeEx) {
-                    // Fallback if it's not a LocalDateTime or format fails
-                    formattedTime = msg.getCreatedAt() != null ? String.valueOf(msg.getCreatedAt()) : "";
+                if (msg.getCreatedAt() != null) {
+                    dto.put("time", msg.getCreatedAt().format(formatter));
+                    dto.put("timestamp", msg.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
+                } else {
+                    dto.put("time", "");
                 }
-                dto.put("time", formattedTime);
                 
                 dto.put("isOwn", msg.getSenderId() != null && msg.getSenderId().equals(user.getId()));
                 result.add(dto);

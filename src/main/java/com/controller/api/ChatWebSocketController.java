@@ -75,6 +75,7 @@ public class ChatWebSocketController {
         messageDto.put("senderAvatar", sender.getProfile() != null
                 ? sender.getProfile().getAvatarUrl() : null);
         messageDto.put("time", saved.getCreatedAt().format(formatter));
+        messageDto.put("timestamp", saved.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
 
         // Xác định người nhận từ room info (Dùng JOIN FETCH để tránh LazyInitializationException)
         ChatRoom chatRoom = chatRoomRepository.findByIdWithDetails(actualRoomId).orElse(null);

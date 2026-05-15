@@ -9,6 +9,7 @@
     let hasMore = true;
     let stompClient = null;
     let isWindowOpen = false;
+    let lastAppendDate = null; // theo dõi ngày để chèn thanh ngăn cách
 
     // UI Elements
     const container = document.createElement('div');
@@ -80,6 +81,44 @@
         loadRooms();
     };
 
+    // Smart time format: Trong ngày → HH:mm, Khác ngày → dd/MM
+    function formatRoomTime(ms) {
+        if (!ms) return '';
+        const d = new Date(ms);
+        const now = new Date();
+        const isToday = d.getDate() === now.getDate() &&
+                        d.getMonth() === now.getMonth() &&
+                        d.getFullYear() === now.getFullYear();
+        if (isToday) {
+            return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+        } else {
+            return d.getDate().toString().padStart(2,'0') + '/' + (d.getMonth()+1).toString().padStart(2,'0');
+        }
+    }
+
+    // Nhãn ngày cho thanh ngăn cách
+    function getDateLabel(ms) {
+        if (!ms) return null;
+        const d = new Date(ms);
+        const now = new Date();
+        const today    = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(today - 86400000);
+        const msgDay   = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        if (msgDay.getTime() === today.getTime())     return 'Hôm nay';
+        if (msgDay.getTime() === yesterday.getTime()) return 'Hôm qua';
+        return d.getDate().toString().padStart(2,'0') + '/' +
+               (d.getMonth()+1).toString().padStart(2,'0') + '/' +
+               d.getFullYear();
+    }
+
+    // Tạo thanh ngăn cách ngày
+    function createDateSep(label) {
+        const sep = document.createElement('div');
+        sep.className = 'cw-date-sep';
+        sep.innerHTML = '<span>' + label + '</span>';
+        return sep;
+    }
+
     // Load Rooms
     function loadRooms() {
         fetch(url + '/api/chat/rooms')
@@ -101,7 +140,10 @@
                             '<div class="chat-widget-room-name">' + room.partnerName + '</div>' +
                             '<div class="chat-widget-room-last">' + (room.lastMessage || 'Chưa có tin nhắn') + '</div>' +
                         '</div>' +
-                        (room.unreadCount > 0 ? '<span class="badge bg-danger rounded-pill">' + room.unreadCount + '</span>' : '') +
+                        '<div class="chat-widget-room-meta">' +
+                            '<div class="chat-widget-room-time">' + formatRoomTime(room.lastMessageAtMs) + '</div>' +
+                            (room.unreadCount > 0 ? '<span class="badge bg-danger rounded-pill">' + room.unreadCount + '</span>' : '') +
+                        '</div>' +
                     '</div>';
                 }).join('');
             })
@@ -129,6 +171,7 @@
 
             currentPage = 0;
             hasMore = true;
+            lastAppendDate = null;
             messagesEl.innerHTML = '';
             loadMessages(roomId, 0);
             fetch(url + '/api/chat/rooms/' + roomId + '/read', { method: 'POST' });
@@ -182,22 +225,32 @@
                 }
 
                 const oldScrollHeight = messagesEl.scrollHeight;
-                
-                // Đảo ngược để prepend đúng thứ tự (vì API trả về ASC trong trang)
-                messages.slice().reverse().forEach(msg => prependMessage(msg));
-                
-                // --- DEBUG BLOCK: LUÔN IN RAW JSON LÊN ĐẦU ---
-                const debugDiv = document.createElement('div');
-                debugDiv.className = 'p-2 text-danger small bg-light border';
-                debugDiv.style.wordBreak = 'break-all';
-                debugDiv.style.fontSize = '10px';
-                debugDiv.innerText = 'DEBUG JSON: ' + JSON.stringify(messages);
-                messagesEl.prepend(debugDiv);
-                
+
                 if (page === 0) {
+                    // Trang đầu: append theo đúng thứ tự + chèn separator ngày
+                    messages.forEach(msg => {
+                        const label = getDateLabel(msg.timestamp);
+                        if (label && label !== lastAppendDate) {
+                            messagesEl.appendChild(createDateSep(label));
+                            lastAppendDate = label;
+                        }
+                        appendMessageDirect(msg);
+                    });
                     scrollToBottom();
                 } else {
-                    // Giữ vị trí cuộn khi load thêm
+                    // Trang cũ hơn: prepend theo thứ tự ngược
+                    let lastPrependDate = null;
+                    messages.slice().reverse().forEach(msg => {
+                        const label = getDateLabel(msg.timestamp);
+                        if (label && label !== lastPrependDate) {
+                            if (lastPrependDate !== null) {
+                                messagesEl.prepend(createDateSep(label));
+                            }
+                            lastPrependDate = label;
+                        }
+                        prependMessageDirect(msg);
+                    });
+                    if (lastPrependDate) messagesEl.prepend(createDateSep(lastPrependDate));
                     messagesEl.scrollTop = messagesEl.scrollHeight - oldScrollHeight;
                 }
                 
@@ -212,25 +265,47 @@
             });
     }
 
-    function prependMessage(msg) {
-        if (messagesEl.querySelector('.text-muted')) {
-            messagesEl.innerHTML = '';
-        }
-        const div = document.createElement('div');
-        div.className = 'cw-msg ' + (msg.isOwn ? 'out' : 'in');
-        div.innerText = msg.content;
-        messagesEl.prepend(div);
+    // Append trực tiếp (dùng khi load trang đầu, không tự xử lý separator)
+    function appendMessageDirect(msg) {
+        if (messagesEl.querySelector('.text-muted')) messagesEl.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cw-msg-wrapper ' + (msg.isOwn ? 'out' : 'in');
+        const bubble = document.createElement('div');
+        bubble.className = 'cw-msg ' + (msg.isOwn ? 'out' : 'in');
+        bubble.innerText = msg.content;
+        const timeEl = document.createElement('div');
+        timeEl.className = 'cw-msg-time';
+        timeEl.innerText = msg.time || '';
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(timeEl);
+        messagesEl.appendChild(wrapper);
     }
 
+    // Prepend trực tiếp (dùng khi load trang cũ, không tự xử lý separator)
+    function prependMessageDirect(msg) {
+        if (messagesEl.querySelector('.text-muted')) messagesEl.innerHTML = '';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'cw-msg-wrapper ' + (msg.isOwn ? 'out' : 'in');
+        const bubble = document.createElement('div');
+        bubble.className = 'cw-msg ' + (msg.isOwn ? 'out' : 'in');
+        bubble.innerText = msg.content;
+        const timeEl = document.createElement('div');
+        timeEl.className = 'cw-msg-time';
+        timeEl.innerText = msg.time || '';
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(timeEl);
+        messagesEl.prepend(wrapper);
+    }
+
+    // Append real-time (có kiểm tra đổi ngày để thêm separator)
     function appendMessage(msg) {
-        // Xóa placeholder nếu là tin nhắn đầu tiên
-        if (messagesEl.querySelector('.text-muted')) {
-            messagesEl.innerHTML = '';
+        if (messagesEl.querySelector('.text-muted')) messagesEl.innerHTML = '';
+        const label = getDateLabel(msg.timestamp);
+        if (label && label !== lastAppendDate) {
+            messagesEl.appendChild(createDateSep(label));
+            lastAppendDate = label;
         }
-        const div = document.createElement('div');
-        div.className = 'cw-msg ' + (msg.isOwn ? 'out' : 'in');
-        div.innerText = msg.content;
-        messagesEl.appendChild(div);
+        appendMessageDirect(msg);
         scrollToBottom();
     }
 
